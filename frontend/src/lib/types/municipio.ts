@@ -20,6 +20,19 @@ export type Municipio = {
 	temp_verano_norm?: number;
 	temp_invierno_norm?: number;
 	accesibilidad_norm?: number;
+	forest_pct?: number;
+	water_pct?: number;
+	artificial_pct?: number;
+	naturality_index?: number;
+	landcover_diversity?: number;
+	forest_norm?: number;
+	water_norm?: number;
+	artificial_norm?: number;
+	naturality_norm?: number;
+	diversity_norm?: number;
+	climate_block_score?: number;
+	access_block_score?: number;
+	nature_block_score?: number;
 	mixed_score?: number;
 };
 
@@ -37,7 +50,14 @@ export type DatasetMetadata = {
 	generated_at_utc: string;
 	analysis_scope: string;
 	climate_source: string;
+	environment_source?: string;
 	climate_period: string;
 	aggregation_method: string;
 	isochrones_definition: string;
+	scoring_method?: string;
+	scoring_weights?: {
+		climate: number;
+		accessibility: number;
+		nature: number;
+	};
 };

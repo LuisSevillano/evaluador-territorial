@@ -7,6 +7,7 @@
 		| 'nombre'
 		| 'provincia'
 		| 'travel_bucket'
+		| 'mixed_score'
 		| 'precip_annual_mm'
 		| 'temp_winter_mean_c'
 		| 'temp_summer_mean_c';
@@ -34,6 +35,9 @@
 		tableRows?: Municipio[];
 		sortBy?: SortField;
 		sortDirection?: 'asc' | 'desc';
+		weights?: { climate: number; access: number; nature: number };
+		weightsRaw?: { climateWeight: number; accessWeight: number; natureWeight: number };
+		sensitivityOverlap?: number;
 		datasetMetadata?: DatasetMetadata | null;
 		labelAccesibilidad?: (bucket: string) => string;
 		climateSeries?: MunicipioClimateMonthly[];
@@ -55,6 +59,10 @@
 		onClearFilters?: () => void;
 		onToggleShortlist?: (municipioId: string) => void;
 		onChangeSort?: (field: SortField) => void;
+		onClimateWeightChange?: (value: number) => void;
+		onAccessWeightChange?: (value: number) => void;
+		onNatureWeightChange?: (value: number) => void;
+		onPresetWeights?: (preset: 'equilibrado' | 'naturaleza' | 'accesibilidad' | 'clima') => void;
 	};
 
 	let {
@@ -78,8 +86,11 @@
 		shortlistedIds = [],
 		shortlistMunicipios = [],
 		tableRows = [],
-		sortBy = 'precip_annual_mm',
+		sortBy = 'mixed_score',
 		sortDirection = 'desc',
+		weights = { climate: 0.4, access: 0.3, nature: 0.3 },
+		weightsRaw = { climateWeight: 40, accessWeight: 30, natureWeight: 30 },
+		sensitivityOverlap = 0,
 		datasetMetadata = null,
 		labelAccesibilidad = (bucket: string) => bucket,
 		climateSeries = [],
@@ -98,7 +109,11 @@
 		onMaxSummerTempChange = () => undefined,
 		onClearFilters = () => undefined,
 		onToggleShortlist = () => undefined,
-		onChangeSort = () => undefined
+		onChangeSort = () => undefined,
+		onClimateWeightChange = () => undefined,
+		onAccessWeightChange = () => undefined,
+		onNatureWeightChange = () => undefined,
+		onPresetWeights = () => undefined
 	}: Props = $props();
 
 	const filteredMunicipios = $derived(
@@ -239,10 +254,12 @@
 				<span>accesibilidad {labelAccesibilidad(selectedMunicipio.travel_bucket)}</span>
 			</div>
 			<div class="metric-grid">
+				<div><span>Score mixto</span><strong>{selectedMunicipio.mixed_score ?? '-'}</strong></div>
 				<div><span>Bucket accesibilidad</span><strong>{selectedMunicipio.travel_bucket}</strong></div>
 				<div><span>Precipitacion anual</span><strong>{selectedMunicipio.precip_annual_mm} mm</strong></div>
 				<div><span>Invierno medio</span><strong>{selectedMunicipio.temp_winter_mean_c} C</strong></div>
 				<div><span>Verano medio</span><strong>{selectedMunicipio.temp_summer_mean_c} C</strong></div>
+				<div><span>% forestal / agua</span><strong>{selectedMunicipio.forest_pct ?? '-'} / {selectedMunicipio.water_pct ?? '-'}</strong></div>
 				<div><span>Enero / Julio</span><strong>{selectedMunicipio.temp_jan_mean_c} / {selectedMunicipio.temp_jul_mean_c} C</strong></div>
 				<div><span>Norma futura</span><strong>{selectedMunicipio.precip_norm ?? '-'} / {selectedMunicipio.accesibilidad_norm ?? '-'}</strong></div>
 			</div>
@@ -273,6 +290,7 @@
 						<th><button onclick={() => onChangeSort('nombre')}>Municipio{sortLabel('nombre')}</button></th>
 						<th><button onclick={() => onChangeSort('provincia')}>Provincia{sortLabel('provincia')}</button></th>
 						<th><button onclick={() => onChangeSort('travel_bucket')}>Isocrona{sortLabel('travel_bucket')}</button></th>
+						<th><button onclick={() => onChangeSort('mixed_score')}>Score{sortLabel('mixed_score')}</button></th>
 						<th><button onclick={() => onChangeSort('precip_annual_mm')}>PPT{sortLabel('precip_annual_mm')}</button></th>
 						<th><button onclick={() => onChangeSort('temp_winter_mean_c')}>Invierno{sortLabel('temp_winter_mean_c')}</button></th>
 						<th><button onclick={() => onChangeSort('temp_summer_mean_c')}>Verano{sortLabel('temp_summer_mean_c')}</button></th>
@@ -284,6 +302,7 @@
 							<td>{municipio.nombre}</td>
 							<td>{municipio.provincia}</td>
 							<td>{municipio.travel_bucket}</td>
+							<td>{municipio.mixed_score ?? '-'}</td>
 							<td>{municipio.precip_annual_mm}</td>
 							<td>{municipio.temp_winter_mean_c}</td>
 							<td>{municipio.temp_summer_mean_c}</td>
@@ -292,6 +311,30 @@
 				</tbody>
 			</table>
 		</div>
+	</section>
+
+	<section class="panel">
+		<h2>Scoring y sensibilidad</h2>
+		<div class="chips-wrap compact">
+			<button type="button" class="chip" onclick={() => onPresetWeights('equilibrado')}>Eq</button>
+			<button type="button" class="chip" onclick={() => onPresetWeights('naturaleza')}>Nat</button>
+			<button type="button" class="chip" onclick={() => onPresetWeights('accesibilidad')}>Acc</button>
+			<button type="button" class="chip" onclick={() => onPresetWeights('clima')}>Cli</button>
+		</div>
+		<div class="control">
+			<label for="w-climate">Peso clima: {weightsRaw.climateWeight}</label>
+			<input id="w-climate" type="range" min="0" max="100" step="1" value={weightsRaw.climateWeight} oninput={(e) => onClimateWeightChange(toNumber(e))} />
+		</div>
+		<div class="control">
+			<label for="w-access">Peso accesibilidad: {weightsRaw.accessWeight}</label>
+			<input id="w-access" type="range" min="0" max="100" step="1" value={weightsRaw.accessWeight} oninput={(e) => onAccessWeightChange(toNumber(e))} />
+		</div>
+		<div class="control">
+			<label for="w-nature">Peso naturaleza: {weightsRaw.natureWeight}</label>
+			<input id="w-nature" type="range" min="0" max="100" step="1" value={weightsRaw.natureWeight} oninput={(e) => onNatureWeightChange(toNumber(e))} />
+		</div>
+		<p class="muted">Normalizados: clima {(weights.climate * 100).toFixed(0)}% · acces {(weights.access * 100).toFixed(0)}% · nat {(weights.nature * 100).toFixed(0)}%</p>
+		<p class="muted">Robustez top-10 vs equilibrado: {sensitivityOverlap}/10</p>
 	</section>
 
 	<section class="panel">
@@ -323,6 +366,7 @@
 					<p><strong>Isocronas:</strong> {datasetMetadata.isochrones_definition}</p>
 					<p><strong>Fecha generacion:</strong> {datasetMetadata.generated_at_utc}</p>
 					<p><strong>Version dataset:</strong> {datasetMetadata.dataset_version}</p>
+					<p><strong>Scoring:</strong> {datasetMetadata.scoring_method ?? 'No definido'}</p>
 				{:else}
 					<p class="muted">Sin metadata disponible en este build.</p>
 				{/if}
