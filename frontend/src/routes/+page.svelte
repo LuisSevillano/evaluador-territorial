@@ -24,7 +24,7 @@
 	const municipiosPmtilesUrl = '/tiles/municipios.pmtiles';
 let provinceFilter = $state('Todas');
 let shortlistedIds = $state<string[]>([]);
-	let sortBy = $state<'nombre' | 'provincia' | 'travel_bucket' | 'precip_annual_mm' | 'temp_winter_mean_c' | 'temp_summer_mean_c'>('precip_annual_mm');
+	let sortBy = $state<'nombre' | 'provincia' | 'travel_bucket' | 'precip_annual_mm' | 'temp_winter_mean_c' | 'temp_summer_mean_c' | 'mixed_score'>('mixed_score');
 	let sortDirection = $state<'asc' | 'desc'>('desc');
 
 	let maxTravelBucket = $state<'<=1h30' | '<=2h00' | '<=2h30' | '<=3h30' | '<=4h00' | '>4h00'>(
@@ -33,6 +33,9 @@ let shortlistedIds = $state<string[]>([]);
 	let minPrecipAnnual = $state(0);
 	let minWinterTemp = $state(-10);
 	let maxSummerTemp = $state(40);
+	let climateWeight = $state(40);
+	let accessWeight = $state(30);
+	let natureWeight = $state(30);
 
 	const bucketOrder: Record<string, number> = {
 		'<=1h30': 1,
@@ -88,14 +91,49 @@ let shortlistedIds = $state<string[]>([]);
 		return 'baja';
 	};
 
+	const normalizedWeights = $derived(
+		(() => {
+			const total = climateWeight + accessWeight + natureWeight;
+			if (!total) return { climate: 0.4, access: 0.3, nature: 0.3 };
+			return {
+				climate: climateWeight / total,
+				access: accessWeight / total,
+				nature: natureWeight / total
+			};
+		})()
+	);
+
+	const scoreFor = (m: Municipio, weights: { climate: number; access: number; nature: number }) => {
+		const climate = m.climate_block_score ?? m.precip_norm ?? 0.5;
+		const access = m.access_block_score ?? m.accesibilidad_norm ?? 0.5;
+		const nature = m.nature_block_score ?? m.naturality_norm ?? 0.5;
+		return weights.climate * climate + weights.access * access + weights.nature * nature;
+	};
+
+	const baselineWeights = { climate: 0.4, access: 0.3, nature: 0.3 };
+	const baselineTopIds = $derived(
+		[...municipiosFiltrados]
+			.sort((a, b) => scoreFor(b, baselineWeights) - scoreFor(a, baselineWeights))
+			.slice(0, 10)
+			.map((m) => m.id)
+	);
+
 	const tableRows = $derived(
 		[...municipiosFiltrados].sort((a, b) => {
 			let cmp = 0;
 			if (sortBy === 'travel_bucket') cmp = bucketOrder[a.travel_bucket] - bucketOrder[b.travel_bucket];
 			else if (sortBy === 'nombre' || sortBy === 'provincia') cmp = a[sortBy].localeCompare(b[sortBy], 'es');
+			else if (sortBy === 'mixed_score') cmp = scoreFor(a, normalizedWeights) - scoreFor(b, normalizedWeights);
 			else cmp = (a[sortBy] ?? 0) - (b[sortBy] ?? 0);
 			return sortDirection === 'asc' ? cmp : -cmp;
 		})
+	);
+
+	const sensitivityOverlap = $derived(
+		(() => {
+			const currentTop = tableRows.slice(0, 10).map((m) => m.id);
+			return currentTop.filter((id) => baselineTopIds.includes(id)).length;
+		})()
 	);
 
 	const shortlistMunicipios = $derived(
@@ -148,6 +186,26 @@ let shortlistedIds = $state<string[]>([]);
 		}
 		sortBy = newSortBy;
 		sortDirection = newSortBy === 'nombre' || newSortBy === 'provincia' || newSortBy === 'travel_bucket' ? 'asc' : 'desc';
+	};
+
+	const handlePresetWeights = (preset: 'equilibrado' | 'naturaleza' | 'accesibilidad' | 'clima') => {
+		if (preset === 'equilibrado') {
+			climateWeight = 40;
+			accessWeight = 30;
+			natureWeight = 30;
+		} else if (preset === 'naturaleza') {
+			climateWeight = 25;
+			accessWeight = 20;
+			natureWeight = 55;
+		} else if (preset === 'accesibilidad') {
+			climateWeight = 25;
+			accessWeight = 55;
+			natureWeight = 20;
+		} else {
+			climateWeight = 55;
+			accessWeight = 20;
+			natureWeight = 25;
+		}
 	};
 
 	$effect(() => {
@@ -211,6 +269,9 @@ let shortlistedIds = $state<string[]>([]);
 		tableRows={tableRows}
 		{sortBy}
 		{sortDirection}
+		weights={normalizedWeights}
+		weightsRaw={{ climateWeight, accessWeight, natureWeight }}
+		sensitivityOverlap={sensitivityOverlap}
 		datasetMetadata={data.datasetMetadata}
 		labelAccesibilidad={labelAccesibilidad}
 		climateSeries={selectedClimateSeries}
@@ -230,6 +291,10 @@ let shortlistedIds = $state<string[]>([]);
 		onClearFilters={handleClearFilters}
 		onToggleShortlist={handleToggleShortlist}
 		onChangeSort={handleChangeSort}
+		onClimateWeightChange={(value) => (climateWeight = value)}
+		onAccessWeightChange={(value) => (accessWeight = value)}
+		onNatureWeightChange={(value) => (natureWeight = value)}
+		onPresetWeights={handlePresetWeights}
 	/>
 
 	<section class="map-wrap">

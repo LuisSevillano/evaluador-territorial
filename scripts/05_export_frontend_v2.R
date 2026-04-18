@@ -39,15 +39,34 @@ minmax_norm <- function(x, invert = FALSE) {
 mun$precip_norm <- round(minmax_norm(mun$precip_annual_mm, invert = FALSE), 4)
 mun$temp_verano_norm <- round(minmax_norm(mun$temp_summer_mean_c, invert = TRUE), 4)
 mun$temp_invierno_norm <- round(minmax_norm(mun$temp_winter_mean_c, invert = FALSE), 4)
+mun$forest_norm <- round(minmax_norm(mun$forest_pct, invert = FALSE), 4)
+mun$water_norm <- round(minmax_norm(mun$water_pct, invert = FALSE), 4)
+mun$artificial_norm <- round(minmax_norm(mun$artificial_pct, invert = TRUE), 4)
+mun$naturality_norm <- round(minmax_norm(mun$naturality_index, invert = FALSE), 4)
+mun$diversity_norm <- round(minmax_norm(mun$landcover_diversity, invert = FALSE), 4)
 
 travel_order <- c("<=1h30", "<=2h00", "<=2h30", "<=3h30", "<=4h00", ">4h00")
 travel_score <- setNames(rev(seq_along(travel_order)), travel_order)
 mun$accesibilidad_norm <- round((travel_score[mun$travel_bucket] - 1) / (length(travel_order) - 1), 4)
+
+mun$climate_block_score <- round(
+  rowMeans(cbind(mun$precip_norm, mun$temp_verano_norm, mun$temp_invierno_norm), na.rm = TRUE),
+  4
+)
+mun$access_block_score <- round(mun$accesibilidad_norm, 4)
+mun$nature_block_score <- round(
+  rowMeans(cbind(mun$forest_norm, mun$water_norm, mun$naturality_norm, mun$diversity_norm), na.rm = TRUE),
+  4
+)
+
+w_climate <- 0.4
+w_access <- 0.3
+w_nature <- 0.3
+
 mun$mixed_score <- round(
-  0.35 * mun$precip_norm +
-    0.25 * mun$temp_verano_norm +
-    0.20 * mun$temp_invierno_norm +
-    0.20 * mun$accesibilidad_norm,
+  w_climate * mun$climate_block_score +
+    w_access * mun$access_block_score +
+    w_nature * mun$nature_block_score,
   4
 )
 
@@ -73,7 +92,20 @@ mun_v2 <- mun |>
     precip_norm,
     temp_verano_norm,
     temp_invierno_norm,
+    forest_pct,
+    water_pct,
+    artificial_pct,
+    naturality_index,
+    landcover_diversity,
+    forest_norm,
+    water_norm,
+    artificial_norm,
+    naturality_norm,
+    diversity_norm,
     accesibilidad_norm,
+    climate_block_score,
+    access_block_score,
+    nature_block_score,
     mixed_score
   )
 

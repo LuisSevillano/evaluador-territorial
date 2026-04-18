@@ -456,7 +456,7 @@
 				hoverPopup
 					.setLngLat(e.lngLat)
 					.setHTML(
-						`<strong>${selectedFeatureMunicipio.nombre}</strong><br>${selectedFeatureMunicipio.provincia}<br>Bucket: ${selectedFeatureMunicipio.travel_bucket}`
+						`<strong>${selectedFeatureMunicipio.nombre}</strong><br>${selectedFeatureMunicipio.provincia}<br>Bucket: ${selectedFeatureMunicipio.travel_bucket}<br>Score: ${(selectedFeatureMunicipio.mixed_score ?? 0).toFixed(2)}`
 					)
 					.addTo(map);
 			});
