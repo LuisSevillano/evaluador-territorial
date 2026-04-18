@@ -15,7 +15,20 @@
 - Clima agregado a escala municipal desde raster (no microclima de parcela).
 - Isocronas fijas precalculadas: no representan variacion horaria o de trafico en tiempo real.
 
+## Entorno natural
+- `forest_pct`: porcentaje municipal de coberturas forestales y matorral arbolado (CORINE 311-324).
+- `water_pct`: porcentaje municipal de coberturas de agua (CORINE 5xx).
+- `artificial_pct`: porcentaje municipal de coberturas artificiales (CORINE 1xx).
+- `naturality_index`: indice simple de naturalidad (0-100).
+- `landcover_diversity`: diversidad de coberturas (Shannon normalizado 0-100).
+
+## Scoring compuesto
+- `climate_block_score`: bloque clima (media de precip_norm, temp_verano_norm, temp_invierno_norm).
+- `access_block_score`: bloque accesibilidad (accesibilidad_norm).
+- `nature_block_score`: bloque naturaleza (media de forest_norm, water_norm, naturality_norm, diversity_norm).
+- `mixed_score`: score mixto final = 0.4 * clima + 0.3 * accesibilidad + 0.3 * naturaleza.
+
 ## Trazabilidad del dataset
 - `dataset_version`: v3.0.0
-- `generated_at_utc`: 2026-04-18 06:20:34 UTC
+- `generated_at_utc`: 2026-04-18 06:36:52 UTC
 - `analysis_scope`: Castilla y Leon

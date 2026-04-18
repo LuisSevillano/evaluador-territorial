@@ -11,9 +11,12 @@ metadata <- list(
   generated_at_utc = generated_at_utc,
   analysis_scope = scope_config$label,
   climate_source = "TerraClimate (tmin, tmax, ppt)",
+  environment_source = "CORINE Land Cover (si disponible en data/raw/corine)",
   climate_period = "2014-2023",
   aggregation_method = "Media zonal por poligono municipal (exactextractr) sobre climatologia mensual",
-  isochrones_definition = "Bucle de isocronas precalculadas y bucket por primera cobertura del centroide municipal"
+  isochrones_definition = "Bucle de isocronas precalculadas y bucket por primera cobertura del centroide municipal",
+  scoring_method = "Score mixto por bloques normalizados: clima 40%, accesibilidad 30%, naturaleza 30%",
+  scoring_weights = list(climate = 0.4, accessibility = 0.3, nature = 0.3)
 )
 
 lines <- c(
@@ -33,6 +36,19 @@ lines <- c(
   "## Limitaciones",
   "- Clima agregado a escala municipal desde raster (no microclima de parcela).",
   "- Isocronas fijas precalculadas: no representan variacion horaria o de trafico en tiempo real.",
+  "",
+  "## Entorno natural",
+  "- `forest_pct`: porcentaje municipal de coberturas forestales y matorral arbolado (CORINE 311-324).",
+  "- `water_pct`: porcentaje municipal de coberturas de agua (CORINE 5xx).",
+  "- `artificial_pct`: porcentaje municipal de coberturas artificiales (CORINE 1xx).",
+  "- `naturality_index`: indice simple de naturalidad (0-100).",
+  "- `landcover_diversity`: diversidad de coberturas (Shannon normalizado 0-100).",
+  "",
+  "## Scoring compuesto",
+  "- `climate_block_score`: bloque clima (media de precip_norm, temp_verano_norm, temp_invierno_norm).",
+  "- `access_block_score`: bloque accesibilidad (accesibilidad_norm).",
+  "- `nature_block_score`: bloque naturaleza (media de forest_norm, water_norm, naturality_norm, diversity_norm).",
+  "- `mixed_score`: score mixto final = 0.4 * clima + 0.3 * accesibilidad + 0.3 * naturaleza.",
   "",
   "## Trazabilidad del dataset",
   paste0("- `dataset_version`: ", metadata$dataset_version),

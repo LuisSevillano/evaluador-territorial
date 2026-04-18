@@ -3,6 +3,7 @@ source("scripts/00_config.R")
 steps <- list(
   list(path = "scripts/01_municipios_base.R", label = "Base municipal"),
   list(path = "scripts/02_clima_real.R", label = "Clima real municipal"),
+  list(path = "scripts/04_entorno_corine.R", label = "Entorno CORINE"),
   list(path = "scripts/03_isochrones.R", label = "Isochronas"),
   list(path = "scripts/04_quality_checks.R", label = "Control de calidad"),
   list(path = "scripts/05_export_frontend_v2.R", label = "Export frontend v2"),
