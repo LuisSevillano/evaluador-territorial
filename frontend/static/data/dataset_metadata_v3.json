@@ -1,0 +1,9 @@
+{
+  "dataset_version": "v3.0.0",
+  "generated_at_utc": "2026-04-17 21:26:12 UTC",
+  "analysis_scope": "Castilla y Leon",
+  "climate_source": "TerraClimate (tmin, tmax, ppt)",
+  "climate_period": "2014-2023",
+  "aggregation_method": "Media zonal por poligono municipal (exactextractr) sobre climatologia mensual",
+  "isochrones_definition": "Bucle de isocronas precalculadas y bucket por primera cobertura del centroide municipal"
+}
