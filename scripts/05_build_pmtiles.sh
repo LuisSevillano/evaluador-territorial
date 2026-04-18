@@ -62,6 +62,7 @@ tippecanoe \
   -y id \
   -y codigo \
   -y precip_annual_mm \
+  -y mixed_score \
   -S 6 \
   -pk \
   -pf \
