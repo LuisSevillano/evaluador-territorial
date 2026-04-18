@@ -12,6 +12,10 @@
 		showMunicipioPolygons?: boolean;
 		showMunicipioPoints?: boolean;
 		showIgnWmsBase?: boolean;
+		mapColorMetric?: 'precip_annual_mm' | 'mixed_score';
+		showForestLayer?: boolean;
+		showLandUseLayer?: boolean;
+		showVegetationLayer?: boolean;
 		visibleMunicipioIds?: string[];
 		polygonDataUrl?: string;
 		pmtilesUrl?: string;
@@ -24,6 +28,10 @@
 		showMunicipioPolygons = true,
 		showMunicipioPoints = true,
 		showIgnWmsBase = false,
+		mapColorMetric = 'mixed_score',
+		showForestLayer = false,
+		showLandUseLayer = false,
+		showVegetationLayer = false,
 		visibleMunicipioIds = [],
 		polygonDataUrl = '/data/municipios_final.geojson',
 		pmtilesUrl = '/tiles/municipios.pmtiles',
@@ -47,9 +55,44 @@
 	const provinciasLineLayerId = 'provincias-line-layer';
 	const ignWmsSourceId = 'ign-wms-source';
 	const ignWmsLayerId = 'ign-wms-layer';
+	const forestSourceId = 'forest-source';
+	const forestLayerId = 'forest-layer';
+	const landUseSourceId = 'landuse-source';
+	const landUseLayerId = 'landuse-layer';
+	const vegetationSourceId = 'vegetation-source';
+	const vegetationLayerId = 'vegetation-layer';
 	const sourceLayerName = 'municipios';
 	const provinciasSourceLayerName = 'provincias';
 	let hoveredMunicipioId = $state<string | null>(null);
+	let hoverPopup: maplibregl.Popup | null = null;
+
+	const scoreColorExpression: any = [
+		'interpolate',
+		['linear'],
+		['to-number', ['get', 'mixed_score'], 0],
+		0,
+		'#d8d2c4',
+		0.35,
+		'#8db8b0',
+		0.65,
+		'#4f8da3',
+		1,
+		'#1f4f68'
+	];
+
+	const precipColorExpression: any = [
+		'interpolate',
+		['linear'],
+		['to-number', ['get', 'precip_annual_mm'], 600],
+		300,
+		'#f3d7ac',
+		600,
+		'#7cbac0',
+		900,
+		'#265d7f'
+	];
+
+	const getMapFillExpression = () => (mapColorMetric === 'mixed_score' ? scoreColorExpression : precipColorExpression);
 
 	const baseStyle: maplibregl.StyleSpecification = {
 		version: 8,
@@ -83,6 +126,12 @@
 		const source = map.getSource(municipiosSourceId) as maplibregl.GeoJSONSource | undefined;
 		if (!source) return;
 		source.setData(toFeatureCollection(municipios) as any);
+	};
+
+	const getMunicipioByFeature = (feature: maplibregl.MapGeoJSONFeature | undefined) => {
+		if (!feature) return null;
+		const featureId = String(feature.properties?.id ?? feature.properties?.codigo ?? '');
+		return municipios.find((m) => m.id === featureId || m.codigo === featureId) ?? null;
 	};
 
 	const setLayerVisibility = (layerId: string, visible: boolean) => {
@@ -190,17 +239,7 @@
 			type: 'fill',
 			source: municipiosPolygonsSourceId,
 			paint: {
-				'fill-color': [
-					'interpolate',
-					['linear'],
-					['get', 'precip_annual_mm'],
-					300,
-					'#f3d7ac',
-					600,
-					'#7cbac0',
-					900,
-					'#265d7f'
-				],
+				'fill-color': getMapFillExpression(),
 				'fill-opacity': 0.36
 			}
 		});
@@ -241,20 +280,10 @@
 			source: municipiosPmtilesSourceId,
 			'source-layer': sourceLayerName,
 			paint: {
-				'fill-color': [
-					'interpolate',
-					['linear'],
-					['to-number', ['get', 'precip_annual_mm'], 600],
-					300,
-					'#f3d7ac',
-					600,
-						'#7cbac0',
-						900,
-						'#265d7f'
-					],
-					'fill-opacity': 0.36
-				}
-			});
+				'fill-color': getMapFillExpression(),
+				'fill-opacity': 0.36
+			}
+		});
 
 			map.addLayer({
 				id: municipiosPolygonsLineLayerId,
@@ -282,6 +311,35 @@
 		} catch (error) {
 			console.warn('PMTiles no disponible, cambiando a fallback GeoJSON.', error);
 			return false;
+		}
+	};
+
+	const addOptionalOverlayLayers = async () => {
+		if (!map) return;
+		const files = [
+			{ url: '/data/masa_forestal.geojson', source: forestSourceId, layer: forestLayerId, color: '#2f6f3f' },
+			{ url: '/data/usos_suelo.geojson', source: landUseSourceId, layer: landUseLayerId, color: '#8a6d3b' },
+			{ url: '/data/cobertura_vegetal.geojson', source: vegetationSourceId, layer: vegetationLayerId, color: '#3e8f5c' }
+		] as const;
+
+		for (const file of files) {
+			try {
+				const response = await fetch(file.url);
+				if (!response.ok) continue;
+				const geojson = await response.json();
+				map.addSource(file.source, { type: 'geojson', data: geojson as any });
+				map.addLayer({
+					id: file.layer,
+					type: 'fill',
+					source: file.source,
+					paint: {
+						'fill-color': file.color,
+						'fill-opacity': 0.2
+					}
+				});
+			} catch (_error) {
+				// optional layers are best effort
+			}
 		}
 	};
 
@@ -366,6 +424,7 @@
 			usingPmtiles = addMunicipiosPmtiles();
 			if (!usingPmtiles) addMunicipiosFallbackGeojson();
 			addProvinciasBoundaries();
+			void addOptionalOverlayLayers();
 
 			map.addSource(municipiosSourceId, {
 				type: 'geojson',
@@ -385,16 +444,28 @@
 
 			map.on('mousemove', municipiosPolygonsFillLayerId, (e: maplibregl.MapLayerMouseEvent) => {
 				const feature = e.features?.[0];
+				const selectedFeatureMunicipio = getMunicipioByFeature(feature);
 				hoveredMunicipioId = feature
 					? String(feature.properties?.id ?? feature.properties?.codigo ?? '')
 					: null;
 				syncHighlightFilters();
+				if (!selectedFeatureMunicipio) return;
+				if (!hoverPopup) {
+					hoverPopup = new maplibregl.Popup({ closeButton: false, closeOnClick: false, offset: 12 });
+				}
+				hoverPopup
+					.setLngLat(e.lngLat)
+					.setHTML(
+						`<strong>${selectedFeatureMunicipio.nombre}</strong><br>${selectedFeatureMunicipio.provincia}<br>Bucket: ${selectedFeatureMunicipio.travel_bucket}`
+					)
+					.addTo(map);
 			});
 
 			map.on('mouseleave', municipiosPolygonsFillLayerId, () => {
 				map.getCanvas().style.cursor = '';
 				hoveredMunicipioId = null;
 				syncHighlightFilters();
+				hoverPopup?.remove();
 			});
 		});
 
@@ -420,6 +491,14 @@
 		setLayerVisibility(municipiosHoverLineLayerId, showMunicipioPolygons);
 		setLayerVisibility(municipiosSelectedLineLayerId, showMunicipioPolygons);
 		setLayerVisibility(municipiosLayerId, showMunicipioPoints);
+		setLayerVisibility(forestLayerId, showForestLayer);
+		setLayerVisibility(landUseLayerId, showLandUseLayer);
+		setLayerVisibility(vegetationLayerId, showVegetationLayer);
+	});
+
+	$effect(() => {
+		if (!map || !map.getLayer(municipiosPolygonsFillLayerId)) return;
+		map.setPaintProperty(municipiosPolygonsFillLayerId, 'fill-color', getMapFillExpression() as any);
 	});
 
 	$effect(() => {
@@ -439,9 +518,9 @@
 			<p>{usingPmtiles ? 'Render vectorial PMTiles' : 'Render fallback GeoJSON'}</p>
 		</div>
 		<div class="legend">
-			<span>Seco</span>
+			<span>{mapColorMetric === 'mixed_score' ? 'Bajo' : 'Seco'}</span>
 			<div class="scale"></div>
-			<span>Humedo</span>
+			<span>{mapColorMetric === 'mixed_score' ? 'Alto' : 'Humedo'}</span>
 		</div>
 	</div>
 	<div class="map" bind:this={mapContainer} aria-label="Mapa principal"></div>

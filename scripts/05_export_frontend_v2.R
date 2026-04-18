@@ -43,6 +43,13 @@ mun$temp_invierno_norm <- round(minmax_norm(mun$temp_winter_mean_c, invert = FAL
 travel_order <- c("<=1h30", "<=2h00", "<=2h30", "<=3h30", "<=4h00", ">4h00")
 travel_score <- setNames(rev(seq_along(travel_order)), travel_order)
 mun$accesibilidad_norm <- round((travel_score[mun$travel_bucket] - 1) / (length(travel_order) - 1), 4)
+mun$mixed_score <- round(
+  0.35 * mun$precip_norm +
+    0.25 * mun$temp_verano_norm +
+    0.20 * mun$temp_invierno_norm +
+    0.20 * mun$accesibilidad_norm,
+  4
+)
 
 mun_v2 <- mun |>
   transmute(
@@ -66,7 +73,8 @@ mun_v2 <- mun |>
     precip_norm,
     temp_verano_norm,
     temp_invierno_norm,
-    accesibilidad_norm
+    accesibilidad_norm,
+    mixed_score
   )
 
 mun_tab <- mun_v2 |>
