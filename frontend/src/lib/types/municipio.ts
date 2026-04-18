@@ -20,6 +20,7 @@ export type Municipio = {
 	temp_verano_norm?: number;
 	temp_invierno_norm?: number;
 	accesibilidad_norm?: number;
+	mixed_score?: number;
 };
 
 export type MunicipioClimateMonthly = {

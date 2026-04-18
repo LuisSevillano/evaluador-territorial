@@ -18,6 +18,10 @@
 		selectedMunicipio?: Municipio | null;
 		showMunicipioPolygons?: boolean;
 		showIgnWmsBase?: boolean;
+		mapColorMetric?: 'precip_annual_mm' | 'mixed_score';
+		showForestLayer?: boolean;
+		showLandUseLayer?: boolean;
+		showVegetationLayer?: boolean;
 		provinceFilter?: string;
 		provinciasDisponibles?: string[];
 		maxTravelBucket?: '<=1h30' | '<=2h00' | '<=2h30' | '<=3h30' | '<=4h00' | '>4h00';
@@ -37,6 +41,10 @@
 		onSelectMunicipio?: (municipio: Municipio) => void;
 		onToggleMunicipioPolygons?: (value: boolean) => void;
 		onToggleIgnWmsBase?: (value: boolean) => void;
+		onMapColorMetricChange?: (value: 'precip_annual_mm' | 'mixed_score') => void;
+		onToggleForestLayer?: (value: boolean) => void;
+		onToggleLandUseLayer?: (value: boolean) => void;
+		onToggleVegetationLayer?: (value: boolean) => void;
 		onProvinceFilterChange?: (value: string) => void;
 		onMaxTravelBucketChange?: (
 			value: '<=1h30' | '<=2h00' | '<=2h30' | '<=3h30' | '<=4h00' | '>4h00'
@@ -56,6 +64,10 @@
 		selectedMunicipio = null,
 		showMunicipioPolygons = true,
 		showIgnWmsBase = false,
+		mapColorMetric = 'mixed_score',
+		showForestLayer = false,
+		showLandUseLayer = false,
+		showVegetationLayer = false,
 		provinceFilter = 'Todas',
 		provinciasDisponibles = ['Todas'],
 		maxTravelBucket = '>4h00',
@@ -75,6 +87,10 @@
 		onSelectMunicipio = () => undefined,
 		onToggleMunicipioPolygons = () => undefined,
 		onToggleIgnWmsBase = () => undefined,
+		onMapColorMetricChange = () => undefined,
+		onToggleForestLayer = () => undefined,
+		onToggleLandUseLayer = () => undefined,
+		onToggleVegetationLayer = () => undefined,
 		onProvinceFilterChange = () => undefined,
 		onMaxTravelBucketChange = () => undefined,
 		onMinPrecipAnnualChange = () => undefined,
@@ -317,8 +333,16 @@
 	<section class="panel">
 		<h2>Capas</h2>
 		<div class="layers">
+			<p class="control-title">Color municipal</p>
+			<div class="chips-wrap compact">
+				<button type="button" class={`chip ${mapColorMetric === 'mixed_score' ? 'active' : ''}`} onclick={() => onMapColorMetricChange('mixed_score')} aria-pressed={mapColorMetric === 'mixed_score'}>Score</button>
+				<button type="button" class={`chip ${mapColorMetric === 'precip_annual_mm' ? 'active' : ''}`} onclick={() => onMapColorMetricChange('precip_annual_mm')} aria-pressed={mapColorMetric === 'precip_annual_mm'}>PPT</button>
+			</div>
 			<label><input type="checkbox" checked={showMunicipioPolygons} onchange={(e) => onToggleMunicipioPolygons((e.currentTarget as HTMLInputElement).checked)} /><span>Poligonos municipales</span></label>
 			<label><input type="checkbox" checked={showIgnWmsBase} onchange={(e) => onToggleIgnWmsBase((e.currentTarget as HTMLInputElement).checked)} /><span>Base IGN WMS</span></label>
+			<label><input type="checkbox" checked={showForestLayer} onchange={(e) => onToggleForestLayer((e.currentTarget as HTMLInputElement).checked)} /><span>Masa forestal</span></label>
+			<label><input type="checkbox" checked={showLandUseLayer} onchange={(e) => onToggleLandUseLayer((e.currentTarget as HTMLInputElement).checked)} /><span>Usos del suelo</span></label>
+			<label><input type="checkbox" checked={showVegetationLayer} onchange={(e) => onToggleVegetationLayer((e.currentTarget as HTMLInputElement).checked)} /><span>Cobertura vegetal</span></label>
 		</div>
 	</section>
 </aside>

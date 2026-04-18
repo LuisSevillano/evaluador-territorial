@@ -17,6 +17,10 @@
 	let showMunicipioPolygons = $state(true);
 	let showMunicipioPoints = $state(false);
 	let showIgnWmsBase = $state(false);
+	let mapColorMetric = $state<'precip_annual_mm' | 'mixed_score'>('mixed_score');
+	let showForestLayer = $state(false);
+	let showLandUseLayer = $state(false);
+	let showVegetationLayer = $state(false);
 	const municipiosPmtilesUrl = '/tiles/municipios.pmtiles';
 let provinceFilter = $state('Todas');
 let shortlistedIds = $state<string[]>([]);
@@ -191,6 +195,10 @@ let shortlistedIds = $state<string[]>([]);
 		{selectedMunicipio}
 		{showMunicipioPolygons}
 		{showIgnWmsBase}
+		{mapColorMetric}
+		{showForestLayer}
+		{showLandUseLayer}
+		{showVegetationLayer}
 		{provinceFilter}
 		{provinciasDisponibles}
 		{maxTravelBucket}
@@ -210,6 +218,10 @@ let shortlistedIds = $state<string[]>([]);
 		onSelectMunicipio={handleSelectMunicipio}
 		onToggleMunicipioPolygons={(value) => (showMunicipioPolygons = value)}
 		onToggleIgnWmsBase={(value) => (showIgnWmsBase = value)}
+		onMapColorMetricChange={(value) => (mapColorMetric = value)}
+		onToggleForestLayer={(value) => (showForestLayer = value)}
+		onToggleLandUseLayer={(value) => (showLandUseLayer = value)}
+		onToggleVegetationLayer={(value) => (showVegetationLayer = value)}
 		onProvinceFilterChange={(value) => (provinceFilter = value)}
 		onMaxTravelBucketChange={(value) => (maxTravelBucket = value)}
 		onMinPrecipAnnualChange={(value) => (minPrecipAnnual = value)}
@@ -227,6 +239,10 @@ let shortlistedIds = $state<string[]>([]);
 			{showMunicipioPolygons}
 			{showMunicipioPoints}
 			{showIgnWmsBase}
+			{mapColorMetric}
+			{showForestLayer}
+			{showLandUseLayer}
+			{showVegetationLayer}
 			{visibleMunicipioIds}
 			polygonDataUrl="/data/municipios_v2.geojson"
 			pmtilesUrl={municipiosPmtilesUrl}
