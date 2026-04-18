@@ -1,0 +1,60 @@
+options(stringsAsFactors = FALSE)
+
+library(fs)
+
+project_root <- path_abs(".")
+analysis_scope <- tolower(trimws(Sys.getenv("ANALYSIS_SCOPE", unset = "cyl")))
+
+prov_labels <- c(
+  "05" = "Avila", "09" = "Burgos", "24" = "Leon", "34" = "Palencia", "37" = "Salamanca",
+  "40" = "Segovia", "42" = "Soria", "47" = "Valladolid", "49" = "Zamora"
+)
+
+scope_config <- switch(analysis_scope,
+  "avila" = list(mode = "provincia", codprov = "05", label = "Avila", n_provinces = 1),
+  "cyl" = list(mode = "nut2", codnut2 = "ES41", label = "Castilla y Leon", n_provinces = 9),
+  "castilla_y_leon" = list(mode = "nut2", codnut2 = "ES41", label = "Castilla y Leon", n_provinces = 9),
+  "espana" = list(mode = "all", label = "Espana", n_provinces = 52),
+  stop("ANALYSIS_SCOPE no valido. Usa: avila | cyl | espana")
+)
+
+paths <- list(
+  shapefile = path(
+    "/Users/portatil/Documents/gis/SIGLIM_Publico_INSPIRE/SHP_ETRS89/recintos_municipales_inspire_peninbal_etrs89",
+    "recintos_municipales_inspire_peninbal_etrs89.shp"
+  ),
+  provinces_shapefile = path(
+    "/Users/portatil/Documents/gis/SIGLIM_Publico_INSPIRE/SHP_ETRS89/recintos_provinciales_inspire_peninbal_etrs89",
+    "recintos_provinciales_inspire_peninbal_etrs89.shp"
+  ),
+  output_dir = path(project_root, "output"),
+  output_base_geojson = path(project_root, "output", "municipios_base.geojson"),
+  output_clima_geojson = path(project_root, "output", "municipios_clima.geojson"),
+  output_final_geojson = path(project_root, "output", "municipios_final.geojson"),
+  output_final_csv = path(project_root, "output", "municipios_final.csv"),
+  output_final_json = path(project_root, "output", "municipios_final.json"),
+  frontend_geojson = path(project_root, "frontend", "static", "data", "municipios_final.geojson"),
+  frontend_json = path(project_root, "frontend", "static", "data", "municipios_final.json"),
+  isochrones_dir = path("/Users/portatil/Documents/epic-life/isochrones"),
+  output_v2_geojson = path(project_root, "output", "municipios_v2.geojson"),
+  output_v2_csv = path(project_root, "output", "municipios_v2.csv"),
+  output_v2_json = path(project_root, "output", "municipios_v2.json"),
+  output_climate_monthly_csv = path(project_root, "output", "municipios_climate_monthly.csv"),
+  output_climate_monthly_json = path(project_root, "output", "municipios_climate_monthly.json"),
+  output_quality_report_csv = path(project_root, "output", "data_quality_report.csv"),
+  output_ccaa_geojson = path(project_root, "output", "ccaa_boundaries.geojson"),
+  output_provincias_geojson = path(project_root, "output", "provincias_boundaries.geojson"),
+  output_dataset_metadata_json = path(project_root, "output", "dataset_metadata_v3.json"),
+  docs_indicators = path(project_root, "docs", "indicators.md"),
+  frontend_v2_geojson = path(project_root, "frontend", "static", "data", "municipios_v2.geojson"),
+  frontend_v2_json = path(project_root, "frontend", "static", "data", "municipios_v2.json"),
+  frontend_climate_monthly_json = path(project_root, "frontend", "static", "data", "municipios_climate_monthly.json"),
+  frontend_dataset_metadata_json = path(project_root, "frontend", "static", "data", "dataset_metadata_v3.json"),
+  frontend_ccaa_geojson = path(project_root, "frontend", "static", "data", "ccaa_boundaries.geojson"),
+  frontend_provincias_geojson = path(project_root, "frontend", "static", "data", "provincias_boundaries.geojson")
+)
+
+invisible(dir_create(paths$output_dir, recurse = TRUE))
+invisible(dir_create(path_dir(paths$frontend_json), recurse = TRUE))
+
+message("Scope activo: ", scope_config$label, " (ANALYSIS_SCOPE=", analysis_scope, ")")
