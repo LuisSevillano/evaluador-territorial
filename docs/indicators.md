@@ -30,5 +30,5 @@
 
 ## Trazabilidad del dataset
 - `dataset_version`: v3.0.0
-- `generated_at_utc`: 2026-04-18 06:36:52 UTC
+- `generated_at_utc`: 2026-04-18 07:17:30 UTC
 - `analysis_scope`: Castilla y Leon
