@@ -42,12 +42,20 @@
 			.nice()
 			.range([height - margin.bottom, margin.top]);
 
-		svg
+		const xAxis = svg
 			.append('g')
 			.attr('transform', `translate(0,${height - margin.bottom})`)
 			.call(axisBottom(x).tickFormat((d) => monthLabels[(Number(d) || 1) - 1]));
 
-		svg.append('g').attr('transform', `translate(${margin.left},0)`).call(axisLeft(y).ticks(4));
+		const yAxis = svg.append('g').attr('transform', `translate(${margin.left},0)`).call(axisLeft(y).ticks(4));
+		xAxis.select('.domain').attr('stroke', '#000000');
+		xAxis.selectAll('.tick line').remove();
+		yAxis
+			.selectAll('.tick line')
+			.attr('x2', -4)
+			.attr('stroke', 'rgba(33, 52, 49, 0.7)')
+			.attr('stroke-width', 0.7);
+		yAxis.select('.domain').remove();
 
 		svg
 			.append('g')
@@ -75,10 +83,6 @@
 	.chart {
 		width: 100%;
 		height: auto;
-	}
-	:global(.chart .domain),
-	:global(.chart .tick line) {
-		stroke: rgba(21, 32, 33, 0.3);
 	}
 	:global(.chart .tick text) {
 		fill: #334947;
