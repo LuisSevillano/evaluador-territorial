@@ -17,3 +17,6 @@ output/*
 !data/output/.gitkeep
 !data/output/parquet/.gitkeep
 !data/output/pmtiles/.gitkeep
+
+# Local Netlify folder
+.netlify
