@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://el-buen-vivir.netlify.app/sitemap.xml

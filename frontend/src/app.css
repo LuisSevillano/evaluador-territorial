@@ -16,10 +16,6 @@ body {
 	min-height: 100%;
 	font-family: 'Manrope', 'Segoe UI', sans-serif;
 	color: var(--ink);
-	background:
-		radial-gradient(circle at 15% 20%, rgba(187, 91, 49, 0.11) 0 26%, transparent 40%),
-		radial-gradient(circle at 85% 5%, rgba(47, 125, 133, 0.13) 0 22%, transparent 48%),
-		linear-gradient(130deg, var(--paper), var(--paper-2));
 }
 
 * {
