@@ -712,9 +712,9 @@
 							onclick={() => handleSelectSheetTab('sel')}
 							aria-label={selectedMunicipio ? `Selección activa: ${selectedMunicipio.nombre}` : 'Selección'}
 						>
-							<MapPin size={16} />Sel
+							<MapPin size={16} />Sel.
 						</button>
-						<button class:active={activeSheetTab === 'filtr'} onclick={() => handleSelectSheetTab('filtr')}><SlidersHorizontal size={16} />Filtr</button>
+						<button class:active={activeSheetTab === 'filtr'} onclick={() => handleSelectSheetTab('filtr')}><SlidersHorizontal size={16} />Filtros</button>
 						<button class:active={activeSheetTab === 'capas'} onclick={() => handleSelectSheetTab('capas')}><Layers size={16} />Capas</button>
 						<button class:active={activeSheetTab === 'rank'} onclick={() => handleSelectSheetTab('rank')}><BarChart3 size={16} />Rank</button>
 						<button class:active={activeSheetTab === 'meta'} onclick={() => handleSelectSheetTab('meta')}><Info size={16} />Meta</button>
