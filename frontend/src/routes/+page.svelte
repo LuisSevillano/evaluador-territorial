@@ -614,10 +614,11 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 			/>
 		</div>
 
-		<section class="map-wrap">
+		<section class="map-wrap" class:table-hidden={viewMode === 'evaluacion' && !showDesktopEvalTable}>
 			<div class="map-desktop-zone">
 				<MapView
 					municipios={municipiosScoredForView}
+					allMunicipios={municipios}
 					{selectedMunicipio}
 					{showMunicipioPolygons}
 					{showMunicipioPoints}
@@ -910,7 +911,6 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 				<section class="desktop-ranking">
 					<h2>Exploración</h2>
 					<p>Explora el mapa, capas y filtros. Al seleccionar un municipio verás la ficha completa aquí.</p>
-					<p class="muted">En este modo ocultamos el ranking para reducir ruido.</p>
 				</section>
 			{:else}
 				<InspectorPanel
@@ -1025,11 +1025,16 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 		background: rgba(251, 246, 236, 0.72);
 		box-sizing: border-box;
 		position: relative;
-		display: grid;
-		grid-template-rows: minmax(0, 1fr) auto minmax(150px, 26%);
+		display: flex;
+		flex-direction: column;
+	}
+	.map-wrap.table-hidden {
+		grid-template-rows: minmax(0, 1fr) auto;
 	}
 	.map-desktop-zone {
 		min-height: 0;
+		flex: 1;
+		overflow: hidden;
 	}
 	.desktop-table-toggle-wrap {
 		display: flex;
@@ -1051,6 +1056,8 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 		border-top: 1px solid rgba(21, 32, 33, 0.14);
 		background: rgba(255, 251, 243, 0.9);
 		min-height: 0;
+		height: 26%;
+		flex-shrink: 0;
 	}
 	.desktop-table-inner {
 		height: 100%;
