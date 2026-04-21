@@ -21,7 +21,7 @@
 		onClimateWeightChange?: (value: number) => void;
 		onAccessWeightChange?: (value: number) => void;
 		onNatureWeightChange?: (value: number) => void;
-		onPresetWeights?: (preset: 'equilibrado' | 'naturaleza' | 'accesibilidad' | 'clima') => void;
+		onPresetWeights?: (preset: 'equilibrado' | 'naturaleza' | 'accesibilidad' | 'clima' | 'clima_estricto') => void;
 		onClearMunicipio?: () => void;
 	};
 
@@ -54,6 +54,7 @@
 		if (c === 25 && a === 20 && n === 55) return 'naturaleza';
 		if (c === 25 && a === 55 && n === 20) return 'accesibilidad';
 		if (c === 55 && a === 20 && n === 25) return 'clima';
+		if (c === 70 && a === 15 && n === 15) return 'clima_estricto';
 		return null;
 	});
 
@@ -130,6 +131,7 @@
 				<ChipButton label="Priorizar naturaleza" active={activePreset === 'naturaleza'} onclick={() => onPresetWeights('naturaleza')} />
 				<ChipButton label="Priorizar accesibilidad" active={activePreset === 'accesibilidad'} onclick={() => onPresetWeights('accesibilidad')} />
 				<ChipButton label="Priorizar clima" active={activePreset === 'clima'} onclick={() => onPresetWeights('clima')} />
+				<ChipButton label="Clima estricto" active={activePreset === 'clima_estricto'} onclick={() => onPresetWeights('clima_estricto')} />
 			</div>
 			<div class="control score-control">
 				<label for="rw-climate">Peso clima: {weightsRaw.climateWeight}</label>

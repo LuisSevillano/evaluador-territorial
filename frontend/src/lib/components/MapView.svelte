@@ -29,6 +29,7 @@
 		showVegetationLayer?: boolean;
 		layerOrder?: string[];
 		visibleMunicipioIds?: string[];
+		provinceFilter?: string;
 		pmtilesUrl?: string;
 		onMapSelection?: (municipio: Municipio | null) => void;
 	};
@@ -48,6 +49,7 @@
 		showVegetationLayer = false,
 		layerOrder = ['municipios', 'landuse', 'reservoirs', 'rivers'],
 		visibleMunicipioIds = [],
+		provinceFilter = 'Todas',
 		pmtilesUrl = '/tiles/municipios.pmtiles',
 		onMapSelection = () => undefined
 	}: Props = $props();
@@ -89,6 +91,7 @@
 	let isMapLoading = $state(true);
 	let loadedOverlayLayers = $state({ forest: false, landuse: false, vegetation: false });
 	let lastSelectedFilterId: string | null = null;
+	let lastFittedProvince: string | null = null;
 	let activeMunicipiosSourceId = municipiosPmtilesSourceId;
 	let activeMunicipiosSourceLayer: string | undefined = sourceLayerName;
 	let initialBoundsApplied = $state(false);
@@ -707,6 +710,57 @@
 		if (!Number.isFinite(selectedMunicipio.lon) || !Number.isFinite(selectedMunicipio.lat)) return;
 		map.flyTo({ center: [selectedMunicipio.lon, selectedMunicipio.lat], zoom: 9, speed: 0.8 });
 	});
+
+	$effect(() => {
+		if (!map || !mapReady) return;
+		if (selectedMunicipio) return;
+
+		if (provinceFilter === 'Todas') {
+			if (lastFittedProvince !== null) {
+				fitToMunicipios();
+			}
+			lastFittedProvince = null;
+			return;
+		}
+
+		if (lastFittedProvince === provinceFilter) return;
+
+		const provincePoints = municipios.filter(
+			(m) => m.provincia === provinceFilter && Number.isFinite(m.lon) && Number.isFinite(m.lat)
+		);
+		if (provincePoints.length === 0) return;
+
+		let minLon = Infinity;
+		let maxLon = -Infinity;
+		let minLat = Infinity;
+		let maxLat = -Infinity;
+
+		for (const point of provincePoints) {
+			if (point.lon < minLon) minLon = point.lon;
+			if (point.lon > maxLon) maxLon = point.lon;
+			if (point.lat < minLat) minLat = point.lat;
+			if (point.lat > maxLat) maxLat = point.lat;
+		}
+
+		if (!Number.isFinite(minLon + maxLon + minLat + maxLat)) return;
+
+		const lonPad = Math.max((maxLon - minLon) * 0.12, 0.08);
+		const latPad = Math.max((maxLat - minLat) * 0.12, 0.06);
+
+		map.fitBounds(
+			[
+				[Math.max(-180, minLon - lonPad), Math.max(-85, minLat - latPad)],
+				[Math.min(180, maxLon + lonPad), Math.min(85, maxLat + latPad)]
+			],
+			{
+				padding: { top: 42, right: 40, bottom: 42, left: 40 },
+				maxZoom: 9,
+				duration: 500
+			}
+		);
+
+		lastFittedProvince = provinceFilter;
+	});
 </script>
 
 <div class="map-shell">
@@ -755,6 +809,8 @@
 		.map-shell {
 			padding: 0.7rem;
 			min-height: 52dvh;
+			grid-template-rows: minmax(0, 1fr);
+			gap: 0;
 		}
 	}
 </style>

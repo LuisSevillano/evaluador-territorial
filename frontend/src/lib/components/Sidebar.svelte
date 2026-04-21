@@ -33,6 +33,7 @@
 		minPrecipAnnual?: number;
 		minWinterTemp?: number;
 		maxSummerTemp?: number;
+		maxThermalAmplitude?: number;
 		minCompositeScore?: number;
 		layerOrder?: string[];
 		activeFiltersSummary?: string[];
@@ -66,6 +67,7 @@
 		onMinPrecipAnnualChange?: (value: number) => void;
 		onMinWinterTempChange?: (value: number) => void;
 		onMaxSummerTempChange?: (value: number) => void;
+		onMaxThermalAmplitudeChange?: (value: number) => void;
 		onMinCompositeScoreChange?: (value: number) => void;
 		onClearFilters?: () => void;
 		onLayerOrderChange?: (value: string[]) => void;
@@ -74,7 +76,7 @@
 		onClimateWeightChange?: (value: number) => void;
 		onAccessWeightChange?: (value: number) => void;
 		onNatureWeightChange?: (value: number) => void;
-		onPresetWeights?: (preset: 'equilibrado' | 'naturaleza' | 'accesibilidad' | 'clima') => void;
+		onPresetWeights?: (preset: 'equilibrado' | 'naturaleza' | 'accesibilidad' | 'clima' | 'clima_estricto') => void;
 	};
 
 	let {
@@ -98,6 +100,7 @@
 		minPrecipAnnual = 0,
 		minWinterTemp = -10,
 		maxSummerTemp = 40,
+		maxThermalAmplitude = 21,
 		minCompositeScore = 0,
 		layerOrder = ['municipios', 'landuse', 'reservoirs', 'rivers'],
 		activeFiltersSummary = [],
@@ -129,6 +132,7 @@
 		onMinPrecipAnnualChange = () => undefined,
 		onMinWinterTempChange = () => undefined,
 		onMaxSummerTempChange = () => undefined,
+		onMaxThermalAmplitudeChange = () => undefined,
 		onMinCompositeScoreChange = () => undefined,
 		onClearFilters = () => undefined,
 		onLayerOrderChange = () => undefined,
@@ -220,6 +224,7 @@
 		if (c === 25 && a === 20 && n === 55) return 'naturaleza';
 		if (c === 25 && a === 55 && n === 20) return 'accesibilidad';
 		if (c === 55 && a === 20 && n === 25) return 'clima';
+		if (c === 70 && a === 15 && n === 15) return 'clima_estricto';
 		return null;
 	});
 
@@ -376,6 +381,8 @@
 			<input id="min-winter-temp" name="min-winter-temp" type="range" min="-15" max="15" step="0.5" value={minWinterTemp} oninput={(e) => onMinWinterTempChange(toNumber(e))} />
 			<label for="max-summer-temp">Temp. verano maxima: {maxSummerTemp} C</label>
 			<input id="max-summer-temp" name="max-summer-temp" type="range" min="15" max="40" step="0.5" value={maxSummerTemp} oninput={(e) => onMaxSummerTempChange(toNumber(e))} />
+			<label for="max-thermal-amplitude">Amplitud termica maxima: {maxThermalAmplitude.toFixed(1)} C</label>
+			<input id="max-thermal-amplitude" name="max-thermal-amplitude" type="range" min="12" max="21" step="0.1" value={maxThermalAmplitude} oninput={(e) => onMaxThermalAmplitudeChange(toNumber(e))} />
 			{#if isEvaluationMode}
 				<label for="min-score">Score minimo visible: {minCompositeScore.toFixed(2)}</label>
 				<input id="min-score" name="min-score" type="range" min="0" max="1" step="0.01" value={minCompositeScore} oninput={(e) => onMinCompositeScoreChange(toNumber(e))} />
@@ -397,6 +404,7 @@
 				<ChipButton label="Priorizar naturaleza" active={activePreset === 'naturaleza'} onclick={() => onPresetWeights('naturaleza')} />
 				<ChipButton label="Priorizar accesibilidad" active={activePreset === 'accesibilidad'} onclick={() => onPresetWeights('accesibilidad')} />
 				<ChipButton label="Priorizar clima" active={activePreset === 'clima'} onclick={() => onPresetWeights('clima')} />
+				<ChipButton label="Clima estricto" active={activePreset === 'clima_estricto'} onclick={() => onPresetWeights('clima_estricto')} />
 			</div>
 			<div class="control score-control">
 				<label for="m-rw-climate">Peso clima: {weightsRaw.climateWeight}</label>
@@ -507,6 +515,7 @@
 	.panel { border: 1px solid rgba(21, 32, 33, 0.16); border-radius: 12px; padding: 0.8rem; background: rgba(255, 255, 255, 0.62); }
 	h2,p { margin: 0; }
 	h2 { font-family: 'Fraunces', serif; font-size: 1rem; margin-bottom: 0.5rem; }
+	.mode-context p { font-size: 0.78rem; line-height: 1.35; color: #48615d; }
 	.control-title { margin: 0; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.06em; color: #405753; }
 	.control > label { font-size: 0.78rem; letter-spacing: 0.02em; color: #425955; }
 	.search-control { position: relative; z-index: 24; }

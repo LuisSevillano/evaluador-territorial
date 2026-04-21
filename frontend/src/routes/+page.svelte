@@ -7,6 +7,48 @@
 	import RankingList from '$lib/components/RankingList.svelte';
 	import ChipButton from '$lib/components/ui/ChipButton.svelte';
 	import LayerOrderList from '$lib/components/layers/LayerOrderList.svelte';
+	import ColorLegend from '$lib/components/ColorLegend.svelte';
+	import { getLegendConfig } from '$lib/components/map/coloring';
+	import { buildUrlState, parseUrlState } from '$lib/state/urlState';
+	import { modeCopy, tabForMode } from '$lib/state/viewMode';
+	import {
+		bucketOrder,
+		clampNumber,
+		isPlausiblePrecipAnnual,
+		isPlausibleTemp,
+		travelBuckets,
+		type TravelBucket
+	} from '$lib/state/filters';
+	import {
+		isLayerVisible,
+		layerLabels,
+		type LayerVisibilityState
+	} from '$lib/state/layers';
+	import {
+		ccaaClimateSeries,
+		selectedMunicipioClimateSeries,
+		selectedProvinciaClimateSeries
+	} from '$lib/state/climate';
+	import {
+		panelStateOnClearSelection,
+		panelStateOnSelect,
+		panelStateOnTabClick
+	} from '$lib/state/panel';
+	import { loadStringArray, saveStringArray } from '$lib/state/persistence';
+	import {
+		activePresetFromWeights,
+		normalizeWeights,
+		scoreForMunicipio,
+		weightsForPreset,
+		type Preset
+	} from '$lib/state/scoring';
+	import {
+		nextSortState,
+		sensitivityTop10Overlap,
+		sortRows,
+		type SortDirection,
+		type SortField
+	} from '$lib/state/ranking';
 	import { MapPin, SlidersHorizontal, Layers, BarChart3 } from 'lucide-svelte';
 	import type { DatasetMetadata, Municipio, MunicipioClimateMonthly } from '$lib/types/municipio';
 
@@ -31,7 +73,8 @@
 	let mapColorMetric = $state<'precip_annual_mm' | 'mixed_score'>('mixed_score');
 	let viewMode = $state<'exploracion' | 'evaluacion'>('exploracion');
 	let activeSheetTab = $state<'sel' | 'filtr' | 'capas' | 'rank'>('filtr');
-	let hasNewSelection = $state(false);
+	let isMobileView = $state(false);
+	let desktopEvalPanel = $state<'top' | 'shortlist'>('top');
 	let showForestLayer = $state(false);
 	let showLandUseLayer = $state(false);
 	let showVegetationLayer = $state(false);
@@ -45,34 +88,19 @@
 	const municipiosPmtilesUrl = '/tiles/municipios.pmtiles';
 	let provinceFilter = $state('Todas');
 	let shortlistedIds = $state<string[]>([]);
-	let sortBy = $state<'nombre' | 'provincia' | 'travel_bucket' | 'precip_annual_mm' | 'temp_winter_mean_c' | 'temp_summer_mean_c' | 'mixed_score'>('mixed_score');
-	let sortDirection = $state<'asc' | 'desc'>('desc');
+	let sortBy = $state<SortField>('mixed_score');
+	let sortDirection = $state<SortDirection>('desc');
 
-	let maxTravelBucket = $state<'<=1h30' | '<=2h00' | '<=2h30' | '<=3h30' | '<=4h00' | '>4h00'>(
-		'>4h00'
-	);
+	let maxTravelBucket = $state<TravelBucket>('>4h00');
 	let minPrecipAnnual = $state(0);
 	let minWinterTemp = $state(-10);
 	let maxSummerTemp = $state(40);
+	let maxThermalAmplitude = $state(21);
 	let climateWeight = $state(40);
 	let accessWeight = $state(30);
 	let natureWeight = $state(30);
 	let urlStateReady = $state(false);
-
-	const bucketOrder: Record<string, number> = {
-		'<=1h30': 1,
-		'<=2h00': 2,
-		'<=2h30': 3,
-		'<=3h30': 4,
-		'<=4h00': 5,
-		'>4h00': 6
-	};
-
-	const isPlausibleTemp = (value: number) => Number.isFinite(value) && value > -60 && value < 60;
-	const isPlausiblePrecipAnnual = (value: number) =>
-		Number.isFinite(value) && value >= 0 && value < 20000;
-
-	const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
+	let pendingSelectedMunicipioId = $state<string | null>(null);
 
 	const provinciasDisponibles = $derived([
 		'Todas',
@@ -88,35 +116,31 @@
 	};
 
 	const normalizedWeights = $derived(
-		(() => {
-			const total = climateWeight + accessWeight + natureWeight;
-			if (!total) return { climate: 0.4, access: 0.3, nature: 0.3 };
-			return {
-				climate: climateWeight / total,
-				access: accessWeight / total,
-				nature: natureWeight / total
-			};
-		})()
+		normalizeWeights({
+			climateWeight,
+			accessWeight,
+			natureWeight
+		})
 	);
-
-	const scoreFor = (m: Municipio, weights: { climate: number; access: number; nature: number }) => {
-		const climate = m.climate_block_score ?? m.precip_norm ?? 0.5;
-		const access = m.access_block_score ?? m.accesibilidad_norm ?? 0.5;
-		const nature = m.nature_block_score ?? m.naturality_norm ?? 0.5;
-		return weights.climate * climate + weights.access * access + weights.nature * nature;
-	};
 
 	const municipiosScoredForView = $derived(
 		municipios.map((m) => ({
 			...m,
-			mixed_score: Number(scoreFor(m, normalizedWeights).toFixed(4))
+			mixed_score: Number(scoreForMunicipio(m, normalizedWeights).toFixed(4))
 		}))
 	);
 
 	const municipiosFiltradosBase = $derived(
 		municipiosScoredForView.filter((m) => {
+			const queryText = query.trim().toLowerCase();
+			const queryOk =
+				queryText.length === 0 ||
+				m.nombre.toLowerCase().includes(queryText) ||
+				m.provincia.toLowerCase().includes(queryText);
 			const provinceOk = provinceFilter === 'Todas' || m.provincia === provinceFilter;
-			const bucketOk = bucketOrder[m.travel_bucket] <= bucketOrder[maxTravelBucket];
+			const bucketOk =
+				(bucketOrder[m.travel_bucket as TravelBucket] ?? bucketOrder['>4h00']) <=
+				bucketOrder[maxTravelBucket];
 			const precipOk = isPlausiblePrecipAnnual(m.precip_annual_mm)
 				? m.precip_annual_mm >= minPrecipAnnual
 				: true;
@@ -126,10 +150,14 @@
 			const summerOk = isPlausibleTemp(m.temp_summer_mean_c)
 				? m.temp_summer_mean_c <= maxSummerTemp
 				: true;
+			const amplitude = m.temp_jul_mean_c - m.temp_jan_mean_c;
+			const amplitudeOk = Number.isFinite(amplitude)
+				? amplitude <= maxThermalAmplitude
+				: true;
 			const scoreOk = Number.isFinite(m.mixed_score)
 				? m.mixed_score >= minCompositeScore
 				: true;
-			return provinceOk && bucketOk && precipOk && winterOk && summerOk && scoreOk;
+			return queryOk && provinceOk && bucketOk && precipOk && winterOk && summerOk && amplitudeOk && scoreOk;
 		})
 	);
 
@@ -138,28 +166,16 @@
 	const baselineWeights = { climate: 0.4, access: 0.3, nature: 0.3 };
 	const baselineTopIds = $derived(
 		[...municipiosFiltrados]
-			.sort((a, b) => scoreFor(b, baselineWeights) - scoreFor(a, baselineWeights))
+			.sort((a, b) => scoreForMunicipio(b, baselineWeights) - scoreForMunicipio(a, baselineWeights))
 			.slice(0, 10)
 			.map((m) => m.id)
 	);
 
 	const tableRows = $derived(
-		[...municipiosFiltrados].sort((a, b) => {
-			let cmp = 0;
-			if (sortBy === 'travel_bucket') cmp = bucketOrder[a.travel_bucket] - bucketOrder[b.travel_bucket];
-			else if (sortBy === 'nombre' || sortBy === 'provincia') cmp = a[sortBy].localeCompare(b[sortBy], 'es');
-			else if (sortBy === 'mixed_score') cmp = scoreFor(a, normalizedWeights) - scoreFor(b, normalizedWeights);
-			else cmp = (a[sortBy] ?? 0) - (b[sortBy] ?? 0);
-			return sortDirection === 'asc' ? cmp : -cmp;
-		})
+		sortRows(municipiosFiltrados, sortBy, sortDirection, normalizedWeights, bucketOrder)
 	);
 
-	const sensitivityOverlap = $derived(
-		(() => {
-			const currentTop = tableRows.slice(0, 10).map((m) => m.id);
-			return currentTop.filter((id) => baselineTopIds.includes(id)).length;
-		})()
-	);
+	const sensitivityOverlap = $derived(sensitivityTop10Overlap(tableRows, baselineTopIds));
 
 	const shortlistMunicipios = $derived(
 		municipiosScoredForView
@@ -174,53 +190,25 @@
 			minPrecipAnnual !== 0 ? `ppt>=${minPrecipAnnual}` : null,
 			minWinterTemp !== -10 ? `t_inv>=${minWinterTemp}` : null,
 			maxSummerTemp !== 40 ? `t_ver<=${maxSummerTemp}` : null,
+			maxThermalAmplitude < 21 ? `amp<=${maxThermalAmplitude.toFixed(1)}` : null,
 			minCompositeScore > 0 ? `score>=${minCompositeScore.toFixed(2)}` : null
 		].filter(Boolean) as string[]
 	);
 
 	const toNumber = (event: Event) => Number((event.currentTarget as HTMLInputElement).value);
 
-	const travelBuckets: Array<{
-		value: '<=1h30' | '<=2h00' | '<=2h30' | '<=3h30' | '<=4h00' | '>4h00';
-		label: string;
-	}> = [
-		{ value: '<=1h30', label: '1,5h' },
-		{ value: '<=2h00', label: '2h' },
-		{ value: '<=2h30', label: '2,5h' },
-		{ value: '<=3h30', label: '3,5h' },
-		{ value: '<=4h00', label: '4h' },
-		{ value: '>4h00', label: '>4h' }
-	];
+	const activePreset = $derived.by(() =>
+		activePresetFromWeights({ climateWeight, accessWeight, natureWeight })
+	);
 
-	const activePreset = $derived.by(() => {
-		const c = climateWeight;
-		const a = accessWeight;
-		const n = natureWeight;
-		if (c === 40 && a === 30 && n === 30) return 'equilibrado';
-		if (c === 25 && a === 20 && n === 55) return 'naturaleza';
-		if (c === 25 && a === 55 && n === 20) return 'accesibilidad';
-		if (c === 55 && a === 20 && n === 25) return 'clima';
-		return null;
+	const layerVisibility = (): LayerVisibilityState => ({
+		showMunicipioPolygons,
+		showLandUseLayer,
+		showVegetationLayer,
+		showForestLayer,
+		showIgnReservoirs,
+		showIgnRivers
 	});
-
-	const layerLabels: Record<string, string> = {
-		municipios: 'Municipios',
-		landuse: 'Usos del suelo',
-		vegetation: 'Cobertura vegetal',
-		forest: 'Masa forestal',
-		reservoirs: 'Embalses IGN',
-		rivers: 'Rios IGN'
-	};
-
-	const isLayerVisible = (layerKey: string) => {
-		if (layerKey === 'municipios') return showMunicipioPolygons;
-		if (layerKey === 'landuse') return showLandUseLayer;
-		if (layerKey === 'vegetation') return showVegetationLayer;
-		if (layerKey === 'forest') return showForestLayer;
-		if (layerKey === 'reservoirs') return showIgnReservoirs;
-		if (layerKey === 'rivers') return showIgnRivers;
-		return false;
-	};
 
 	const toggleLayerVisibility = (layerKey: string, checked: boolean) => {
 		if (layerKey === 'municipios') showMunicipioPolygons = checked;
@@ -235,7 +223,7 @@
 		layerOrder.map((layerKey) => ({
 			key: layerKey,
 			label: layerLabels[layerKey] ?? layerKey,
-			visible: isLayerVisible(layerKey)
+			visible: isLayerVisible(layerKey, layerVisibility())
 		}))
 	);
 
@@ -254,62 +242,21 @@
 		mapColorMetric === 'mixed_score' ? 'Puntuacion global' : 'Precipitacion anual'
 	);
 
-	const topCandidate = $derived(tableRows[0] ?? null);
+	const topbarLegendConfig = $derived(getLegendConfig(mapColorMetric));
 
-	const modeCopy = {
-		exploracion: {
-			tagline: 'Exploracion: filtros y capas',
-			helper: 'Ajusta filtros territoriales y explora el mapa.'
-		},
-		evaluacion: {
-			tagline: 'Evaluacion: score y ranking',
-			helper: 'Ajusta score, pesos y ranking para comparar municipios.'
-		}
-	} as const;
+	const topCandidate = $derived(tableRows[0] ?? null);
 
 	const visibleMunicipioIds = $derived(municipiosFiltrados.map((m) => m.id));
 
 	const selectedClimateSeries = $derived(
-		(() => {
-			const selected = selectedMunicipio;
-			if (!selected) return [];
-			return climateMonthly.filter((r) => r.id === selected.id).sort((a, b) => a.month - b.month);
-		})()
+		selectedMunicipioClimateSeries(climateMonthly, selectedMunicipio?.id ?? null)
 	);
 
 	const selectedProvinceClimateSeries = $derived(
-		(() => {
-			const selected = selectedMunicipio;
-			if (!selected) return [];
-			const byMonth = new Map<number, { sumTemp: number; count: number }>();
-			for (const row of climateMonthly) {
-				if (row.provincia !== selected.provincia) continue;
-				const bucket = byMonth.get(row.month) ?? { sumTemp: 0, count: 0 };
-				bucket.sumTemp += row.temp_mean_c;
-				bucket.count += 1;
-				byMonth.set(row.month, bucket);
-			}
-			return Array.from(byMonth.entries())
-				.map(([month, values]) => ({ month, temp_mean_c: values.count ? values.sumTemp / values.count : 0 }))
-				.sort((a, b) => a.month - b.month);
-		})()
+		selectedProvinciaClimateSeries(climateMonthly, selectedMunicipio?.provincia ?? null)
 	);
 
-	const selectedCcaaClimateSeries = $derived(
-		(() => {
-			if (climateMonthly.length === 0) return [];
-			const byMonth = new Map<number, { sumTemp: number; count: number }>();
-			for (const row of climateMonthly) {
-				const bucket = byMonth.get(row.month) ?? { sumTemp: 0, count: 0 };
-				bucket.sumTemp += row.temp_mean_c;
-				bucket.count += 1;
-				byMonth.set(row.month, bucket);
-			}
-			return Array.from(byMonth.entries())
-				.map(([month, values]) => ({ month, temp_mean_c: values.count ? values.sumTemp / values.count : 0 }))
-				.sort((a, b) => a.month - b.month);
-		})()
-	);
+	const selectedCcaaClimateSeries = $derived(ccaaClimateSeries(climateMonthly));
 
 	const handleSelectMunicipio = (municipio: Municipio | null) => {
 		if (!municipio) {
@@ -317,17 +264,25 @@
 			return;
 		}
 		selectedMunicipio = municipio;
-		hasNewSelection = true;
-		activeSheetTab = 'sel';
+		const panel = panelStateOnSelect(activeSheetTab, isMobileView);
+		activeSheetTab = panel.tab;
 		queueMicrotask(() => {
-			isBottomSheetOpen = true;
+			isBottomSheetOpen = panel.open;
 		});
 	};
 
 	const handleClearSelectedMunicipio = () => {
 		selectedMunicipio = null;
-		hasNewSelection = false;
-		isBottomSheetOpen = false;
+		pendingSelectedMunicipioId = null;
+		const panel = panelStateOnClearSelection(activeSheetTab, isMobileView);
+		activeSheetTab = panel.tab;
+		isBottomSheetOpen = panel.open;
+	};
+
+	const handleSelectSheetTab = (tab: 'sel' | 'filtr' | 'capas' | 'rank') => {
+		const panel = panelStateOnTabClick(tab);
+		activeSheetTab = panel.tab;
+		isBottomSheetOpen = panel.open;
 	};
 
 	const handleClearFilters = () => {
@@ -336,47 +291,36 @@
 		minPrecipAnnual = 0;
 		minWinterTemp = -10;
 		maxSummerTemp = 40;
+		maxThermalAmplitude = 21;
 		minCompositeScore = 0;
 	};
 
 	const handleToggleShortlist = (municipioId: string) => {
-		shortlistedIds = shortlistedIds.includes(municipioId)
+		const wasShortlisted = shortlistedIds.includes(municipioId);
+		shortlistedIds = wasShortlisted
 			? shortlistedIds.filter((id) => id !== municipioId)
 			: [...shortlistedIds, municipioId];
+		if (!wasShortlisted) {
+			desktopEvalPanel = 'shortlist';
+		}
 	};
 
-	const handleChangeSort = (newSortBy: typeof sortBy) => {
-		if (sortBy === newSortBy) {
-			sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
-			return;
-		}
-		sortBy = newSortBy;
-		sortDirection = newSortBy === 'nombre' || newSortBy === 'provincia' || newSortBy === 'travel_bucket' ? 'asc' : 'desc';
+	const handleChangeSort = (newSortBy: SortField) => {
+		const next = nextSortState(sortBy, sortDirection, newSortBy);
+		sortBy = next.sortBy;
+		sortDirection = next.sortDirection;
 	};
 
 	const handleLayerOrderChange = (nextOrder: string[]) => {
 		layerOrder = nextOrder;
 	};
 
-	const handlePresetWeights = (preset: 'equilibrado' | 'naturaleza' | 'accesibilidad' | 'clima') => {
+	const handlePresetWeights = (preset: Preset) => {
 		mapColorMetric = 'mixed_score';
-		if (preset === 'equilibrado') {
-			climateWeight = 40;
-			accessWeight = 30;
-			natureWeight = 30;
-		} else if (preset === 'naturaleza') {
-			climateWeight = 25;
-			accessWeight = 20;
-			natureWeight = 55;
-		} else if (preset === 'accesibilidad') {
-			climateWeight = 25;
-			accessWeight = 55;
-			natureWeight = 20;
-		} else {
-			climateWeight = 55;
-			accessWeight = 20;
-			natureWeight = 25;
-		}
+		const weights = weightsForPreset(preset);
+		climateWeight = weights.climateWeight;
+		accessWeight = weights.accessWeight;
+		natureWeight = weights.natureWeight;
 	};
 
 	const handleClimateWeightChange = (value: number) => {
@@ -401,85 +345,69 @@
 	});
 
 	$effect(() => {
+		if (typeof window === 'undefined') return;
+		const updateViewport = () => {
+			isMobileView = window.innerWidth <= 900;
+		};
+		updateViewport();
+		window.addEventListener('resize', updateViewport);
+		return () => window.removeEventListener('resize', updateViewport);
+	});
+
+	$effect(() => {
 		if (typeof window === 'undefined' || urlStateReady) return;
-		const params = new URLSearchParams(window.location.search);
-		const mode = params.get('mode');
-		const province = params.get('province');
-		const bucket = params.get('travel');
-		const ppt = params.get('ppt');
-		const tw = params.get('tw');
-		const ts = params.get('ts');
-		const score = params.get('score');
-		const cw = params.get('cw');
-		const aw = params.get('aw');
-		const nw = params.get('nw');
-		const tab = params.get('tab');
+		const state = parseUrlState(window.location.search);
 
-		if (mode === 'exploracion' || mode === 'evaluacion') viewMode = mode;
-		if (province) provinceFilter = province;
-		if (bucket && bucket in bucketOrder) {
-			maxTravelBucket = bucket as typeof maxTravelBucket;
-		}
+		if (state.mode) viewMode = state.mode;
+		if (state.q) query = state.q;
+		if (state.province) provinceFilter = state.province;
+		if (state.travel) maxTravelBucket = state.travel;
 
-		if (ppt !== null) {
-			const value = Number(ppt);
-			if (Number.isFinite(value)) minPrecipAnnual = clamp(value, 0, 1800);
-		}
-		if (tw !== null) {
-			const value = Number(tw);
-			if (Number.isFinite(value)) minWinterTemp = clamp(value, -15, 15);
-		}
-		if (ts !== null) {
-			const value = Number(ts);
-			if (Number.isFinite(value)) maxSummerTemp = clamp(value, 15, 40);
-		}
-		if (score !== null) {
-			const value = Number(score);
-			if (Number.isFinite(value)) minCompositeScore = clamp(value, 0, 1);
-		}
+		if (state.ppt !== undefined) minPrecipAnnual = clampNumber(state.ppt, 0, 1800);
+		if (state.tw !== undefined) minWinterTemp = clampNumber(state.tw, -15, 15);
+		if (state.ts !== undefined) maxSummerTemp = clampNumber(state.ts, 15, 40);
+		if (state.ta !== undefined) maxThermalAmplitude = clampNumber(state.ta, 12, 21);
+		if (state.score !== undefined) minCompositeScore = clampNumber(state.score, 0, 1);
 
-		if (cw !== null) {
-			const value = Number(cw);
-			if (Number.isFinite(value)) climateWeight = clamp(value, 0, 100);
-		}
-		if (aw !== null) {
-			const value = Number(aw);
-			if (Number.isFinite(value)) accessWeight = clamp(value, 0, 100);
-		}
-		if (nw !== null) {
-			const value = Number(nw);
-			if (Number.isFinite(value)) natureWeight = clamp(value, 0, 100);
-		}
+		if (state.cw !== undefined) climateWeight = clampNumber(state.cw, 0, 100);
+		if (state.aw !== undefined) accessWeight = clampNumber(state.aw, 0, 100);
+		if (state.nw !== undefined) natureWeight = clampNumber(state.nw, 0, 100);
 
-		if (tab === 'sel' || tab === 'filtr' || tab === 'capas' || tab === 'rank') {
-			activeSheetTab = tab;
-		}
+		if (state.tab)
+			activeSheetTab = tabForMode(
+				state.mode ?? viewMode,
+				state.tab,
+				window.innerWidth <= 900,
+				Boolean(state.sel)
+			);
+		if (state.sel) pendingSelectedMunicipioId = state.sel;
+		if (state.open && window.innerWidth <= 900) isBottomSheetOpen = true;
 
 		urlStateReady = true;
 	});
 
 	$effect(() => {
 		if (typeof window === 'undefined' || !urlStateReady) return;
-		const params = new URLSearchParams();
-		params.set('mode', viewMode);
+		const params = buildUrlState({
+			mode: viewMode,
+			q: query.trim().length > 0 ? query.trim() : undefined,
+			province: provinceFilter !== 'Todas' ? provinceFilter : undefined,
+			travel: maxTravelBucket !== '>4h00' ? maxTravelBucket : undefined,
+			ppt: minPrecipAnnual !== 0 ? minPrecipAnnual : undefined,
+			tw: minWinterTemp !== -10 ? minWinterTemp : undefined,
+			ts: maxSummerTemp !== 40 ? maxSummerTemp : undefined,
+			ta: maxThermalAmplitude < 21 ? Number(maxThermalAmplitude.toFixed(1)) : undefined,
+			score: minCompositeScore > 0 ? minCompositeScore : undefined,
+			cw: viewMode === 'evaluacion' ? climateWeight : undefined,
+			aw: viewMode === 'evaluacion' ? accessWeight : undefined,
+			nw: viewMode === 'evaluacion' ? natureWeight : undefined,
+			tab: isMobileView && activeSheetTab !== 'filtr' ? activeSheetTab : undefined,
+			sel: selectedMunicipio?.id,
+			open: isMobileView ? isBottomSheetOpen : undefined
+		});
 
-		if (provinceFilter !== 'Todas') params.set('province', provinceFilter);
-		if (maxTravelBucket !== '>4h00') params.set('travel', maxTravelBucket);
-		if (minPrecipAnnual !== 0) params.set('ppt', String(minPrecipAnnual));
-		if (minWinterTemp !== -10) params.set('tw', String(minWinterTemp));
-		if (maxSummerTemp !== 40) params.set('ts', String(maxSummerTemp));
-		if (minCompositeScore > 0) params.set('score', minCompositeScore.toFixed(2));
-
-		if (viewMode === 'evaluacion') {
-			params.set('cw', String(climateWeight));
-			params.set('aw', String(accessWeight));
-			params.set('nw', String(natureWeight));
-		}
-
-		if (activeSheetTab !== 'filtr') params.set('tab', activeSheetTab);
-
-		const query = params.toString();
-		const nextUrl = query ? `${window.location.pathname}?${query}` : window.location.pathname;
+		const queryString = params.toString();
+		const nextUrl = queryString ? `${window.location.pathname}?${queryString}` : window.location.pathname;
 		window.history.replaceState({}, '', nextUrl);
 	});
 
@@ -487,6 +415,17 @@
 		if (selectedMunicipio && !municipiosScoredForView.some((m) => m.id === selectedMunicipio?.id)) {
 			selectedMunicipio = null;
 		}
+	});
+
+	$effect(() => {
+		if (!pendingSelectedMunicipioId || municipiosScoredForView.length === 0) return;
+		const fromUrl = municipiosScoredForView.find((m) => m.id === pendingSelectedMunicipioId) ?? null;
+		if (!fromUrl) {
+			pendingSelectedMunicipioId = null;
+			return;
+		}
+		selectedMunicipio = fromUrl;
+		pendingSelectedMunicipioId = null;
 	});
 
 	$effect(() => {
@@ -499,29 +438,18 @@
 	});
 
 	$effect(() => {
-		if (typeof localStorage === 'undefined') return;
-		const raw = localStorage.getItem('ebv-shortlist-v1');
-		if (!raw) return;
-		try {
-			const parsed = JSON.parse(raw) as string[];
-			if (Array.isArray(parsed)) shortlistedIds = parsed;
-		} catch (_error) {
-			shortlistedIds = [];
-		}
+		shortlistedIds = loadStringArray('ebv-shortlist-v1');
 	});
 
 	$effect(() => {
-		if (typeof localStorage === 'undefined') return;
-		localStorage.setItem('ebv-shortlist-v1', JSON.stringify(shortlistedIds));
+		saveStringArray('ebv-shortlist-v1', shortlistedIds);
 	});
 
 	$effect(() => {
 		if (viewMode === 'evaluacion') {
 			mapColorMetric = 'mixed_score';
 		}
-		if (viewMode === 'exploracion' && activeSheetTab === 'rank') {
-			activeSheetTab = 'filtr';
-		}
+		activeSheetTab = tabForMode(viewMode, activeSheetTab, isMobileView, Boolean(selectedMunicipio));
 	});
 </script>
 
@@ -567,6 +495,15 @@
 	<div class="topbar-brand">
 		<strong>El Buen Vivir</strong>
 		<small>{modeCopy[viewMode].tagline} · {municipiosFiltrados.length}/{municipios.length}</small>
+	</div>
+	<div class="topbar-legend">
+		<ColorLegend
+			title={topbarLegendConfig.title}
+			thresholds={topbarLegendConfig.thresholds}
+			colors={topbarLegendConfig.colors}
+			formatLabel={topbarLegendConfig.formatLabel}
+			width={148}
+		/>
 	</div>
 	<div class="topbar-mode">
 		<ModeToggle mode={viewMode} onChange={(nextMode) => (viewMode = nextMode)} />
@@ -614,6 +551,7 @@
 				{minPrecipAnnual}
 				{minWinterTemp}
 				{maxSummerTemp}
+				{maxThermalAmplitude}
 				{minCompositeScore}
 				{layerOrder}
 				activeFiltersSummary={activeFiltersSummary}
@@ -645,6 +583,7 @@
 				onMinPrecipAnnualChange={(value) => (minPrecipAnnual = value)}
 				onMinWinterTempChange={(value) => (minWinterTemp = value)}
 				onMaxSummerTempChange={(value) => (maxSummerTemp = value)}
+				onMaxThermalAmplitudeChange={(value) => (maxThermalAmplitude = value)}
 				onMinCompositeScoreChange={(value: number) => (minCompositeScore = value)}
 				onClearFilters={handleClearFilters}
 				onLayerOrderChange={handleLayerOrderChange}
@@ -673,16 +612,17 @@
 				{showVegetationLayer}
 				{layerOrder}
 				{visibleMunicipioIds}
+				{provinceFilter}
 				pmtilesUrl={municipiosPmtilesUrl}
 				onMapSelection={handleSelectMunicipio}
 			/>
 			<BottomSheet initialHeight="34vh" expandedHeight="62vh" peekHeight="5.2rem" bind:isOpen={isBottomSheetOpen}>
 				{#snippet children()}
 					<div class="sheet-tabs" role="tablist" aria-label="Panel movil">
-						<button class:active={activeSheetTab === 'sel'} onclick={() => { activeSheetTab = 'sel'; isBottomSheetOpen = true; }}><MapPin size={16} />Sel</button>
-						<button class:active={activeSheetTab === 'filtr'} onclick={() => { activeSheetTab = 'filtr'; isBottomSheetOpen = true; }}><SlidersHorizontal size={16} />Filtr</button>
-						<button class:active={activeSheetTab === 'capas'} onclick={() => { activeSheetTab = 'capas'; isBottomSheetOpen = true; }}><Layers size={16} />Capas</button>
-						<button class:active={activeSheetTab === 'rank'} onclick={() => { activeSheetTab = 'rank'; isBottomSheetOpen = true; }}><BarChart3 size={16} />Rank</button>
+						<button class:active={activeSheetTab === 'sel'} onclick={() => handleSelectSheetTab('sel')}><MapPin size={16} />Sel</button>
+						<button class:active={activeSheetTab === 'filtr'} onclick={() => handleSelectSheetTab('filtr')}><SlidersHorizontal size={16} />Filtr</button>
+						<button class:active={activeSheetTab === 'capas'} onclick={() => handleSelectSheetTab('capas')}><Layers size={16} />Capas</button>
+						<button class:active={activeSheetTab === 'rank'} onclick={() => handleSelectSheetTab('rank')}><BarChart3 size={16} />Rank</button>
 					</div>
 					<div class="sheet-content">
 						{#if activeSheetTab === 'sel'}
@@ -707,7 +647,15 @@
 								/>
 							{:else}
 								<p class="sheet-empty">Selecciona un municipio en el mapa para ver su ficha.</p>
-								<button class="sheet-clear" onclick={() => (activeSheetTab = 'rank')}>Ir al ranking</button>
+								<button
+									class="sheet-clear"
+									onclick={() => {
+										viewMode = 'evaluacion';
+										handleSelectSheetTab('rank');
+									}}
+								>
+									Ir al ranking
+								</button>
 							{/if}
 						{:else if activeSheetTab === 'filtr'}
 							<div class="sheet-block">
@@ -724,26 +672,51 @@
 										<ChipButton label={bucket.label} size="small" compact={true} active={maxTravelBucket === bucket.value} onclick={() => (maxTravelBucket = bucket.value)} />
 									{/each}
 								</div>
-								<label for="sheet-min-precip">Precipitacion minima anual: {minPrecipAnnual} mm</label>
-								<input id="sheet-min-precip" type="range" min="0" max="1800" step="10" value={minPrecipAnnual} oninput={(e) => (minPrecipAnnual = toNumber(e))} />
-								<label for="sheet-min-winter">Temp. invierno minima: {minWinterTemp} C</label>
-								<input id="sheet-min-winter" type="range" min="-15" max="15" step="0.5" value={minWinterTemp} oninput={(e) => (minWinterTemp = toNumber(e))} />
-								<label for="sheet-max-summer">Temp. verano maxima: {maxSummerTemp} C</label>
-								<input id="sheet-max-summer" type="range" min="15" max="40" step="0.5" value={maxSummerTemp} oninput={(e) => (maxSummerTemp = toNumber(e))} />
+								<p class="sheet-subtitle">Filtros de climatologia</p>
+								<div class="sheet-slider-grid">
+									<div class="sheet-score-item">
+										<label for="sheet-min-precip">Precipitacion minima anual: {minPrecipAnnual} mm</label>
+										<input id="sheet-min-precip" type="range" min="0" max="1800" step="10" value={minPrecipAnnual} oninput={(e) => (minPrecipAnnual = toNumber(e))} />
+									</div>
+									<div class="sheet-score-item">
+										<label for="sheet-min-winter">Temp. invierno minima: {minWinterTemp} C</label>
+										<input id="sheet-min-winter" type="range" min="-15" max="15" step="0.5" value={minWinterTemp} oninput={(e) => (minWinterTemp = toNumber(e))} />
+									</div>
+									<div class="sheet-score-item">
+										<label for="sheet-max-summer">Temp. verano maxima: {maxSummerTemp} C</label>
+										<input id="sheet-max-summer" type="range" min="15" max="40" step="0.5" value={maxSummerTemp} oninput={(e) => (maxSummerTemp = toNumber(e))} />
+									</div>
+									<div class="sheet-score-item">
+										<label for="sheet-max-amplitude">Amplitud termica maxima: {maxThermalAmplitude.toFixed(1)} C</label>
+										<input id="sheet-max-amplitude" type="range" min="12" max="21" step="0.1" value={maxThermalAmplitude} oninput={(e) => (maxThermalAmplitude = toNumber(e))} />
+									</div>
+								</div>
 								{#if viewMode === 'evaluacion'}
-									<label for="sheet-min-score">Score minimo visible: {minCompositeScore.toFixed(2)}</label>
-									<input id="sheet-min-score" type="range" min="0" max="1" step="0.01" value={minCompositeScore} oninput={(e) => (minCompositeScore = toNumber(e))} />
-									<label for="sheet-w-clima">Peso clima: {climateWeight}</label>
-									<input id="sheet-w-clima" type="range" min="0" max="100" step="1" value={climateWeight} oninput={(e) => handleClimateWeightChange(toNumber(e))} />
-									<label for="sheet-w-acceso">Peso accesibilidad: {accessWeight}</label>
-									<input id="sheet-w-acceso" type="range" min="0" max="100" step="1" value={accessWeight} oninput={(e) => handleAccessWeightChange(toNumber(e))} />
-									<label for="sheet-w-nat">Peso naturaleza: {natureWeight}</label>
-									<input id="sheet-w-nat" type="range" min="0" max="100" step="1" value={natureWeight} oninput={(e) => handleNatureWeightChange(toNumber(e))} />
+									<p class="sheet-subtitle">Ajuste del score</p>
 									<div class="chips-row">
 										<ChipButton label="Equilibrado" active={activePreset === 'equilibrado'} onclick={() => handlePresetWeights('equilibrado')} />
 										<ChipButton label="Naturaleza" active={activePreset === 'naturaleza'} onclick={() => handlePresetWeights('naturaleza')} />
 										<ChipButton label="Accesibilidad" active={activePreset === 'accesibilidad'} onclick={() => handlePresetWeights('accesibilidad')} />
 										<ChipButton label="Clima" active={activePreset === 'clima'} onclick={() => handlePresetWeights('clima')} />
+										<ChipButton label="Clima estricto" active={activePreset === 'clima_estricto'} onclick={() => handlePresetWeights('clima_estricto')} />
+									</div>
+									<div class="sheet-slider-grid">
+										<div class="sheet-score-item">
+											<label for="sheet-min-score">Score minimo visible: {minCompositeScore.toFixed(2)}</label>
+											<input id="sheet-min-score" type="range" min="0" max="1" step="0.01" value={minCompositeScore} oninput={(e) => (minCompositeScore = toNumber(e))} />
+										</div>
+										<div class="sheet-score-item">
+											<label for="sheet-w-clima">Peso clima: {climateWeight}</label>
+											<input id="sheet-w-clima" type="range" min="0" max="100" step="1" value={climateWeight} oninput={(e) => handleClimateWeightChange(toNumber(e))} />
+										</div>
+										<div class="sheet-score-item">
+											<label for="sheet-w-acceso">Peso accesibilidad: {accessWeight}</label>
+											<input id="sheet-w-acceso" type="range" min="0" max="100" step="1" value={accessWeight} oninput={(e) => handleAccessWeightChange(toNumber(e))} />
+										</div>
+										<div class="sheet-score-item">
+											<label for="sheet-w-nat">Peso naturaleza: {natureWeight}</label>
+											<input id="sheet-w-nat" type="range" min="0" max="100" step="1" value={natureWeight} oninput={(e) => handleNatureWeightChange(toNumber(e))} />
+										</div>
 									</div>
 									<p class="sheet-meta">Robustez top-10: {sensitivityOverlap}/10</p>
 								{/if}
@@ -766,7 +739,7 @@
 									<RankingList rows={tableRows} limit={25} compact={true} onSelect={handleSelectMunicipio} />
 								{:else}
 									<p class="sheet-meta">El ranking se utiliza en modo evaluacion.</p>
-									<button class="sheet-clear" onclick={() => { viewMode = 'evaluacion'; activeSheetTab = 'rank'; isBottomSheetOpen = true; }}>Cambiar a evaluacion</button>
+									<button class="sheet-clear" onclick={() => { viewMode = 'evaluacion'; handleSelectSheetTab('rank'); }}>Cambiar a evaluacion</button>
 								{/if}
 							</div>
 						{/if}
@@ -780,8 +753,59 @@
 				<section class="desktop-ranking">
 					<h2>Evaluacion</h2>
 					<p>Selecciona un municipio para ver su ficha o usa este ranking para comparar.</p>
-					<p class="muted">Top 25 por score mixto · robustez {sensitivityOverlap}/10</p>
-					<RankingList rows={tableRows} limit={25} onSelect={handleSelectMunicipio} />
+					<div class="desktop-toggle" role="tablist" aria-label="Vista de evaluacion">
+						<button
+							type="button"
+							class:active={desktopEvalPanel === 'top'}
+							onclick={() => (desktopEvalPanel = 'top')}
+						>
+							Top 25
+						</button>
+						<button
+							type="button"
+							class:active={desktopEvalPanel === 'shortlist'}
+							onclick={() => (desktopEvalPanel = 'shortlist')}
+						>
+							Shortlist ({shortlistMunicipios.length})
+						</button>
+					</div>
+					{#if desktopEvalPanel === 'top'}
+						<p class="muted">Top 25 por score mixto · robustez {sensitivityOverlap}/10</p>
+						<RankingList rows={tableRows} limit={25} onSelect={handleSelectMunicipio} />
+					{:else}
+						{#if shortlistMunicipios.length > 0}
+							<p class="muted">Municipios guardados en shortlist.</p>
+							<RankingList rows={shortlistMunicipios} limit={200} onSelect={handleSelectMunicipio} />
+						{:else}
+							<p class="muted">Tu shortlist esta vacia. Abre un municipio y pulsa "Guardar shortlist".</p>
+						{/if}
+					{/if}
+
+					<section class="desktop-score-panel">
+						<h3>Ajuste del score</h3>
+						<p class="muted">Estos pesos cambian el score y el ranking; el filtro de score minimo del panel izquierdo decide que municipios se muestran en mapa y tabla.</p>
+						<div class="chips-row">
+							<ChipButton label="Equilibrado" active={activePreset === 'equilibrado'} onclick={() => handlePresetWeights('equilibrado')} />
+							<ChipButton label="Priorizar naturaleza" active={activePreset === 'naturaleza'} onclick={() => handlePresetWeights('naturaleza')} />
+							<ChipButton label="Priorizar accesibilidad" active={activePreset === 'accesibilidad'} onclick={() => handlePresetWeights('accesibilidad')} />
+							<ChipButton label="Priorizar clima" active={activePreset === 'clima'} onclick={() => handlePresetWeights('clima')} />
+							<ChipButton label="Clima estricto" active={activePreset === 'clima_estricto'} onclick={() => handlePresetWeights('clima_estricto')} />
+						</div>
+						<div class="desktop-score-control">
+							<label for="desktop-rw-climate">Peso clima: {climateWeight}</label>
+							<input id="desktop-rw-climate" type="range" min="0" max="100" step="1" value={climateWeight} oninput={(e) => handleClimateWeightChange(toNumber(e))} />
+						</div>
+						<div class="desktop-score-control">
+							<label for="desktop-rw-access">Peso accesibilidad: {accessWeight}</label>
+							<input id="desktop-rw-access" type="range" min="0" max="100" step="1" value={accessWeight} oninput={(e) => handleAccessWeightChange(toNumber(e))} />
+						</div>
+						<div class="desktop-score-control">
+							<label for="desktop-rw-nature">Peso naturaleza: {natureWeight}</label>
+							<input id="desktop-rw-nature" type="range" min="0" max="100" step="1" value={natureWeight} oninput={(e) => handleNatureWeightChange(toNumber(e))} />
+						</div>
+						<p class="muted">Normalizados: clima {(normalizedWeights.climate * 100).toFixed(0)}% · acces {(normalizedWeights.access * 100).toFixed(0)}% · nat {(normalizedWeights.nature * 100).toFixed(0)}%</p>
+						<p class="muted">Robustez top-10 vs base equilibrada: {sensitivityOverlap}/10</p>
+					</section>
 				</section>
 			{:else if viewMode === 'exploracion' && !selectedMunicipio}
 				<section class="desktop-ranking">
@@ -837,6 +861,10 @@
 	}
 	.topbar-mode {
 		display: block;
+	}
+	.topbar-legend {
+		display: none;
+		min-width: 0;
 	}
 	.mode-strip {
 		display: flex;
@@ -914,9 +942,59 @@
 		color: #3f5652;
 		line-height: 1.3;
 	}
+	.desktop-toggle {
+		display: inline-flex;
+		gap: 0.25rem;
+		padding: 0.2rem;
+		border: 1px solid rgba(21, 32, 33, 0.18);
+		border-radius: 999px;
+		background: rgba(255, 255, 255, 0.65);
+		width: fit-content;
+	}
+	.desktop-toggle button {
+		border: 0;
+		border-radius: 999px;
+		padding: 0.28rem 0.62rem;
+		font-size: 0.72rem;
+		background: transparent;
+		color: #425a56;
+		cursor: pointer;
+	}
+	.desktop-toggle button.active {
+		background: rgba(47, 125, 133, 0.15);
+		color: #2f7d85;
+		font-weight: 600;
+	}
 	.desktop-ranking .muted {
 		font-size: 0.76rem;
 		color: #4b6460;
+	}
+	.desktop-score-panel {
+		margin-top: 0.5rem;
+		padding: 0.85rem;
+		display: grid;
+		gap: 0.45rem;
+		border: 1px solid rgba(21, 32, 33, 0.16);
+		border-radius: 12px;
+		background: rgba(255, 255, 255, 0.72);
+	}
+	.desktop-score-panel h3 {
+		margin: 0;
+		font-family: 'Fraunces', serif;
+		font-size: 1.02rem;
+	}
+	.desktop-score-control {
+		display: grid;
+		gap: 0.28rem;
+		max-width: 240px;
+	}
+	.desktop-score-control label {
+		font-size: 0.76rem;
+		letter-spacing: 0.02em;
+		color: #3f5853;
+	}
+	.desktop-score-control input[type='range'] {
+		height: 10px;
 	}
 	.sheet-tabs,
 	.sheet-content {
@@ -924,8 +1002,16 @@
 	}
 	@media (max-width: 900px) {
 		.topbar {
-			height: 52px;
-			padding: 0.5rem 0.6rem;
+			height: 60px;
+			padding: 0.38rem 0.55rem;
+			gap: 0.4rem;
+			overflow: hidden;
+		}
+		.topbar-legend {
+			display: block;
+			margin-left: auto;
+			transform: scale(0.8);
+			transform-origin: right center;
 		}
 		.mode-strip {
 			display: none;
@@ -934,24 +1020,29 @@
 			display: none;
 		}
 		.topbar-brand strong {
-			font-size: 1.1rem;
+			font-size: 1.02rem;
 		}
 		.topbar-brand small {
-			font-size: 0.65rem;
+			display: block;
+			font-size: 0.62rem;
+			white-space: nowrap;
 		}
 		main {
-			height: auto;
-			min-height: calc(100dvh - 52px);
-			grid-template-columns: 1fr;
-			grid-template-rows: 1fr;
+			display: block;
+			height: calc(100vh - 60px);
+			height: calc(100dvh - 60px);
+			min-height: calc(100vh - 60px);
+			min-height: calc(100dvh - 60px);
 			padding: 0;
 			gap: 0;
 			overflow: hidden;
 		}
 		.map-wrap {
 			display: block;
-			min-height: calc(100dvh - 52px);
-			height: calc(100dvh - 52px);
+			height: calc(100vh - 60px);
+			height: calc(100dvh - 60px);
+			min-height: calc(100vh - 60px);
+			min-height: calc(100dvh - 60px);
 			border-radius: 0;
 			box-shadow: none;
 		}
@@ -1005,9 +1096,26 @@
 			display: grid;
 			gap: 0.45rem;
 		}
+		.sheet-slider-grid {
+			display: grid;
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+			gap: 0.45rem 0.5rem;
+		}
+		.sheet-score-item {
+			display: grid;
+			gap: 0.2rem;
+		}
 		.sheet-block label {
 			font-size: 0.75rem;
 			color: #3f5753;
+		}
+		.sheet-subtitle {
+			margin: 0.3rem 0 0.05rem;
+			font-size: 0.7rem;
+			font-weight: 700;
+			letter-spacing: 0.06em;
+			text-transform: uppercase;
+			color: #3d5551;
 		}
 		.sheet-block select {
 			border: 1px solid rgba(21, 32, 33, 0.2);
