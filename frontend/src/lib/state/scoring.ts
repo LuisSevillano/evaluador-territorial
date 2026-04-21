@@ -14,9 +14,23 @@ export type WeightsNormalized = {
 	nature: number;
 };
 
+export const DEFAULT_WEIGHTS_RAW: WeightsRaw = {
+	climateWeight: 45,
+	accessWeight: 20,
+	natureWeight: 35
+};
+
+export const DEFAULT_WEIGHTS_NORMALIZED: WeightsNormalized = {
+	climate: 0.45,
+	access: 0.2,
+	nature: 0.35
+};
+
+export const BASELINE_WEIGHTS: WeightsNormalized = DEFAULT_WEIGHTS_NORMALIZED;
+
 export const normalizeWeights = (raw: WeightsRaw): WeightsNormalized => {
 	const total = raw.climateWeight + raw.accessWeight + raw.natureWeight;
-	if (!total) return { climate: 0.4, access: 0.3, nature: 0.3 };
+	if (!total) return DEFAULT_WEIGHTS_NORMALIZED;
 	return {
 		climate: raw.climateWeight / total,
 		access: raw.accessWeight / total,
@@ -44,7 +58,11 @@ export const scoreForMunicipio = (m: Municipio, weights: WeightsNormalized): num
 };
 
 export const activePresetFromWeights = (raw: WeightsRaw): Preset | null => {
-	if (raw.climateWeight === 40 && raw.accessWeight === 30 && raw.natureWeight === 30)
+	if (
+		raw.climateWeight === DEFAULT_WEIGHTS_RAW.climateWeight &&
+		raw.accessWeight === DEFAULT_WEIGHTS_RAW.accessWeight &&
+		raw.natureWeight === DEFAULT_WEIGHTS_RAW.natureWeight
+	)
 		return 'equilibrado';
 	if (raw.climateWeight === 25 && raw.accessWeight === 20 && raw.natureWeight === 55)
 		return 'naturaleza';
@@ -58,7 +76,7 @@ export const activePresetFromWeights = (raw: WeightsRaw): Preset | null => {
 };
 
 export const weightsForPreset = (preset: Preset): WeightsRaw => {
-	if (preset === 'equilibrado') return { climateWeight: 40, accessWeight: 30, natureWeight: 30 };
+	if (preset === 'equilibrado') return DEFAULT_WEIGHTS_RAW;
 	if (preset === 'naturaleza') return { climateWeight: 25, accessWeight: 20, natureWeight: 55 };
 	if (preset === 'accesibilidad') return { climateWeight: 25, accessWeight: 55, natureWeight: 20 };
 	if (preset === 'clima_estricto') return { climateWeight: 70, accessWeight: 15, natureWeight: 15 };

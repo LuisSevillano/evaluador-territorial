@@ -37,6 +37,8 @@
 	import { loadStringArray, saveStringArray } from '$lib/state/persistence';
 	import {
 		activePresetFromWeights,
+		BASELINE_WEIGHTS,
+		DEFAULT_WEIGHTS_RAW,
 		normalizeWeights,
 		scoreForMunicipio,
 		weightsForPreset,
@@ -96,9 +98,9 @@
 	let minWinterTemp = $state(-10);
 	let maxSummerTemp = $state(40);
 	let maxThermalAmplitude = $state(21);
-	let climateWeight = $state(40);
-	let accessWeight = $state(30);
-	let natureWeight = $state(30);
+	let climateWeight = $state(DEFAULT_WEIGHTS_RAW.climateWeight);
+	let accessWeight = $state(DEFAULT_WEIGHTS_RAW.accessWeight);
+	let natureWeight = $state(DEFAULT_WEIGHTS_RAW.natureWeight);
 	let urlStateReady = $state(false);
 	let pendingSelectedMunicipioId = $state<string | null>(null);
 
@@ -163,7 +165,7 @@
 
 	const municipiosFiltrados = $derived(municipiosFiltradosBase);
 
-	const baselineWeights = { climate: 0.4, access: 0.3, nature: 0.3 };
+	const baselineWeights = BASELINE_WEIGHTS;
 	const baselineTopIds = $derived(
 		[...municipiosFiltrados]
 			.sort((a, b) => scoreForMunicipio(b, baselineWeights) - scoreForMunicipio(a, baselineWeights))
