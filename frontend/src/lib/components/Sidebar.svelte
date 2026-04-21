@@ -2,6 +2,7 @@
 	import type { DatasetMetadata, Municipio, MunicipioClimateMonthly } from '$lib/types/municipio';
 	import LayerOrderList from '$lib/components/layers/LayerOrderList.svelte';
 	import ChipButton from '$lib/components/ui/ChipButton.svelte';
+	import { DEFAULT_WEIGHTS_NORMALIZED, DEFAULT_WEIGHTS_RAW } from '$lib/state/scoring';
 
 	type SortField =
 		| 'nombre'
@@ -110,8 +111,8 @@
 		sortBy = 'mixed_score',
 		sortDirection = 'desc',
 		isEvaluationMode = false,
-		weights = { climate: 0.4, access: 0.3, nature: 0.3 },
-		weightsRaw = { climateWeight: 40, accessWeight: 30, natureWeight: 30 },
+		weights = DEFAULT_WEIGHTS_NORMALIZED,
+		weightsRaw = DEFAULT_WEIGHTS_RAW,
 		sensitivityOverlap = 0,
 		datasetMetadata = null,
 		labelAccesibilidad = (bucket: string) => bucket,
@@ -220,7 +221,12 @@
 		const c = weightsRaw.climateWeight;
 		const a = weightsRaw.accessWeight;
 		const n = weightsRaw.natureWeight;
-		if (c === 40 && a === 30 && n === 30) return 'equilibrado';
+		if (
+			c === DEFAULT_WEIGHTS_RAW.climateWeight &&
+			a === DEFAULT_WEIGHTS_RAW.accessWeight &&
+			n === DEFAULT_WEIGHTS_RAW.natureWeight
+		)
+			return 'equilibrado';
 		if (c === 25 && a === 20 && n === 55) return 'naturaleza';
 		if (c === 25 && a === 55 && n === 20) return 'accesibilidad';
 		if (c === 55 && a === 20 && n === 25) return 'clima';
