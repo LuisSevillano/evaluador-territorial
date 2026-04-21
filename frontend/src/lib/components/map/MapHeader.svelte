@@ -64,12 +64,7 @@
 
 	@media (max-width: 900px) {
 		.map-header {
-			flex-direction: column;
-			align-items: flex-start;
-			gap: 0.5rem;
-		}
-		.intro {
-			font-size: 0.74rem;
+			display: none;
 		}
 	}
 </style>
