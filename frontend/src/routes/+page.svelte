@@ -350,7 +350,10 @@
 	<meta property="og:description" content="Herramienta analítica para evaluar municipios según climatología, accesibilidad y naturaleza en Castilla y León." />
 	<meta property="og:site_name" content="El Buen Vivir" />
 	<meta property="og:locale" content="es_ES" />
-	<meta property="og:image" content="https://observatorio-territorial.netlify.app/og-image.jpg" />
+	<meta property="og:image" content="https://observatorio-territorial.netlify.app/og-image-v2.jpg" />
+	<meta property="og:image:secure_url" content="https://observatorio-territorial.netlify.app/og-image-v2.jpg" />
+	<meta property="og:image:type" content="image/jpeg" />
+	<meta property="og:image:alt" content="Observatorio Territorial El Buen Vivir" />
 	<meta property="og:image:width" content="1200" />
 	<meta property="og:image:height" content="630" />
 
@@ -359,7 +362,7 @@
 	<meta name="twitter:url" content="https://observatorio-territorial.netlify.app/" />
 	<meta name="twitter:title" content="El Buen Vivir | Visor Territorial" />
 	<meta name="twitter:description" content="Evalúa municipios por clima, accesibilidad y naturaleza. Herramienta de análisis territorial." />
-	<meta name="twitter:image" content="https://observatorio-territorial.netlify.app/og-image.jpg" />
+	<meta name="twitter:image" content="https://observatorio-territorial.netlify.app/og-image-v2.jpg" />
 
 	<!-- Telegram / WhatsApp -->
 	<meta property="telegram:channel" content="@elbuenvivir" />
