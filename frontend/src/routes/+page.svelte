@@ -3,7 +3,10 @@
 	import Sidebar from '$lib/components/Sidebar.svelte';
 	import InspectorPanel from '$lib/components/InspectorPanel.svelte';
 	import BottomSheet from '$lib/components/ui/BottomSheet.svelte';
-	import { Filter, Map as MapIcon } from 'lucide-svelte';
+	import ModeToggle from '$lib/components/ui/ModeToggle.svelte';
+	import ChipButton from '$lib/components/ui/ChipButton.svelte';
+	import LayerOrderList from '$lib/components/layers/LayerOrderList.svelte';
+	import { MapPin, SlidersHorizontal, Layers, BarChart3 } from 'lucide-svelte';
 	import type { DatasetMetadata, Municipio, MunicipioClimateMonthly } from '$lib/types/municipio';
 
 	type PageData = {
@@ -25,7 +28,8 @@
 	let showIgnRivers = $state(false);
 	let showIgnReservoirs = $state(false);
 	let mapColorMetric = $state<'precip_annual_mm' | 'mixed_score'>('mixed_score');
-	let activeMobileTab = $state<'filters' | 'map'>('map');
+	let viewMode = $state<'exploracion' | 'evaluacion'>('exploracion');
+	let activeSheetTab = $state<'sel' | 'filtr' | 'capas' | 'rank'>('filtr');
 	let hasNewSelection = $state(false);
 	let showForestLayer = $state(false);
 	let showLandUseLayer = $state(false);
@@ -170,6 +174,67 @@
 		].filter(Boolean) as string[]
 	);
 
+	const toNumber = (event: Event) => Number((event.currentTarget as HTMLInputElement).value);
+
+	const travelBuckets: Array<{
+		value: '<=1h30' | '<=2h00' | '<=2h30' | '<=3h30' | '<=4h00' | '>4h00';
+		label: string;
+	}> = [
+		{ value: '<=1h30', label: '1,5h' },
+		{ value: '<=2h00', label: '2h' },
+		{ value: '<=2h30', label: '2,5h' },
+		{ value: '<=3h30', label: '3,5h' },
+		{ value: '<=4h00', label: '4h' },
+		{ value: '>4h00', label: '>4h' }
+	];
+
+	const activePreset = $derived.by(() => {
+		const c = climateWeight;
+		const a = accessWeight;
+		const n = natureWeight;
+		if (c === 40 && a === 30 && n === 30) return 'equilibrado';
+		if (c === 25 && a === 20 && n === 55) return 'naturaleza';
+		if (c === 25 && a === 55 && n === 20) return 'accesibilidad';
+		if (c === 55 && a === 20 && n === 25) return 'clima';
+		return null;
+	});
+
+	const layerLabels: Record<string, string> = {
+		municipios: 'Municipios',
+		landuse: 'Usos del suelo',
+		vegetation: 'Cobertura vegetal',
+		forest: 'Masa forestal',
+		reservoirs: 'Embalses IGN',
+		rivers: 'Rios IGN'
+	};
+
+	const isLayerVisible = (layerKey: string) => {
+		if (layerKey === 'municipios') return showMunicipioPolygons;
+		if (layerKey === 'landuse') return showLandUseLayer;
+		if (layerKey === 'vegetation') return showVegetationLayer;
+		if (layerKey === 'forest') return showForestLayer;
+		if (layerKey === 'reservoirs') return showIgnReservoirs;
+		if (layerKey === 'rivers') return showIgnRivers;
+		return false;
+	};
+
+	const toggleLayerVisibility = (layerKey: string, checked: boolean) => {
+		if (layerKey === 'municipios') showMunicipioPolygons = checked;
+		else if (layerKey === 'landuse') showLandUseLayer = checked;
+		else if (layerKey === 'vegetation') showVegetationLayer = checked;
+		else if (layerKey === 'forest') showForestLayer = checked;
+		else if (layerKey === 'reservoirs') showIgnReservoirs = checked;
+		else if (layerKey === 'rivers') showIgnRivers = checked;
+	};
+
+	const layerItems = $derived(
+		layerOrder.map((layerKey) => ({
+			key: layerKey,
+			label: layerLabels[layerKey] ?? layerKey,
+			visible: isLayerVisible(layerKey)
+		}))
+	);
+
 	const visibleMunicipioIds = $derived(municipiosFiltrados.map((m) => m.id));
 
 	const selectedClimateSeries = $derived(
@@ -217,20 +282,19 @@
 	const handleSelectMunicipio = (municipio: Municipio | null) => {
 		if (!municipio) {
 			selectedMunicipio = null;
-			isBottomSheetOpen = false;
 			return;
 		}
 		selectedMunicipio = municipio;
 		hasNewSelection = true;
-		isBottomSheetOpen = true;
-		activeMobileTab = 'map';
+		if (activeSheetTab === 'sel') {
+			isBottomSheetOpen = true;
+		}
 	};
 
 	const handleClearSelectedMunicipio = () => {
 		selectedMunicipio = null;
 		hasNewSelection = false;
-		isBottomSheetOpen = false;
-		activeMobileTab = 'map';
+		activeSheetTab = 'rank';
 	};
 
 	const handleClearFilters = () => {
@@ -333,6 +397,12 @@
 		if (typeof localStorage === 'undefined') return;
 		localStorage.setItem('ebv-shortlist-v1', JSON.stringify(shortlistedIds));
 	});
+
+	$effect(() => {
+		if (viewMode === 'evaluacion') {
+			mapColorMetric = 'mixed_score';
+		}
+	});
 </script>
 
 <svelte:head>
@@ -373,19 +443,18 @@
 	<link rel="apple-touch-icon" href="/favicon.svg" />
 </svelte:head>
 
-<nav class="mobile-tabs">
-		<button class="tab-btn" class:active={activeMobileTab === 'filters'} onclick={() => activeMobileTab = 'filters'}>
-			<Filter size={20} />
-			<span class="tab-label">Filtros</span>
-		</button>
-		<button class="tab-btn" class:active={activeMobileTab === 'map'} onclick={() => activeMobileTab = 'map'}>
-			<MapIcon size={20} />
-			<span class="tab-label">Mapa</span>
-		</button>
-	</nav>
+<header class="topbar">
+	<div class="topbar-brand">
+		<strong>El Buen Vivir</strong>
+		<small>{viewMode === 'exploracion' ? 'Exploracion: filtros y capas' : 'Evaluacion: score y ranking'} · {municipiosFiltrados.length}/{municipios.length}</small>
+	</div>
+	<div class="topbar-mode">
+		<ModeToggle mode={viewMode} onChange={(nextMode) => (viewMode = nextMode)} />
+	</div>
+</header>
 
-	<main>
-		<div class="panel-wrapper" class:visible={activeMobileTab === 'filters'}>
+<main>
+		<div class="panel-wrapper">
 			<Sidebar
 				{query}
 				municipios={municipiosFiltrados}
@@ -415,6 +484,7 @@
 				tableRows={tableRows}
 				{sortBy}
 				{sortDirection}
+				isEvaluationMode={viewMode === 'evaluacion'}
 				weights={normalizedWeights}
 				weightsRaw={{ climateWeight, accessWeight, natureWeight }}
 				sensitivityOverlap={sensitivityOverlap}
@@ -449,7 +519,7 @@
 			/>
 		</div>
 
-		<section class="map-wrap" class:visible={activeMobileTab === 'map'}>
+		<section class="map-wrap">
 			<MapView
 				municipios={municipiosScoredForView}
 				{selectedMunicipio}
@@ -468,29 +538,110 @@
 				pmtilesUrl={municipiosPmtilesUrl}
 				onMapSelection={handleSelectMunicipio}
 			/>
-			{#if selectedMunicipio}
-				<BottomSheet initialHeight="35vh" bind:isOpen={isBottomSheetOpen}>
-					{#snippet children()}
-						<InspectorPanel
-							{selectedMunicipio}
-							municipios={municipiosScoredForView}
-							shortlistedIds={shortlistedIds}
-							weights={normalizedWeights}
-							weightsRaw={{ climateWeight, accessWeight, natureWeight }}
-							sensitivityOverlap={sensitivityOverlap}
-							climateSeries={selectedClimateSeries}
-							provinceClimateSeries={selectedProvinceClimateSeries}
-							ccaaClimateSeries={selectedCcaaClimateSeries}
-							onToggleShortlist={handleToggleShortlist}
-							onClimateWeightChange={handleClimateWeightChange}
-							onAccessWeightChange={handleAccessWeightChange}
-							onNatureWeightChange={handleNatureWeightChange}
-							onPresetWeights={handlePresetWeights}
-							onClearMunicipio={handleClearSelectedMunicipio}
-						/>
-					{/snippet}
-				</BottomSheet>
-			{/if}
+			<BottomSheet initialHeight="20vh" expandedHeight="62vh" peekHeight="5.2rem" bind:isOpen={isBottomSheetOpen}>
+				{#snippet children()}
+					<div class="sheet-tabs" role="tablist" aria-label="Panel movil">
+						<button class:active={activeSheetTab === 'sel'} onclick={() => { activeSheetTab = 'sel'; isBottomSheetOpen = true; }}><MapPin size={16} />Sel</button>
+						<button class:active={activeSheetTab === 'filtr'} onclick={() => { activeSheetTab = 'filtr'; isBottomSheetOpen = true; }}><SlidersHorizontal size={16} />Filtr</button>
+						<button class:active={activeSheetTab === 'capas'} onclick={() => { activeSheetTab = 'capas'; isBottomSheetOpen = true; }}><Layers size={16} />Capas</button>
+						<button class:active={activeSheetTab === 'rank'} onclick={() => { activeSheetTab = 'rank'; isBottomSheetOpen = true; }}><BarChart3 size={16} />Rank</button>
+					</div>
+					<div class="sheet-content">
+						{#if activeSheetTab === 'sel'}
+							{#if selectedMunicipio}
+								<InspectorPanel
+									{selectedMunicipio}
+									municipios={municipiosScoredForView}
+									shortlistedIds={shortlistedIds}
+									weights={normalizedWeights}
+									weightsRaw={{ climateWeight, accessWeight, natureWeight }}
+									sensitivityOverlap={sensitivityOverlap}
+									isEvaluationMode={viewMode === 'evaluacion'}
+									climateSeries={selectedClimateSeries}
+									provinceClimateSeries={selectedProvinceClimateSeries}
+									ccaaClimateSeries={selectedCcaaClimateSeries}
+									onToggleShortlist={handleToggleShortlist}
+									onClimateWeightChange={handleClimateWeightChange}
+									onAccessWeightChange={handleAccessWeightChange}
+									onNatureWeightChange={handleNatureWeightChange}
+									onPresetWeights={handlePresetWeights}
+									onClearMunicipio={handleClearSelectedMunicipio}
+								/>
+							{:else}
+								<p class="sheet-empty">Selecciona un municipio en el mapa para ver su ficha.</p>
+								<button class="sheet-clear" onclick={() => (activeSheetTab = 'rank')}>Ir al ranking</button>
+							{/if}
+						{:else if activeSheetTab === 'filtr'}
+							<div class="sheet-block">
+								<ModeToggle mode={viewMode} onChange={(nextMode) => (viewMode = nextMode)} />
+								<p class="sheet-meta">{viewMode === 'exploracion' ? 'Ajusta filtros territoriales y explora el mapa.' : 'Ajusta score, pesos y ranking para comparar municipios.'}</p>
+								<label for="sheet-province">Provincia</label>
+								<select id="sheet-province" value={provinceFilter} onchange={(e) => (provinceFilter = (e.currentTarget as HTMLSelectElement).value)}>
+									{#each provinciasDisponibles as provincia}
+										<option value={provincia}>{provincia}</option>
+									{/each}
+								</select>
+								<div class="chips-row">
+									{#each travelBuckets as bucket}
+										<ChipButton label={bucket.label} size="small" compact={true} active={maxTravelBucket === bucket.value} onclick={() => (maxTravelBucket = bucket.value)} />
+									{/each}
+								</div>
+								<label for="sheet-min-precip">Precipitacion minima anual: {minPrecipAnnual} mm</label>
+								<input id="sheet-min-precip" type="range" min="0" max="1800" step="10" value={minPrecipAnnual} oninput={(e) => (minPrecipAnnual = toNumber(e))} />
+								<label for="sheet-min-winter">Temp. invierno minima: {minWinterTemp} C</label>
+								<input id="sheet-min-winter" type="range" min="-15" max="15" step="0.5" value={minWinterTemp} oninput={(e) => (minWinterTemp = toNumber(e))} />
+								<label for="sheet-max-summer">Temp. verano maxima: {maxSummerTemp} C</label>
+								<input id="sheet-max-summer" type="range" min="15" max="40" step="0.5" value={maxSummerTemp} oninput={(e) => (maxSummerTemp = toNumber(e))} />
+								{#if viewMode === 'evaluacion'}
+									<label for="sheet-min-score">Score minimo visible: {minCompositeScore.toFixed(2)}</label>
+									<input id="sheet-min-score" type="range" min="0" max="1" step="0.01" value={minCompositeScore} oninput={(e) => (minCompositeScore = toNumber(e))} />
+									<label for="sheet-w-clima">Peso clima: {climateWeight}</label>
+									<input id="sheet-w-clima" type="range" min="0" max="100" step="1" value={climateWeight} oninput={(e) => handleClimateWeightChange(toNumber(e))} />
+									<label for="sheet-w-acceso">Peso accesibilidad: {accessWeight}</label>
+									<input id="sheet-w-acceso" type="range" min="0" max="100" step="1" value={accessWeight} oninput={(e) => handleAccessWeightChange(toNumber(e))} />
+									<label for="sheet-w-nat">Peso naturaleza: {natureWeight}</label>
+									<input id="sheet-w-nat" type="range" min="0" max="100" step="1" value={natureWeight} oninput={(e) => handleNatureWeightChange(toNumber(e))} />
+									<div class="chips-row">
+										<ChipButton label="Equilibrado" active={activePreset === 'equilibrado'} onclick={() => handlePresetWeights('equilibrado')} />
+										<ChipButton label="Naturaleza" active={activePreset === 'naturaleza'} onclick={() => handlePresetWeights('naturaleza')} />
+										<ChipButton label="Accesibilidad" active={activePreset === 'accesibilidad'} onclick={() => handlePresetWeights('accesibilidad')} />
+										<ChipButton label="Clima" active={activePreset === 'clima'} onclick={() => handlePresetWeights('clima')} />
+									</div>
+									<p class="sheet-meta">Robustez top-10: {sensitivityOverlap}/10</p>
+								{/if}
+								<button class="sheet-clear" onclick={handleClearFilters}>Limpiar filtros</button>
+							</div>
+						{:else if activeSheetTab === 'capas'}
+							<div class="sheet-block">
+								<LayerOrderList items={layerItems} onToggle={toggleLayerVisibility} onReorder={handleLayerOrderChange} />
+								<div class="chips-row">
+									<ChipButton label="Puntuacion global" active={mapColorMetric === 'mixed_score'} onclick={() => (mapColorMetric = 'mixed_score')} />
+									<ChipButton label="Precipitacion" active={mapColorMetric === 'precip_annual_mm'} onclick={() => (mapColorMetric = 'precip_annual_mm')} />
+								</div>
+								<label><input type="checkbox" checked={showIgnWmsBase} onchange={(e) => (showIgnWmsBase = (e.currentTarget as HTMLInputElement).checked)} /> Base IGN</label>
+								<label><input type="checkbox" checked={showIgnSatellite} onchange={(e) => (showIgnSatellite = (e.currentTarget as HTMLInputElement).checked)} /> Satelite IGN</label>
+							</div>
+						{:else}
+							<div class="sheet-rank">
+								{#if viewMode === 'evaluacion'}
+									<p class="sheet-meta">Top 25 en base a score mixto actual.</p>
+									{#each tableRows.slice(0, 25) as municipio, idx (municipio.id)}
+										<button class="rank-row" onclick={() => handleSelectMunicipio(municipio)}>
+											<span class="idx">#{idx + 1}</span>
+											<span>{municipio.nombre}</span>
+											<small>{municipio.provincia}</small>
+											<strong>{municipio.mixed_score?.toFixed(3) ?? '-'}</strong>
+										</button>
+									{/each}
+								{:else}
+									<p class="sheet-meta">El ranking se utiliza en modo evaluacion.</p>
+									<button class="sheet-clear" onclick={() => (viewMode = 'evaluacion')}>Cambiar a evaluacion</button>
+								{/if}
+							</div>
+						{/if}
+					</div>
+				{/snippet}
+			</BottomSheet>
 		</section>
 
 		<div class="inspector-desktop">
@@ -501,6 +652,7 @@
 				weights={normalizedWeights}
 				weightsRaw={{ climateWeight, accessWeight, natureWeight }}
 				sensitivityOverlap={sensitivityOverlap}
+				isEvaluationMode={viewMode === 'evaluacion'}
 				climateSeries={selectedClimateSeries}
 				provinceClimateSeries={selectedProvinceClimateSeries}
 				ccaaClimateSeries={selectedCcaaClimateSeries}
@@ -515,11 +667,33 @@
 	</main>
 
 <style>
-	.mobile-tabs {
-		display: none;
+	.topbar {
+		height: 56px;
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 0.8rem;
+		padding: 0.55rem 0.9rem;
+		border-bottom: 1px solid rgba(21, 32, 33, 0.16);
+		background: linear-gradient(180deg, rgba(253, 250, 244, 0.96), rgba(246, 239, 226, 0.96));
+	}
+	.topbar-brand {
+		display: grid;
+		line-height: 1.1;
+	}
+	.topbar-brand strong {
+		font-family: 'Fraunces', serif;
+		font-size: 1.38rem;
+	}
+	.topbar-brand small {
+		font-size: 0.72rem;
+		color: #405753;
+	}
+	.topbar-mode {
+		display: block;
 	}
 	main {
-		height: 100dvh;
+		height: calc(100dvh - 56px);
 		display: grid;
 		grid-template-columns: 440px 1fr 360px;
 		grid-template-rows: minmax(0, 1fr);
@@ -534,6 +708,7 @@
 		overflow: hidden;
 		background: rgba(251, 246, 236, 0.72);
 		box-sizing: border-box;
+		position: relative;
 	}
 	.panel-wrapper {
 		display: contents;
@@ -546,95 +721,151 @@
 		background: rgba(251, 246, 236, 0.95);
 		border-left: 1px solid rgba(21, 32, 33, 0.12);
 	}
+	.sheet-tabs,
+	.sheet-content {
+		display: none;
+	}
 	@media (max-width: 900px) {
-		.mobile-tabs {
-			display: flex;
-			position: fixed;
-			bottom: 0;
-			left: 0;
-			right: 0;
-			z-index: 9999;
-			background: linear-gradient(180deg, rgba(255, 252, 245, 0.98), rgba(245, 238, 224, 0.98));
-			border-top: 1px solid rgba(21, 32, 33, 0.18);
-			padding: 0.5rem 0.25rem;
-			gap: 0.25rem;
-			box-shadow: 0 -4px 20px rgba(21, 32, 33, 0.1);
+		.topbar {
+			height: 52px;
+			padding: 0.5rem 0.6rem;
 		}
-		.tab-btn {
-			position: relative;
-			flex: 1;
-			display: flex;
-			flex-direction: column;
-			align-items: center;
-			justify-content: center;
-			gap: 0.15rem;
-			padding: 0.4rem 0.25rem;
-			border: none;
-			border-radius: 6px;
-			background: transparent;
-			cursor: pointer;
-			transition: background 160ms ease;
-			color: #354845;
+		.topbar-mode {
+			display: none;
 		}
-		.tab-btn:hover {
-			background: rgba(47, 125, 133, 0.08);
+		.topbar-brand strong {
+			font-size: 1.1rem;
 		}
-		.tab-btn.active {
-			background: rgba(47, 125, 133, 0.15);
-			color: #2f7d85;
-		}
-		.tab-icon-wrap {
-			position: relative;
-			display: inline-flex;
-			align-items: center;
-			justify-content: center;
-		}
-		.notification-dot {
-			position: absolute;
-			top: -2px;
-			right: -6px;
-			width: 12px;
-			height: 12px;
-			background: #22c55e;
-			border-radius: 50%;
-			border: 1px solid rgba(255, 255, 255, 0.95);
-		}
-		.tab-label {
+		.topbar-brand small {
 			font-size: 0.65rem;
-			color: inherit;
 		}
 		main {
 			height: auto;
-			min-height: 100dvh;
+			min-height: calc(100dvh - 52px);
 			grid-template-columns: 1fr;
 			grid-template-rows: 1fr;
 			padding: 0;
 			gap: 0;
 			overflow: hidden;
-			padding-bottom: 60px;
 		}
 		.map-wrap {
-			display: none;
-			min-height: calc(100dvh - 60px);
-			height: calc(100dvh - 60px);
+			display: block;
+			min-height: calc(100dvh - 52px);
+			height: calc(100dvh - 52px);
 			border-radius: 0;
 			box-shadow: none;
-			position: relative;
 		}
 		.map-wrap :global(.map-shell) {
 			height: 100%;
 		}
-		.map-wrap.visible,
-		.panel-wrapper.visible {
-			display: block;
-		}
 		.panel-wrapper {
 			display: none;
-			overflow-y: auto;
-			max-height: calc(100dvh - 60px);
 		}
-		.panel-wrapper.visible {
+		.sheet-tabs {
+			display: grid;
+			grid-template-columns: repeat(4, minmax(0, 1fr));
+			gap: 0.25rem;
+			position: sticky;
+			top: 0;
+			padding: 0.2rem 0 0.45rem;
+			background: linear-gradient(180deg, rgba(252, 248, 238, 0.98), rgba(248, 242, 226, 0.96));
+			z-index: 2;
+		}
+		.sheet-tabs button {
+			border: 0;
+			border-radius: 8px;
+			padding: 0.4rem 0.2rem;
+			font-size: 0.68rem;
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			gap: 0.22rem;
+			background: transparent;
+			color: #3d5551;
+		}
+		.sheet-tabs button :global(svg) {
+			width: 15px;
+			height: 15px;
+		}
+		.sheet-tabs button.active {
+			background: rgba(47, 125, 133, 0.14);
+			color: #2f7d85;
+			font-weight: 600;
+		}
+		.sheet-content {
 			display: block;
+			padding-bottom: 0.3rem;
+		}
+		.sheet-empty {
+			font-size: 0.82rem;
+			color: #415955;
+			margin: 0.35rem 0;
+		}
+		.sheet-block {
+			display: grid;
+			gap: 0.45rem;
+		}
+		.sheet-block label {
+			font-size: 0.75rem;
+			color: #3f5753;
+		}
+		.sheet-block select {
+			border: 1px solid rgba(21, 32, 33, 0.2);
+			border-radius: 8px;
+			padding: 0.4rem 0.5rem;
+			font-size: 0.8rem;
+			background: rgba(255, 255, 255, 0.86);
+		}
+		.chips-row {
+			display: flex;
+			flex-wrap: wrap;
+			gap: 0.25rem;
+		}
+		.sheet-clear {
+			width: auto;
+			justify-self: start;
+			border: 1px solid rgba(21, 32, 33, 0.22);
+			border-radius: 999px;
+			background: rgba(255, 255, 255, 0.8);
+			padding: 0.3rem 0.6rem;
+			font-size: 0.75rem;
+		}
+		.sheet-rank {
+			display: grid;
+			gap: 0.2rem;
+		}
+		.sheet-meta {
+			margin: 0.1rem 0 0.2rem;
+			font-size: 0.72rem;
+			color: #48605c;
+		}
+		.rank-row {
+			display: grid;
+			grid-template-columns: auto 1fr auto;
+			gap: 0.2rem 0.45rem;
+			align-items: center;
+			text-align: left;
+			border: 1px solid rgba(21, 32, 33, 0.12);
+			border-radius: 8px;
+			background: rgba(255, 255, 255, 0.7);
+			padding: 0.36rem 0.45rem;
+		}
+		.rank-row .idx {
+			font-size: 0.68rem;
+			color: #4a605c;
+		}
+		.rank-row span {
+			font-size: 0.78rem;
+			font-weight: 600;
+			line-height: 1.1;
+		}
+		.rank-row small {
+			grid-column: 2;
+			font-size: 0.68rem;
+			color: #4a615d;
+		}
+		.rank-row strong {
+			font-size: 0.75rem;
 		}
 		.inspector-desktop {
 			display: none;

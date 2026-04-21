@@ -2,6 +2,8 @@
 	type Props = {
 		isOpen?: boolean;
 		initialHeight?: string;
+		expandedHeight?: string;
+		peekHeight?: string;
 		children?: import('svelte').Snippet;
 		onToggle?: () => void;
 		class?: string;
@@ -10,6 +12,8 @@
 	let {
 		isOpen = $bindable(false),
 		initialHeight = '35vh',
+		expandedHeight = '92vh',
+		peekHeight = '4.8rem',
 		children,
 		class: className = ''
 	}: Props = $props();
@@ -54,6 +58,8 @@
 	class="bottom-sheet {className}"
 	class:open={isOpen}
 	style:--initial-height={initialHeight}
+	style:--expanded-height={expandedHeight}
+	style:--peek-height={peekHeight}
 	role="dialog"
 	aria-label="Panel de información"
 >
@@ -83,12 +89,13 @@
 		bottom: 0;
 		left: 0;
 		right: 0;
+		height: var(--initial-height, 35vh);
 		max-height: var(--initial-height, 35vh);
 		background: linear-gradient(180deg, rgba(252, 248, 238, 0.97), rgba(248, 242, 226, 0.97));
 		border-top-left-radius: 1rem;
 		border-top-right-radius: 1rem;
 		box-shadow: 0 -6px 20px rgba(16, 44, 54, 0.16);
-		transform: translateY(calc(100% - 2.8rem));
+		transform: translateY(calc(100% - var(--peek-height, 4.8rem)));
 		transition: transform 260ms cubic-bezier(0.4, 0, 0.2, 1);
 		z-index: 100;
 		overscroll-behavior: contain;
@@ -97,7 +104,8 @@
 
 	.bottom-sheet.open {
 		transform: translateY(0);
-		max-height: 45vh;
+		height: var(--expanded-height, 92vh);
+		max-height: var(--expanded-height, 92vh);
 	}
 
 	.handle {
@@ -124,7 +132,7 @@
 	.content {
 		padding: 0 0.75rem 0.75rem;
 		overflow-y: auto;
-		max-height: calc(55vh - 1.6rem);
+		max-height: calc(var(--expanded-height, 92vh) - 1.6rem);
 	}
 
 	@media (min-width: 901px) {
