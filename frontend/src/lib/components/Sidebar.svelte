@@ -289,8 +289,19 @@
 		</div>
 	</header>
 
+	<section class="panel mode-context">
+		<h2>{isEvaluationMode ? 'Modo evaluacion' : 'Modo exploracion'}</h2>
+		<p>
+			{#if isEvaluationMode}
+				Ajusta pesos y score para comparar municipios de forma cuantitativa.
+			{:else}
+				Ajusta filtros y capas para explorar el territorio sin sesgo por ranking.
+			{/if}
+		</p>
+	</section>
+
 	<section class="panel">
-		<h2>Filtros duros</h2>
+		<h2>{isEvaluationMode ? 'Filtros de evaluacion' : 'Filtros de exploracion'}</h2>
 		<div class="control search-control">
 			<label for="search">Buscar municipio</label>
 			<div
@@ -405,39 +416,46 @@
 	{/if}
 
 
-	<section class="panel table-panel">
-		<h2>Vista analitica</h2>
-		<div class="table-wrap">
-			<table>
-				<thead>
-					<tr>
-						<th><button onclick={() => onChangeSort('nombre')}>Municipio{sortLabel('nombre')}</button></th>
-						<th><button onclick={() => onChangeSort('provincia')}>Provincia{sortLabel('provincia')}</button></th>
-						<th>Hab.</th>
-						<th><button onclick={() => onChangeSort('travel_bucket')}>Isocrona{sortLabel('travel_bucket')}</button></th>
-						<th><button onclick={() => onChangeSort('mixed_score')}>Score{sortLabel('mixed_score')}</button></th>
-						<th><button onclick={() => onChangeSort('precip_annual_mm')}>PPT{sortLabel('precip_annual_mm')}</button></th>
-						<th><button onclick={() => onChangeSort('temp_winter_mean_c')}>Invierno{sortLabel('temp_winter_mean_c')}</button></th>
-						<th><button onclick={() => onChangeSort('temp_summer_mean_c')}>Verano{sortLabel('temp_summer_mean_c')}</button></th>
-					</tr>
-				</thead>
-				<tbody>
-					{#each tableRows.slice(0, 80) as municipio (municipio.id)}
-						<tr onclick={() => onSelectMunicipio(municipio)}>
-							<td>{municipio.nombre}</td>
-							<td>{municipio.provincia}</td>
-							<td>{municipio.population ? municipio.population.toLocaleString('es-ES') : '-'}</td>
-							<td>{municipio.travel_bucket}</td>
-							<td>{municipio.mixed_score ?? '-'}</td>
-							<td>{municipio.precip_annual_mm}</td>
-							<td>{municipio.temp_winter_mean_c}</td>
-							<td>{municipio.temp_summer_mean_c}</td>
+	{#if !isEvaluationMode}
+		<section class="panel table-panel">
+			<h2>Vista analitica</h2>
+			<div class="table-wrap">
+				<table>
+					<thead>
+						<tr>
+							<th><button onclick={() => onChangeSort('nombre')}>Municipio{sortLabel('nombre')}</button></th>
+							<th><button onclick={() => onChangeSort('provincia')}>Provincia{sortLabel('provincia')}</button></th>
+							<th>Hab.</th>
+							<th><button onclick={() => onChangeSort('travel_bucket')}>Isocrona{sortLabel('travel_bucket')}</button></th>
+							<th><button onclick={() => onChangeSort('mixed_score')}>Score{sortLabel('mixed_score')}</button></th>
+							<th><button onclick={() => onChangeSort('precip_annual_mm')}>PPT{sortLabel('precip_annual_mm')}</button></th>
+							<th><button onclick={() => onChangeSort('temp_winter_mean_c')}>Invierno{sortLabel('temp_winter_mean_c')}</button></th>
+							<th><button onclick={() => onChangeSort('temp_summer_mean_c')}>Verano{sortLabel('temp_summer_mean_c')}</button></th>
 						</tr>
-					{/each}
-				</tbody>
-			</table>
-		</div>
-	</section>
+					</thead>
+					<tbody>
+						{#each tableRows.slice(0, 80) as municipio (municipio.id)}
+							<tr onclick={() => onSelectMunicipio(municipio)}>
+								<td>{municipio.nombre}</td>
+								<td>{municipio.provincia}</td>
+								<td>{municipio.population ? municipio.population.toLocaleString('es-ES') : '-'}</td>
+								<td>{municipio.travel_bucket}</td>
+								<td>{municipio.mixed_score ?? '-'}</td>
+								<td>{municipio.precip_annual_mm}</td>
+								<td>{municipio.temp_winter_mean_c}</td>
+								<td>{municipio.temp_summer_mean_c}</td>
+							</tr>
+						{/each}
+					</tbody>
+				</table>
+			</div>
+		</section>
+	{:else}
+		<section class="panel">
+			<h2>Ranking y decision</h2>
+			<p class="muted">El ranking top 25 aparece en el panel derecho. Selecciona un municipio para revisar su ficha y ajustar pesos con contexto.</p>
+		</section>
+	{/if}
 
 
 	<section class="panel">

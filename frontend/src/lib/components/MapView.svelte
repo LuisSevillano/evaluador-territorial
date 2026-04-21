@@ -711,12 +711,14 @@
 
 <div class="map-shell">
 	<MapHeader {legendConfig} />
-	<div class="map" bind:this={mapContainer} aria-label="Mapa principal"></div>
+	<div class="map-frame">
+		<div class="map" bind:this={mapContainer} aria-label="Mapa principal"></div>
+		{#if isMapLoading}
+			<MapLoadingBadge />
+		{/if}
+	</div>
 	{#if showLandUseLayer}
 		<LandUseLegend palette={landUsePalette} />
-	{/if}
-	{#if isMapLoading}
-		<MapLoadingBadge />
 	{/if}
 </div>
 
@@ -741,6 +743,12 @@
 		box-shadow:
 			0 10px 26px rgba(16, 44, 54, 0.15),
 			inset 0 0 0 1px rgba(255, 255, 255, 0.35);
+	}
+
+	.map-frame {
+		position: relative;
+		min-height: 0;
+		height: 100%;
 	}
 
 	@media (max-width: 900px) {

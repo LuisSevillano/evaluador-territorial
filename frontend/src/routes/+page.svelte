@@ -4,6 +4,7 @@
 	import InspectorPanel from '$lib/components/InspectorPanel.svelte';
 	import BottomSheet from '$lib/components/ui/BottomSheet.svelte';
 	import ModeToggle from '$lib/components/ui/ModeToggle.svelte';
+	import RankingList from '$lib/components/RankingList.svelte';
 	import ChipButton from '$lib/components/ui/ChipButton.svelte';
 	import LayerOrderList from '$lib/components/layers/LayerOrderList.svelte';
 	import { MapPin, SlidersHorizontal, Layers, BarChart3 } from 'lucide-svelte';
@@ -56,6 +57,7 @@
 	let climateWeight = $state(40);
 	let accessWeight = $state(30);
 	let natureWeight = $state(30);
+	let urlStateReady = $state(false);
 
 	const bucketOrder: Record<string, number> = {
 		'<=1h30': 1,
@@ -69,6 +71,8 @@
 	const isPlausibleTemp = (value: number) => Number.isFinite(value) && value > -60 && value < 60;
 	const isPlausiblePrecipAnnual = (value: number) =>
 		Number.isFinite(value) && value >= 0 && value < 20000;
+
+	const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
 
 	const provinciasDisponibles = $derived([
 		'Todas',
@@ -235,6 +239,34 @@
 		}))
 	);
 
+	const activeLayerCount = $derived(
+		(showMunicipioPolygons ? 1 : 0) +
+			(showLandUseLayer ? 1 : 0) +
+			(showVegetationLayer ? 1 : 0) +
+			(showForestLayer ? 1 : 0) +
+			(showIgnReservoirs ? 1 : 0) +
+			(showIgnRivers ? 1 : 0) +
+			(showIgnWmsBase ? 1 : 0) +
+			(showIgnSatellite ? 1 : 0)
+	);
+
+	const mapColorLabel = $derived(
+		mapColorMetric === 'mixed_score' ? 'Puntuacion global' : 'Precipitacion anual'
+	);
+
+	const topCandidate = $derived(tableRows[0] ?? null);
+
+	const modeCopy = {
+		exploracion: {
+			tagline: 'Exploracion: filtros y capas',
+			helper: 'Ajusta filtros territoriales y explora el mapa.'
+		},
+		evaluacion: {
+			tagline: 'Evaluacion: score y ranking',
+			helper: 'Ajusta score, pesos y ranking para comparar municipios.'
+		}
+	} as const;
+
 	const visibleMunicipioIds = $derived(municipiosFiltrados.map((m) => m.id));
 
 	const selectedClimateSeries = $derived(
@@ -286,15 +318,16 @@
 		}
 		selectedMunicipio = municipio;
 		hasNewSelection = true;
-		if (activeSheetTab === 'sel') {
+		activeSheetTab = 'sel';
+		queueMicrotask(() => {
 			isBottomSheetOpen = true;
-		}
+		});
 	};
 
 	const handleClearSelectedMunicipio = () => {
 		selectedMunicipio = null;
 		hasNewSelection = false;
-		activeSheetTab = 'rank';
+		isBottomSheetOpen = false;
 	};
 
 	const handleClearFilters = () => {
@@ -361,9 +394,93 @@
 		mapColorMetric = 'mixed_score';
 	};
 
+
 	$effect(() => {
 		municipios = data.municipios ?? [];
 		climateMonthly = data.climateMonthly ?? [];
+	});
+
+	$effect(() => {
+		if (typeof window === 'undefined' || urlStateReady) return;
+		const params = new URLSearchParams(window.location.search);
+		const mode = params.get('mode');
+		const province = params.get('province');
+		const bucket = params.get('travel');
+		const ppt = params.get('ppt');
+		const tw = params.get('tw');
+		const ts = params.get('ts');
+		const score = params.get('score');
+		const cw = params.get('cw');
+		const aw = params.get('aw');
+		const nw = params.get('nw');
+		const tab = params.get('tab');
+
+		if (mode === 'exploracion' || mode === 'evaluacion') viewMode = mode;
+		if (province) provinceFilter = province;
+		if (bucket && bucket in bucketOrder) {
+			maxTravelBucket = bucket as typeof maxTravelBucket;
+		}
+
+		if (ppt !== null) {
+			const value = Number(ppt);
+			if (Number.isFinite(value)) minPrecipAnnual = clamp(value, 0, 1800);
+		}
+		if (tw !== null) {
+			const value = Number(tw);
+			if (Number.isFinite(value)) minWinterTemp = clamp(value, -15, 15);
+		}
+		if (ts !== null) {
+			const value = Number(ts);
+			if (Number.isFinite(value)) maxSummerTemp = clamp(value, 15, 40);
+		}
+		if (score !== null) {
+			const value = Number(score);
+			if (Number.isFinite(value)) minCompositeScore = clamp(value, 0, 1);
+		}
+
+		if (cw !== null) {
+			const value = Number(cw);
+			if (Number.isFinite(value)) climateWeight = clamp(value, 0, 100);
+		}
+		if (aw !== null) {
+			const value = Number(aw);
+			if (Number.isFinite(value)) accessWeight = clamp(value, 0, 100);
+		}
+		if (nw !== null) {
+			const value = Number(nw);
+			if (Number.isFinite(value)) natureWeight = clamp(value, 0, 100);
+		}
+
+		if (tab === 'sel' || tab === 'filtr' || tab === 'capas' || tab === 'rank') {
+			activeSheetTab = tab;
+		}
+
+		urlStateReady = true;
+	});
+
+	$effect(() => {
+		if (typeof window === 'undefined' || !urlStateReady) return;
+		const params = new URLSearchParams();
+		params.set('mode', viewMode);
+
+		if (provinceFilter !== 'Todas') params.set('province', provinceFilter);
+		if (maxTravelBucket !== '>4h00') params.set('travel', maxTravelBucket);
+		if (minPrecipAnnual !== 0) params.set('ppt', String(minPrecipAnnual));
+		if (minWinterTemp !== -10) params.set('tw', String(minWinterTemp));
+		if (maxSummerTemp !== 40) params.set('ts', String(maxSummerTemp));
+		if (minCompositeScore > 0) params.set('score', minCompositeScore.toFixed(2));
+
+		if (viewMode === 'evaluacion') {
+			params.set('cw', String(climateWeight));
+			params.set('aw', String(accessWeight));
+			params.set('nw', String(natureWeight));
+		}
+
+		if (activeSheetTab !== 'filtr') params.set('tab', activeSheetTab);
+
+		const query = params.toString();
+		const nextUrl = query ? `${window.location.pathname}?${query}` : window.location.pathname;
+		window.history.replaceState({}, '', nextUrl);
 	});
 
 	$effect(() => {
@@ -401,6 +518,9 @@
 	$effect(() => {
 		if (viewMode === 'evaluacion') {
 			mapColorMetric = 'mixed_score';
+		}
+		if (viewMode === 'exploracion' && activeSheetTab === 'rank') {
+			activeSheetTab = 'filtr';
 		}
 	});
 </script>
@@ -446,12 +566,30 @@
 <header class="topbar">
 	<div class="topbar-brand">
 		<strong>El Buen Vivir</strong>
-		<small>{viewMode === 'exploracion' ? 'Exploracion: filtros y capas' : 'Evaluacion: score y ranking'} · {municipiosFiltrados.length}/{municipios.length}</small>
+		<small>{modeCopy[viewMode].tagline} · {municipiosFiltrados.length}/{municipios.length}</small>
 	</div>
 	<div class="topbar-mode">
 		<ModeToggle mode={viewMode} onChange={(nextMode) => (viewMode = nextMode)} />
 	</div>
 </header>
+
+<section class="mode-strip" class:evaluation={viewMode === 'evaluacion'}>
+	{#if viewMode === 'exploracion'}
+		<p><strong>Exploracion activa.</strong> Ajusta filtros y capas para reconocer patrones territoriales.</p>
+		<div class="mode-strip-metrics">
+			<span>Color mapa: {mapColorLabel}</span>
+			<span>Capas activas: {activeLayerCount}</span>
+			<span>Filtro provincia: {provinceFilter}</span>
+		</div>
+	{:else}
+		<p><strong>Evaluacion activa.</strong> El ranking usa los pesos actuales y se actualiza en tiempo real.</p>
+		<div class="mode-strip-metrics">
+			<span>Pesos C/A/N: {climateWeight}/{accessWeight}/{natureWeight}</span>
+			<span>Robustez top-10: {sensitivityOverlap}/10</span>
+			<span>Top actual: {topCandidate ? `${topCandidate.nombre} (${topCandidate.mixed_score?.toFixed(3) ?? '-'})` : 'sin datos'}</span>
+		</div>
+	{/if}
+</section>
 
 <main>
 		<div class="panel-wrapper">
@@ -538,7 +676,7 @@
 				pmtilesUrl={municipiosPmtilesUrl}
 				onMapSelection={handleSelectMunicipio}
 			/>
-			<BottomSheet initialHeight="20vh" expandedHeight="62vh" peekHeight="5.2rem" bind:isOpen={isBottomSheetOpen}>
+			<BottomSheet initialHeight="34vh" expandedHeight="62vh" peekHeight="5.2rem" bind:isOpen={isBottomSheetOpen}>
 				{#snippet children()}
 					<div class="sheet-tabs" role="tablist" aria-label="Panel movil">
 						<button class:active={activeSheetTab === 'sel'} onclick={() => { activeSheetTab = 'sel'; isBottomSheetOpen = true; }}><MapPin size={16} />Sel</button>
@@ -574,7 +712,7 @@
 						{:else if activeSheetTab === 'filtr'}
 							<div class="sheet-block">
 								<ModeToggle mode={viewMode} onChange={(nextMode) => (viewMode = nextMode)} />
-								<p class="sheet-meta">{viewMode === 'exploracion' ? 'Ajusta filtros territoriales y explora el mapa.' : 'Ajusta score, pesos y ranking para comparar municipios.'}</p>
+								<p class="sheet-meta">{modeCopy[viewMode].helper}</p>
 								<label for="sheet-province">Provincia</label>
 								<select id="sheet-province" value={provinceFilter} onchange={(e) => (provinceFilter = (e.currentTarget as HTMLSelectElement).value)}>
 									{#each provinciasDisponibles as provincia}
@@ -625,17 +763,10 @@
 							<div class="sheet-rank">
 								{#if viewMode === 'evaluacion'}
 									<p class="sheet-meta">Top 25 en base a score mixto actual.</p>
-									{#each tableRows.slice(0, 25) as municipio, idx (municipio.id)}
-										<button class="rank-row" onclick={() => handleSelectMunicipio(municipio)}>
-											<span class="idx">#{idx + 1}</span>
-											<span>{municipio.nombre}</span>
-											<small>{municipio.provincia}</small>
-											<strong>{municipio.mixed_score?.toFixed(3) ?? '-'}</strong>
-										</button>
-									{/each}
+									<RankingList rows={tableRows} limit={25} compact={true} onSelect={handleSelectMunicipio} />
 								{:else}
 									<p class="sheet-meta">El ranking se utiliza en modo evaluacion.</p>
-									<button class="sheet-clear" onclick={() => (viewMode = 'evaluacion')}>Cambiar a evaluacion</button>
+									<button class="sheet-clear" onclick={() => { viewMode = 'evaluacion'; activeSheetTab = 'rank'; isBottomSheetOpen = true; }}>Cambiar a evaluacion</button>
 								{/if}
 							</div>
 						{/if}
@@ -645,24 +776,39 @@
 		</section>
 
 		<div class="inspector-desktop">
-			<InspectorPanel
-				{selectedMunicipio}
-				municipios={municipiosScoredForView}
-				shortlistedIds={shortlistedIds}
-				weights={normalizedWeights}
-				weightsRaw={{ climateWeight, accessWeight, natureWeight }}
-				sensitivityOverlap={sensitivityOverlap}
-				isEvaluationMode={viewMode === 'evaluacion'}
-				climateSeries={selectedClimateSeries}
-				provinceClimateSeries={selectedProvinceClimateSeries}
-				ccaaClimateSeries={selectedCcaaClimateSeries}
-				onToggleShortlist={handleToggleShortlist}
-				onClimateWeightChange={handleClimateWeightChange}
-				onAccessWeightChange={handleAccessWeightChange}
-				onNatureWeightChange={handleNatureWeightChange}
-				onPresetWeights={handlePresetWeights}
-				onClearMunicipio={handleClearSelectedMunicipio}
-			/>
+			{#if viewMode === 'evaluacion' && !selectedMunicipio}
+				<section class="desktop-ranking">
+					<h2>Evaluacion</h2>
+					<p>Selecciona un municipio para ver su ficha o usa este ranking para comparar.</p>
+					<p class="muted">Top 25 por score mixto · robustez {sensitivityOverlap}/10</p>
+					<RankingList rows={tableRows} limit={25} onSelect={handleSelectMunicipio} />
+				</section>
+			{:else if viewMode === 'exploracion' && !selectedMunicipio}
+				<section class="desktop-ranking">
+					<h2>Exploracion</h2>
+					<p>Explora el mapa, capas y filtros. Al seleccionar un municipio veras la ficha completa aqui.</p>
+					<p class="muted">En este modo ocultamos el ranking para reducir ruido.</p>
+				</section>
+			{:else}
+				<InspectorPanel
+					{selectedMunicipio}
+					municipios={municipiosScoredForView}
+					shortlistedIds={shortlistedIds}
+					weights={normalizedWeights}
+					weightsRaw={{ climateWeight, accessWeight, natureWeight }}
+					sensitivityOverlap={sensitivityOverlap}
+					isEvaluationMode={viewMode === 'evaluacion'}
+					climateSeries={selectedClimateSeries}
+					provinceClimateSeries={selectedProvinceClimateSeries}
+					ccaaClimateSeries={selectedCcaaClimateSeries}
+					onToggleShortlist={handleToggleShortlist}
+					onClimateWeightChange={handleClimateWeightChange}
+					onAccessWeightChange={handleAccessWeightChange}
+					onNatureWeightChange={handleNatureWeightChange}
+					onPresetWeights={handlePresetWeights}
+					onClearMunicipio={handleClearSelectedMunicipio}
+				/>
+			{/if}
 		</div>
 	</main>
 
@@ -692,8 +838,39 @@
 	.topbar-mode {
 		display: block;
 	}
+	.mode-strip {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 0.8rem;
+		padding: 0.45rem 0.9rem;
+		border-bottom: 1px solid rgba(21, 32, 33, 0.14);
+		background: rgba(245, 239, 226, 0.78);
+	}
+	.mode-strip.evaluation {
+		background: rgba(236, 245, 242, 0.9);
+	}
+	.mode-strip p {
+		margin: 0;
+		font-size: 0.78rem;
+		color: #3d5652;
+	}
+	.mode-strip-metrics {
+		display: flex;
+		gap: 0.4rem;
+		flex-wrap: wrap;
+		justify-content: flex-end;
+	}
+	.mode-strip-metrics span {
+		font-size: 0.72rem;
+		padding: 0.2rem 0.45rem;
+		border-radius: 999px;
+		background: rgba(255, 255, 255, 0.68);
+		border: 1px solid rgba(21, 32, 33, 0.14);
+		color: #405a56;
+	}
 	main {
-		height: calc(100dvh - 56px);
+		height: calc(100dvh - 106px);
 		display: grid;
 		grid-template-columns: 440px 1fr 360px;
 		grid-template-rows: minmax(0, 1fr);
@@ -721,6 +898,26 @@
 		background: rgba(251, 246, 236, 0.95);
 		border-left: 1px solid rgba(21, 32, 33, 0.12);
 	}
+	.desktop-ranking {
+		padding: 1rem;
+		display: grid;
+		gap: 0.5rem;
+	}
+	.desktop-ranking h2 {
+		margin: 0;
+		font-family: 'Fraunces', serif;
+		font-size: 1.22rem;
+	}
+	.desktop-ranking p {
+		margin: 0;
+		font-size: 0.82rem;
+		color: #3f5652;
+		line-height: 1.3;
+	}
+	.desktop-ranking .muted {
+		font-size: 0.76rem;
+		color: #4b6460;
+	}
 	.sheet-tabs,
 	.sheet-content {
 		display: none;
@@ -729,6 +926,9 @@
 		.topbar {
 			height: 52px;
 			padding: 0.5rem 0.6rem;
+		}
+		.mode-strip {
+			display: none;
 		}
 		.topbar-mode {
 			display: none;
@@ -838,34 +1038,6 @@
 			margin: 0.1rem 0 0.2rem;
 			font-size: 0.72rem;
 			color: #48605c;
-		}
-		.rank-row {
-			display: grid;
-			grid-template-columns: auto 1fr auto;
-			gap: 0.2rem 0.45rem;
-			align-items: center;
-			text-align: left;
-			border: 1px solid rgba(21, 32, 33, 0.12);
-			border-radius: 8px;
-			background: rgba(255, 255, 255, 0.7);
-			padding: 0.36rem 0.45rem;
-		}
-		.rank-row .idx {
-			font-size: 0.68rem;
-			color: #4a605c;
-		}
-		.rank-row span {
-			font-size: 0.78rem;
-			font-weight: 600;
-			line-height: 1.1;
-		}
-		.rank-row small {
-			grid-column: 2;
-			font-size: 0.68rem;
-			color: #4a615d;
-		}
-		.rank-row strong {
-			font-size: 0.75rem;
 		}
 		.inspector-desktop {
 			display: none;
