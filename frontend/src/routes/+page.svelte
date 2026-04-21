@@ -9,11 +9,10 @@
 	import LayerOrderList from '$lib/components/layers/LayerOrderList.svelte';
 	import ColorLegend from '$lib/components/ColorLegend.svelte';
 	import { getLegendConfig } from '$lib/components/map/coloring';
-	import { buildUrlState, parseUrlState } from '$lib/state/urlState';
+	import { applyUrlToState, buildUrlFromState } from '$lib/state/urlSync';
 	import { modeCopy, tabForMode } from '$lib/state/viewMode';
 	import {
 		bucketOrder,
-		clampNumber,
 		isPlausiblePrecipAnnual,
 		isPlausibleTemp,
 		travelBuckets,
@@ -35,6 +34,11 @@
 		panelStateOnTabClick
 	} from '$lib/state/panel';
 	import { loadStringArray, saveStringArray } from '$lib/state/persistence';
+	import { createSelectionStore } from '$lib/state/selectionStore.svelte';
+	import { createUiStore } from '$lib/state/uiStore.svelte';
+	import { createFiltersStore } from '$lib/state/filtersStore.svelte';
+	import { createLayersStore } from '$lib/state/layersStore.svelte';
+	import { createRankingStore } from '$lib/state/rankingStore.svelte';
 	import {
 		activePresetFromWeights,
 		BASELINE_WEIGHTS,
@@ -48,7 +52,6 @@
 		nextSortState,
 		sensitivityTop10Overlap,
 		sortRows,
-		type SortDirection,
 		type SortField
 	} from '$lib/state/ranking';
 	import { MapPin, SlidersHorizontal, Layers, BarChart3, Info } from 'lucide-svelte';
@@ -63,46 +66,44 @@
 
 	let municipios = $state<Municipio[]>([]);
 	let climateMonthly = $state<MunicipioClimateMonthly[]>([]);
-	let selectedMunicipio = $state<Municipio | null>(null);
-	let isBottomSheetOpen = $state(false);
-	let query = $state('');
-	let showMunicipioPolygons = $state(true);
-	let showMunicipioPoints = $state(false);
-	let showIgnWmsBase = $state(true);
-	let showIgnSatellite = $state(false);
-	let showIgnRivers = $state(false);
-	let showIgnReservoirs = $state(false);
-	let mapColorMetric = $state<'precip_annual_mm' | 'mixed_score'>('mixed_score');
-	let viewMode = $state<'exploracion' | 'evaluacion'>('exploracion');
-	let activeSheetTab = $state<'sel' | 'filtr' | 'capas' | 'rank' | 'meta'>('filtr');
-	let isMobileView = $state(false);
-	let desktopEvalPanel = $state<'top' | 'shortlist'>('top');
-	let showForestLayer = $state(false);
-	let showLandUseLayer = $state(false);
-	let showVegetationLayer = $state(false);
-	let minCompositeScore = $state(0);
-	let layerOrder = $state<string[]>([
-		'municipios',
-		'landuse',
-		'reservoirs',
-		'rivers'
-	]);
+	const uiStore = createUiStore();
+	const filtersStore = createFiltersStore();
+	const layersStore = createLayersStore();
+	const rankingStore = createRankingStore();
+	const isBottomSheetOpen = $derived(uiStore.state.isBottomSheetOpen);
+	const mapColorMetric = $derived(uiStore.state.mapColorMetric);
+	const viewMode = $derived(uiStore.state.viewMode);
+	const activeSheetTab = $derived(uiStore.state.activeSheetTab);
+	const isMobileView = $derived(uiStore.state.isMobileView);
+	const desktopEvalPanel = $derived(uiStore.state.desktopEvalPanel);
+	const query = $derived(filtersStore.state.query);
+	const provinceFilter = $derived(filtersStore.state.provinceFilter);
+	const maxTravelBucket = $derived(filtersStore.state.maxTravelBucket);
+	const minPrecipAnnual = $derived(filtersStore.state.minPrecipAnnual);
+	const minWinterTemp = $derived(filtersStore.state.minWinterTemp);
+	const maxSummerTemp = $derived(filtersStore.state.maxSummerTemp);
+	const maxThermalAmplitude = $derived(filtersStore.state.maxThermalAmplitude);
+	const minCompositeScore = $derived(filtersStore.state.minCompositeScore);
+	const climateWeight = $derived(filtersStore.state.climateWeight);
+	const accessWeight = $derived(filtersStore.state.accessWeight);
+	const natureWeight = $derived(filtersStore.state.natureWeight);
+	const showMunicipioPolygons = $derived(layersStore.state.showMunicipioPolygons);
+	const showMunicipioPoints = $derived(layersStore.state.showMunicipioPoints);
+	const showIgnWmsBase = $derived(layersStore.state.showIgnWmsBase);
+	const showIgnSatellite = $derived(layersStore.state.showIgnSatellite);
+	const showIgnRivers = $derived(layersStore.state.showIgnRivers);
+	const showIgnReservoirs = $derived(layersStore.state.showIgnReservoirs);
+	const showForestLayer = $derived(layersStore.state.showForestLayer);
+	const showLandUseLayer = $derived(layersStore.state.showLandUseLayer);
+	const showVegetationLayer = $derived(layersStore.state.showVegetationLayer);
+	const layerOrder = $derived(layersStore.state.layerOrder);
+	const selectionStore = createSelectionStore();
+	const selectedMunicipio = $derived(selectionStore.state.selectedMunicipio);
+	const shortlistedIds = $derived(selectionStore.state.shortlistedIds);
 	const municipiosPmtilesUrl = '/tiles/municipios.pmtiles';
-	let provinceFilter = $state('Todas');
-	let shortlistedIds = $state<string[]>([]);
-	let sortBy = $state<SortField>('mixed_score');
-	let sortDirection = $state<SortDirection>('desc');
-
-	let maxTravelBucket = $state<TravelBucket>('>4h00');
-	let minPrecipAnnual = $state(0);
-	let minWinterTemp = $state(-10);
-	let maxSummerTemp = $state(40);
-	let maxThermalAmplitude = $state(21);
-	let climateWeight = $state(DEFAULT_WEIGHTS_RAW.climateWeight);
-	let accessWeight = $state(DEFAULT_WEIGHTS_RAW.accessWeight);
-	let natureWeight = $state(DEFAULT_WEIGHTS_RAW.natureWeight);
+	const sortBy = $derived(rankingStore.state.sortBy);
+	const sortDirection = $derived(rankingStore.state.sortDirection);
 	let urlStateReady = $state(false);
-	let pendingSelectedMunicipioId = $state<string | null>(null);
 
 	const provinciasDisponibles = $derived([
 		'Todas',
@@ -213,12 +214,12 @@
 	});
 
 	const toggleLayerVisibility = (layerKey: string, checked: boolean) => {
-		if (layerKey === 'municipios') showMunicipioPolygons = checked;
-		else if (layerKey === 'landuse') showLandUseLayer = checked;
-		else if (layerKey === 'vegetation') showVegetationLayer = checked;
-		else if (layerKey === 'forest') showForestLayer = checked;
-		else if (layerKey === 'reservoirs') showIgnReservoirs = checked;
-		else if (layerKey === 'rivers') showIgnRivers = checked;
+		if (layerKey === 'municipios') layersStore.state.showMunicipioPolygons = checked;
+		else if (layerKey === 'landuse') layersStore.state.showLandUseLayer = checked;
+		else if (layerKey === 'vegetation') layersStore.state.showVegetationLayer = checked;
+		else if (layerKey === 'forest') layersStore.state.showForestLayer = checked;
+		else if (layerKey === 'reservoirs') layersStore.state.showIgnReservoirs = checked;
+		else if (layerKey === 'rivers') layersStore.state.showIgnRivers = checked;
 	};
 
 	const layerItems = $derived(
@@ -262,29 +263,28 @@
 
 	const handleSelectMunicipio = (municipio: Municipio | null) => {
 		if (!municipio) {
-			selectedMunicipio = null;
+			selectionStore.state.selectedMunicipio = null;
 			return;
 		}
-		selectedMunicipio = municipio;
+		selectionStore.state.selectedMunicipio = municipio;
 		const panel = panelStateOnSelect(activeSheetTab, isMobileView);
-		activeSheetTab = panel.tab;
+		uiStore.state.activeSheetTab = panel.tab;
 		queueMicrotask(() => {
-			isBottomSheetOpen = panel.open;
+			uiStore.state.isBottomSheetOpen = panel.open;
 		});
 	};
 
 	const handleClearSelectedMunicipio = () => {
-		selectedMunicipio = null;
-		pendingSelectedMunicipioId = null;
+		selectionStore.clearSelection();
 		const panel = panelStateOnClearSelection(activeSheetTab, isMobileView);
-		activeSheetTab = panel.tab;
-		isBottomSheetOpen = panel.open;
+		uiStore.state.activeSheetTab = panel.tab;
+		uiStore.state.isBottomSheetOpen = panel.open;
 	};
 
 	const handleSelectSheetTab = (tab: 'sel' | 'filtr' | 'capas' | 'rank' | 'meta') => {
 		const panel = panelStateOnTabClick(tab);
-		activeSheetTab = panel.tab;
-		isBottomSheetOpen = panel.open;
+		uiStore.state.activeSheetTab = panel.tab;
+		uiStore.state.isBottomSheetOpen = panel.open;
 	};
 
 	const downloadFile = (filename: string, content: string, mimeType: string) => {
@@ -332,56 +332,47 @@
 	};
 
 	const handleClearFilters = () => {
-		provinceFilter = 'Todas';
-		maxTravelBucket = '>4h00';
-		minPrecipAnnual = 0;
-		minWinterTemp = -10;
-		maxSummerTemp = 40;
-		maxThermalAmplitude = 21;
-		minCompositeScore = 0;
+		filtersStore.clear();
 	};
 
 	const handleToggleShortlist = (municipioId: string) => {
-		const wasShortlisted = shortlistedIds.includes(municipioId);
-		shortlistedIds = wasShortlisted
-			? shortlistedIds.filter((id) => id !== municipioId)
-			: [...shortlistedIds, municipioId];
-		if (!wasShortlisted) {
-			desktopEvalPanel = 'shortlist';
+		const wasAdded = selectionStore.toggleShortlist(municipioId);
+		if (wasAdded) {
+			uiStore.state.desktopEvalPanel = 'shortlist';
 		}
 	};
 
 	const handleChangeSort = (newSortBy: SortField) => {
 		const next = nextSortState(sortBy, sortDirection, newSortBy);
-		sortBy = next.sortBy;
-		sortDirection = next.sortDirection;
+		rankingStore.state.sortBy = next.sortBy;
+		rankingStore.state.sortDirection = next.sortDirection;
 	};
 
 	const handleLayerOrderChange = (nextOrder: string[]) => {
-		layerOrder = nextOrder;
+		layersStore.state.layerOrder = nextOrder;
 	};
 
 	const handlePresetWeights = (preset: Preset) => {
-		mapColorMetric = 'mixed_score';
+		uiStore.state.mapColorMetric = 'mixed_score';
 		const weights = weightsForPreset(preset);
-		climateWeight = weights.climateWeight;
-		accessWeight = weights.accessWeight;
-		natureWeight = weights.natureWeight;
+		filtersStore.state.climateWeight = weights.climateWeight;
+		filtersStore.state.accessWeight = weights.accessWeight;
+		filtersStore.state.natureWeight = weights.natureWeight;
 	};
 
 	const handleClimateWeightChange = (value: number) => {
-		climateWeight = value;
-		mapColorMetric = 'mixed_score';
+		filtersStore.state.climateWeight = value;
+		uiStore.state.mapColorMetric = 'mixed_score';
 	};
 
 	const handleAccessWeightChange = (value: number) => {
-		accessWeight = value;
-		mapColorMetric = 'mixed_score';
+		filtersStore.state.accessWeight = value;
+		uiStore.state.mapColorMetric = 'mixed_score';
 	};
 
 	const handleNatureWeightChange = (value: number) => {
-		natureWeight = value;
-		mapColorMetric = 'mixed_score';
+		filtersStore.state.natureWeight = value;
+		uiStore.state.mapColorMetric = 'mixed_score';
 	};
 
 
@@ -393,7 +384,7 @@
 	$effect(() => {
 		if (typeof window === 'undefined') return;
 		const updateViewport = () => {
-			isMobileView = window.innerWidth <= 900;
+			uiStore.state.isMobileView = window.innerWidth <= 900;
 		};
 		updateViewport();
 		window.addEventListener('resize', updateViewport);
@@ -402,54 +393,66 @@
 
 	$effect(() => {
 		if (typeof window === 'undefined' || urlStateReady) return;
-		const state = parseUrlState(window.location.search);
-
-		if (state.mode) viewMode = state.mode;
-		if (state.q) query = state.q;
-		if (state.province) provinceFilter = state.province;
-		if (state.travel) maxTravelBucket = state.travel;
-
-		if (state.ppt !== undefined) minPrecipAnnual = clampNumber(state.ppt, 0, 1800);
-		if (state.tw !== undefined) minWinterTemp = clampNumber(state.tw, -15, 15);
-		if (state.ts !== undefined) maxSummerTemp = clampNumber(state.ts, 15, 40);
-		if (state.ta !== undefined) maxThermalAmplitude = clampNumber(state.ta, 12, 21);
-		if (state.score !== undefined) minCompositeScore = clampNumber(state.score, 0, 1);
-
-		if (state.cw !== undefined) climateWeight = clampNumber(state.cw, 0, 100);
-		if (state.aw !== undefined) accessWeight = clampNumber(state.aw, 0, 100);
-		if (state.nw !== undefined) natureWeight = clampNumber(state.nw, 0, 100);
-
-		if (state.tab)
-			activeSheetTab = tabForMode(
-				state.mode ?? viewMode,
-				state.tab,
-				window.innerWidth <= 900,
-				Boolean(state.sel)
-			);
-		if (state.sel) pendingSelectedMunicipioId = state.sel;
-		if (state.open && window.innerWidth <= 900) isBottomSheetOpen = true;
+		const { next, pendingSelectedMunicipioId } = applyUrlToState(window.location.search, {
+			viewMode,
+			query,
+			provinceFilter,
+			maxTravelBucket,
+			minPrecipAnnual,
+			minWinterTemp,
+			maxSummerTemp,
+			maxThermalAmplitude,
+			minCompositeScore,
+			climateWeight,
+			accessWeight,
+			natureWeight,
+			activeSheetTab,
+			isMobileView,
+			isBottomSheetOpen,
+			selectedMunicipioId: selectedMunicipio?.id
+		});
+		Object.assign(uiStore.state, {
+			viewMode: next.viewMode ?? uiStore.state.viewMode,
+			activeSheetTab: next.activeSheetTab ?? uiStore.state.activeSheetTab,
+			isBottomSheetOpen: next.isBottomSheetOpen ?? uiStore.state.isBottomSheetOpen
+		});
+		Object.assign(filtersStore.state, {
+			query: next.query ?? filtersStore.state.query,
+			provinceFilter: next.provinceFilter ?? filtersStore.state.provinceFilter,
+			maxTravelBucket: next.maxTravelBucket ?? filtersStore.state.maxTravelBucket,
+			minPrecipAnnual: next.minPrecipAnnual ?? filtersStore.state.minPrecipAnnual,
+			minWinterTemp: next.minWinterTemp ?? filtersStore.state.minWinterTemp,
+			maxSummerTemp: next.maxSummerTemp ?? filtersStore.state.maxSummerTemp,
+			maxThermalAmplitude: next.maxThermalAmplitude ?? filtersStore.state.maxThermalAmplitude,
+			minCompositeScore: next.minCompositeScore ?? filtersStore.state.minCompositeScore,
+			climateWeight: next.climateWeight ?? filtersStore.state.climateWeight,
+			accessWeight: next.accessWeight ?? filtersStore.state.accessWeight,
+			natureWeight: next.natureWeight ?? filtersStore.state.natureWeight
+		});
+		selectionStore.state.pendingSelectedMunicipioId = pendingSelectedMunicipioId;
 
 		urlStateReady = true;
 	});
 
 	$effect(() => {
 		if (typeof window === 'undefined' || !urlStateReady) return;
-		const params = buildUrlState({
-			mode: viewMode,
-			q: query.trim().length > 0 ? query.trim() : undefined,
-			province: provinceFilter !== 'Todas' ? provinceFilter : undefined,
-			travel: maxTravelBucket !== '>4h00' ? maxTravelBucket : undefined,
-			ppt: minPrecipAnnual !== 0 ? minPrecipAnnual : undefined,
-			tw: minWinterTemp !== -10 ? minWinterTemp : undefined,
-			ts: maxSummerTemp !== 40 ? maxSummerTemp : undefined,
-			ta: maxThermalAmplitude < 21 ? Number(maxThermalAmplitude.toFixed(1)) : undefined,
-			score: minCompositeScore > 0 ? minCompositeScore : undefined,
-			cw: viewMode === 'evaluacion' ? climateWeight : undefined,
-			aw: viewMode === 'evaluacion' ? accessWeight : undefined,
-			nw: viewMode === 'evaluacion' ? natureWeight : undefined,
-			tab: isMobileView && activeSheetTab !== 'filtr' ? activeSheetTab : undefined,
-			sel: selectedMunicipio?.id,
-			open: isMobileView ? isBottomSheetOpen : undefined
+		const params = buildUrlFromState({
+			viewMode,
+			query,
+			provinceFilter,
+			maxTravelBucket,
+			minPrecipAnnual,
+			minWinterTemp,
+			maxSummerTemp,
+			maxThermalAmplitude,
+			minCompositeScore,
+			climateWeight,
+			accessWeight,
+			natureWeight,
+			activeSheetTab,
+			isMobileView,
+			isBottomSheetOpen: uiStore.state.isBottomSheetOpen,
+			selectedMunicipioId: selectedMunicipio?.id
 		});
 
 		const queryString = params.toString();
@@ -459,19 +462,20 @@
 
 	$effect(() => {
 		if (selectedMunicipio && !municipiosScoredForView.some((m) => m.id === selectedMunicipio?.id)) {
-			selectedMunicipio = null;
+			selectionStore.state.selectedMunicipio = null;
 		}
 	});
 
 	$effect(() => {
+		const pendingSelectedMunicipioId = selectionStore.state.pendingSelectedMunicipioId;
 		if (!pendingSelectedMunicipioId || municipiosScoredForView.length === 0) return;
 		const fromUrl = municipiosScoredForView.find((m) => m.id === pendingSelectedMunicipioId) ?? null;
 		if (!fromUrl) {
-			pendingSelectedMunicipioId = null;
+			selectionStore.state.pendingSelectedMunicipioId = null;
 			return;
 		}
-		selectedMunicipio = fromUrl;
-		pendingSelectedMunicipioId = null;
+		selectionStore.state.selectedMunicipio = fromUrl;
+		selectionStore.state.pendingSelectedMunicipioId = null;
 	});
 
 	$effect(() => {
@@ -479,12 +483,12 @@
 		const refreshed = municipiosScoredForView.find((m) => m.id === selectedMunicipio?.id) ?? null;
 		if (refreshed && refreshed.id === selectedMunicipio.id) {
 			const changedScore = Math.abs((refreshed.mixed_score ?? 0) - (selectedMunicipio.mixed_score ?? 0)) > 0.0001;
-			if (changedScore) selectedMunicipio = refreshed;
+			if (changedScore) selectionStore.state.selectedMunicipio = refreshed;
 		}
 	});
 
 	$effect(() => {
-		shortlistedIds = loadStringArray('ebv-shortlist-v1');
+		selectionStore.state.shortlistedIds = loadStringArray('ebv-shortlist-v1');
 	});
 
 	$effect(() => {
@@ -493,9 +497,14 @@
 
 	$effect(() => {
 		if (viewMode === 'evaluacion') {
-			mapColorMetric = 'mixed_score';
+			uiStore.state.mapColorMetric = 'mixed_score';
 		}
-		activeSheetTab = tabForMode(viewMode, activeSheetTab, isMobileView, Boolean(selectedMunicipio));
+		uiStore.state.activeSheetTab = tabForMode(
+			viewMode,
+			activeSheetTab,
+			isMobileView,
+			Boolean(selectedMunicipio)
+		);
 	});
 </script>
 
@@ -553,21 +562,10 @@
 			/>
 		</div>
 		<div class="topbar-mode">
-			<ModeToggle mode={viewMode} onChange={(nextMode) => (viewMode = nextMode)} />
+			<ModeToggle mode={viewMode} onChange={(nextMode) => (uiStore.state.viewMode = nextMode)} />
 		</div>
 	</div>
 </header>
-
-<div class="topbar-meta" aria-label="Contexto del dataset">
-	<span>Castilla y León</span>
-	<span>{municipios.length.toLocaleString('es-ES')} municipios</span>
-	{#if data.datasetMetadata?.dataset_version}
-		<span>v{data.datasetMetadata.dataset_version}</span>
-	{/if}
-	{#if data.datasetMetadata?.generated_at_utc}
-		<span>{new Date(data.datasetMetadata.generated_at_utc).toLocaleDateString('es-ES')}</span>
-	{/if}
-</div>
 
 <section class="mode-strip" class:evaluation={viewMode === 'evaluacion'}>
 	{#if viewMode === 'exploracion'}
@@ -623,24 +621,24 @@
 				datasetMetadata={data.datasetMetadata}
 				labelAccesibilidad={labelAccesibilidad}
 				climateSeries={selectedClimateSeries}
-				onQueryChange={(value) => (query = value)}
+				onQueryChange={(value) => (filtersStore.state.query = value)}
 				onSelectMunicipio={handleSelectMunicipio}
-				onToggleMunicipioPolygons={(value) => (showMunicipioPolygons = value)}
-				onToggleIgnWmsBase={(value) => (showIgnWmsBase = value)}
-				onToggleIgnSatellite={(value: boolean) => (showIgnSatellite = value)}
-				onToggleIgnRivers={(value: boolean) => (showIgnRivers = value)}
-				onToggleIgnReservoirs={(value: boolean) => (showIgnReservoirs = value)}
-				onMapColorMetricChange={(value) => (mapColorMetric = value)}
-				onToggleForestLayer={(value) => (showForestLayer = value)}
-				onToggleLandUseLayer={(value) => (showLandUseLayer = value)}
-				onToggleVegetationLayer={(value) => (showVegetationLayer = value)}
-				onProvinceFilterChange={(value) => (provinceFilter = value)}
-				onMaxTravelBucketChange={(value) => (maxTravelBucket = value)}
-				onMinPrecipAnnualChange={(value) => (minPrecipAnnual = value)}
-				onMinWinterTempChange={(value) => (minWinterTemp = value)}
-				onMaxSummerTempChange={(value) => (maxSummerTemp = value)}
-				onMaxThermalAmplitudeChange={(value) => (maxThermalAmplitude = value)}
-				onMinCompositeScoreChange={(value: number) => (minCompositeScore = value)}
+				onToggleMunicipioPolygons={(value) => (layersStore.state.showMunicipioPolygons = value)}
+				onToggleIgnWmsBase={(value) => (layersStore.state.showIgnWmsBase = value)}
+				onToggleIgnSatellite={(value: boolean) => (layersStore.state.showIgnSatellite = value)}
+				onToggleIgnRivers={(value: boolean) => (layersStore.state.showIgnRivers = value)}
+				onToggleIgnReservoirs={(value: boolean) => (layersStore.state.showIgnReservoirs = value)}
+				onMapColorMetricChange={(value) => (uiStore.state.mapColorMetric = value)}
+				onToggleForestLayer={(value) => (layersStore.state.showForestLayer = value)}
+				onToggleLandUseLayer={(value) => (layersStore.state.showLandUseLayer = value)}
+				onToggleVegetationLayer={(value) => (layersStore.state.showVegetationLayer = value)}
+				onProvinceFilterChange={(value) => (filtersStore.state.provinceFilter = value)}
+				onMaxTravelBucketChange={(value) => (filtersStore.state.maxTravelBucket = value)}
+				onMinPrecipAnnualChange={(value) => (filtersStore.state.minPrecipAnnual = value)}
+				onMinWinterTempChange={(value) => (filtersStore.state.minWinterTemp = value)}
+				onMaxSummerTempChange={(value) => (filtersStore.state.maxSummerTemp = value)}
+				onMaxThermalAmplitudeChange={(value) => (filtersStore.state.maxThermalAmplitude = value)}
+				onMinCompositeScoreChange={(value: number) => (filtersStore.state.minCompositeScore = value)}
 				onClearFilters={handleClearFilters}
 				onLayerOrderChange={handleLayerOrderChange}
 				onToggleShortlist={handleToggleShortlist}
@@ -703,7 +701,7 @@
 					</table>
 				</div>
 			</section>
-			<BottomSheet initialHeight="34vh" expandedHeight="62vh" peekHeight="5.2rem" snapPoints={[0.14, 0.66, 0.94]} bind:isOpen={isBottomSheetOpen}>
+			<BottomSheet initialHeight="34vh" expandedHeight="62vh" peekHeight="5.2rem" snapPoints={[0.14, 0.66, 0.94]} bind:isOpen={uiStore.state.isBottomSheetOpen}>
 				{#snippet children()}
 					<div class="sheet-tabs" role="tablist" aria-label="Panel móvil">
 						<button
@@ -745,7 +743,7 @@
 								<button
 									class="sheet-clear"
 									onclick={() => {
-										viewMode = 'evaluacion';
+										uiStore.state.viewMode = 'evaluacion';
 										handleSelectSheetTab('rank');
 									}}
 								>
@@ -754,38 +752,38 @@
 							{/if}
 						{:else if activeSheetTab === 'filtr'}
 							<div class="sheet-block">
-								<ModeToggle mode={viewMode} onChange={(nextMode) => (viewMode = nextMode)} />
+								<ModeToggle mode={viewMode} onChange={(nextMode) => (uiStore.state.viewMode = nextMode)} />
 								<p class="sheet-meta">{modeCopy[viewMode].helper}</p>
 								<section class="sheet-section">
 									<p class="sheet-subtitle">Filtros base</p>
 									<label for="sheet-province">Provincia</label>
-									<select id="sheet-province" value={provinceFilter} onchange={(e) => (provinceFilter = (e.currentTarget as HTMLSelectElement).value)}>
+								<select id="sheet-province" value={provinceFilter} onchange={(e) => (filtersStore.state.provinceFilter = (e.currentTarget as HTMLSelectElement).value)}>
 										{#each provinciasDisponibles as provincia}
 											<option value={provincia}>{provincia}</option>
 										{/each}
 									</select>
 									<div class="chips-row">
 										{#each travelBuckets as bucket}
-											<ChipButton label={bucket.label} size="small" compact={true} active={maxTravelBucket === bucket.value} onclick={() => (maxTravelBucket = bucket.value)} />
+											<ChipButton label={bucket.label} size="small" compact={true} active={maxTravelBucket === bucket.value} onclick={() => (filtersStore.state.maxTravelBucket = bucket.value)} />
 										{/each}
 									</div>
 									<p class="sheet-subtitle">Filtros de climatología</p>
 									<div class="sheet-slider-grid">
 										<div class="sheet-score-item">
 											<label for="sheet-min-precip">Precipitación mínima anual: {minPrecipAnnual} mm</label>
-											<input id="sheet-min-precip" type="range" min="0" max="1800" step="10" value={minPrecipAnnual} oninput={(e) => (minPrecipAnnual = toNumber(e))} />
+											<input id="sheet-min-precip" type="range" min="0" max="1800" step="10" value={minPrecipAnnual} oninput={(e) => (filtersStore.state.minPrecipAnnual = toNumber(e))} />
 										</div>
 										<div class="sheet-score-item">
 											<label for="sheet-min-winter">Temp. invierno mínima: {minWinterTemp} C</label>
-											<input id="sheet-min-winter" type="range" min="-15" max="15" step="0.5" value={minWinterTemp} oninput={(e) => (minWinterTemp = toNumber(e))} />
+											<input id="sheet-min-winter" type="range" min="-15" max="15" step="0.5" value={minWinterTemp} oninput={(e) => (filtersStore.state.minWinterTemp = toNumber(e))} />
 										</div>
 										<div class="sheet-score-item">
 											<label for="sheet-max-summer">Temp. verano máxima: {maxSummerTemp} C</label>
-											<input id="sheet-max-summer" type="range" min="15" max="40" step="0.5" value={maxSummerTemp} oninput={(e) => (maxSummerTemp = toNumber(e))} />
+											<input id="sheet-max-summer" type="range" min="15" max="40" step="0.5" value={maxSummerTemp} oninput={(e) => (filtersStore.state.maxSummerTemp = toNumber(e))} />
 										</div>
 										<div class="sheet-score-item">
 											<label for="sheet-max-amplitude">Amplitud térmica máxima: {maxThermalAmplitude.toFixed(1)} C</label>
-											<input id="sheet-max-amplitude" type="range" min="12" max="21" step="0.1" value={maxThermalAmplitude} oninput={(e) => (maxThermalAmplitude = toNumber(e))} />
+											<input id="sheet-max-amplitude" type="range" min="12" max="21" step="0.1" value={maxThermalAmplitude} oninput={(e) => (filtersStore.state.maxThermalAmplitude = toNumber(e))} />
 										</div>
 									</div>
 								</section>
@@ -806,7 +804,7 @@
 										<div class="sheet-slider-grid">
 											<div class="sheet-score-item">
 												<label for="sheet-min-score">Score mínimo visible: {minCompositeScore.toFixed(2)}</label>
-												<input id="sheet-min-score" type="range" min="0" max="1" step="0.01" value={minCompositeScore} oninput={(e) => (minCompositeScore = toNumber(e))} />
+												<input id="sheet-min-score" type="range" min="0" max="1" step="0.01" value={minCompositeScore} oninput={(e) => (filtersStore.state.minCompositeScore = toNumber(e))} />
 											</div>
 											<div class="sheet-score-item">
 												<label for="sheet-w-clima">Peso clima: {climateWeight}</label>
@@ -834,11 +832,11 @@
 							<div class="sheet-block">
 								<LayerOrderList items={layerItems} onToggle={toggleLayerVisibility} onReorder={handleLayerOrderChange} />
 								<div class="chips-row">
-									<ChipButton label="Puntuación global" active={mapColorMetric === 'mixed_score'} onclick={() => (mapColorMetric = 'mixed_score')} />
-									<ChipButton label="Precipitación" active={mapColorMetric === 'precip_annual_mm'} onclick={() => (mapColorMetric = 'precip_annual_mm')} />
+									<ChipButton label="Puntuación global" active={mapColorMetric === 'mixed_score'} onclick={() => (uiStore.state.mapColorMetric = 'mixed_score')} />
+									<ChipButton label="Precipitación" active={mapColorMetric === 'precip_annual_mm'} onclick={() => (uiStore.state.mapColorMetric = 'precip_annual_mm')} />
 								</div>
-								<label><input type="checkbox" checked={showIgnWmsBase} onchange={(e) => (showIgnWmsBase = (e.currentTarget as HTMLInputElement).checked)} /> Base IGN</label>
-								<label><input type="checkbox" checked={showIgnSatellite} onchange={(e) => (showIgnSatellite = (e.currentTarget as HTMLInputElement).checked)} /> Satélite IGN</label>
+								<label><input type="checkbox" checked={showIgnWmsBase} onchange={(e) => (layersStore.state.showIgnWmsBase = (e.currentTarget as HTMLInputElement).checked)} /> Base IGN</label>
+								<label><input type="checkbox" checked={showIgnSatellite} onchange={(e) => (layersStore.state.showIgnSatellite = (e.currentTarget as HTMLInputElement).checked)} /> Satélite IGN</label>
 							</div>
 						{:else if activeSheetTab === 'rank'}
 							<div class="sheet-rank">
@@ -847,7 +845,7 @@
 									<RankingList rows={tableRows} limit={25} compact={true} onSelect={handleSelectMunicipio} />
 								{:else}
 									<p class="sheet-meta">El ranking se utiliza en modo evaluación.</p>
-									<button class="sheet-clear" onclick={() => { viewMode = 'evaluacion'; handleSelectSheetTab('rank'); }}>Cambiar a evaluación</button>
+									<button class="sheet-clear" onclick={() => { uiStore.state.viewMode = 'evaluacion'; handleSelectSheetTab('rank'); }}>Cambiar a evaluación</button>
 								{/if}
 							</div>
 						{:else}
@@ -884,14 +882,14 @@
 						<button
 							type="button"
 							class:active={desktopEvalPanel === 'top'}
-							onclick={() => (desktopEvalPanel = 'top')}
+							onclick={() => (uiStore.state.desktopEvalPanel = 'top')}
 						>
 							Top 25
 						</button>
 						<button
 							type="button"
 							class:active={desktopEvalPanel === 'shortlist'}
-							onclick={() => (desktopEvalPanel = 'shortlist')}
+							onclick={() => (uiStore.state.desktopEvalPanel = 'shortlist')}
 						>
 							Shortlist ({shortlistMunicipios.length})
 						</button>
@@ -997,26 +995,6 @@
 		gap: 0.6rem;
 		margin-left: auto;
 	}
-	.topbar-meta {
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		gap: 0.45rem;
-		padding: 0.3rem 0.9rem;
-		border-bottom: 1px solid rgba(21, 32, 33, 0.12);
-		font-size: 0.78rem;
-		color: #3f5753;
-		background: rgba(248, 242, 229, 0.9);
-	}
-	.topbar-meta span {
-		display: inline-flex;
-		align-items: center;
-	}
-	.topbar-meta span + span::before {
-		content: '·';
-		margin-right: 0.45rem;
-		color: #788c88;
-	}
 	.topbar-legend {
 		display: block;
 		min-width: 0;
@@ -1057,7 +1035,7 @@
 		color: #405a56;
 	}
 	main {
-		height: calc(100dvh - 136px);
+		height: calc(100dvh - 106px);
 		display: grid;
 		grid-template-columns: 440px 1fr 360px;
 		grid-template-rows: minmax(0, 1fr);
@@ -1220,9 +1198,6 @@
 			transform-origin: right center;
 		}
 		.mode-strip {
-			display: none;
-		}
-		.topbar-meta {
 			display: none;
 		}
 		.topbar-mode {

@@ -347,8 +347,8 @@
 
 		const lonSpan = Math.max(maxLon - minLon, 0.01);
 		const latSpan = Math.max(maxLat - minLat, 0.01);
-		const padLon = Math.max(lonSpan * 0.08, 0.12);
-		const padLat = Math.max(latSpan * 0.08, 0.08);
+		const padLon = Math.max(lonSpan * 0.2, 0.45);
+		const padLat = Math.max(latSpan * 0.2, 0.32);
 
 		const raw: [[number, number], [number, number]] = [
 			[minLon, minLat],
