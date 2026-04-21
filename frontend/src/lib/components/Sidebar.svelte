@@ -4,15 +4,6 @@
 	import ChipButton from '$lib/components/ui/ChipButton.svelte';
 	import { DEFAULT_WEIGHTS_NORMALIZED, DEFAULT_WEIGHTS_RAW } from '$lib/state/scoring';
 
-	type SortField =
-		| 'nombre'
-		| 'provincia'
-		| 'travel_bucket'
-		| 'mixed_score'
-		| 'precip_annual_mm'
-		| 'temp_winter_mean_c'
-		| 'temp_summer_mean_c';
-
 		type Props = {
 		query?: string;
 		municipios?: Municipio[];
@@ -40,9 +31,6 @@
 		activeFiltersSummary?: string[];
 		shortlistedIds?: string[];
 		shortlistMunicipios?: Municipio[];
-		tableRows?: Municipio[];
-		sortBy?: SortField;
-		sortDirection?: 'asc' | 'desc';
 		isEvaluationMode?: boolean;
 		weights?: { climate: number; access: number; nature: number };
 		weightsRaw?: { climateWeight: number; accessWeight: number; natureWeight: number };
@@ -73,7 +61,6 @@
 		onClearFilters?: () => void;
 		onLayerOrderChange?: (value: string[]) => void;
 		onToggleShortlist?: (municipioId: string) => void;
-		onChangeSort?: (field: SortField) => void;
 		onClimateWeightChange?: (value: number) => void;
 		onAccessWeightChange?: (value: number) => void;
 		onNatureWeightChange?: (value: number) => void;
@@ -107,9 +94,6 @@
 		activeFiltersSummary = [],
 		shortlistedIds = [],
 		shortlistMunicipios = [],
-		tableRows = [],
-		sortBy = 'mixed_score',
-		sortDirection = 'desc',
 		isEvaluationMode = false,
 		weights = DEFAULT_WEIGHTS_NORMALIZED,
 		weightsRaw = DEFAULT_WEIGHTS_RAW,
@@ -138,7 +122,6 @@
 		onClearFilters = () => undefined,
 		onLayerOrderChange = () => undefined,
 		onToggleShortlist = () => undefined,
-		onChangeSort = () => undefined,
 		onClimateWeightChange = () => undefined,
 		onAccessWeightChange = () => undefined,
 		onNatureWeightChange = () => undefined,
@@ -214,8 +197,6 @@
 	const within2h = $derived(municipios.filter((m) => m.iso_02h00m).length);
 
 	const toNumber = (event: Event) => Number((event.currentTarget as HTMLInputElement).value);
-
-	const sortLabel = (field: SortField) => (sortBy === field ? ` ${sortDirection === 'asc' ? '↑' : '↓'}` : '');
 
 	const activePreset = $derived.by(() => {
 		const c = weightsRaw.climateWeight;
@@ -430,41 +411,7 @@
 	{/if}
 
 
-	{#if !isEvaluationMode}
-		<section class="panel table-panel">
-			<h2>Vista analitica</h2>
-			<div class="table-wrap">
-				<table>
-					<thead>
-						<tr>
-							<th><button onclick={() => onChangeSort('nombre')}>Municipio{sortLabel('nombre')}</button></th>
-							<th><button onclick={() => onChangeSort('provincia')}>Provincia{sortLabel('provincia')}</button></th>
-							<th>Hab.</th>
-							<th><button onclick={() => onChangeSort('travel_bucket')}>Isocrona{sortLabel('travel_bucket')}</button></th>
-							<th><button onclick={() => onChangeSort('mixed_score')}>Score{sortLabel('mixed_score')}</button></th>
-							<th><button onclick={() => onChangeSort('precip_annual_mm')}>PPT{sortLabel('precip_annual_mm')}</button></th>
-							<th><button onclick={() => onChangeSort('temp_winter_mean_c')}>Invierno{sortLabel('temp_winter_mean_c')}</button></th>
-							<th><button onclick={() => onChangeSort('temp_summer_mean_c')}>Verano{sortLabel('temp_summer_mean_c')}</button></th>
-						</tr>
-					</thead>
-					<tbody>
-						{#each tableRows.slice(0, 80) as municipio (municipio.id)}
-							<tr onclick={() => onSelectMunicipio(municipio)}>
-								<td>{municipio.nombre}</td>
-								<td>{municipio.provincia}</td>
-								<td>{municipio.population ? municipio.population.toLocaleString('es-ES') : '-'}</td>
-								<td>{municipio.travel_bucket}</td>
-								<td>{municipio.mixed_score ?? '-'}</td>
-								<td>{municipio.precip_annual_mm}</td>
-								<td>{municipio.temp_winter_mean_c}</td>
-								<td>{municipio.temp_summer_mean_c}</td>
-							</tr>
-						{/each}
-					</tbody>
-				</table>
-			</div>
-		</section>
-	{:else}
+	{#if isEvaluationMode}
 		<section class="panel">
 			<h2>Ranking y decision</h2>
 			<p class="muted">El ranking top 25 aparece en el panel derecho. Selecciona un municipio para revisar su ficha y ajustar pesos con contexto.</p>
@@ -578,12 +525,6 @@
 	.filter-foot { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; margin: 0.35rem 0; }
 	.filter-foot p { font-size: 0.76rem; color: #3f5653; }
 	.filter-foot .clear { width: auto; font-size: 0.74rem; }
-	.table-wrap { overflow: auto; max-height: 320px; }
-	table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
-	th, td { border-bottom: 1px solid rgba(21, 32, 33, 0.12); padding: 0.25rem 0.35rem; white-space: nowrap; }
-	th button { width: auto; border: 0; padding: 0; background: transparent; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em; }
-	tbody tr { cursor: pointer; }
-	tbody tr:hover { background: rgba(33, 102, 109, 0.08); }
 	.muted { color: #48615d; font-size: 0.76rem; line-height: 1.35; }
 	.methodology details { border: 1px dashed rgba(21, 32, 33, 0.22); border-radius: 10px; background: rgba(255, 255, 255, 0.5); }
 	.methodology summary { cursor: pointer; padding: 0.55rem 0.65rem; font-family: 'Fraunces', serif; font-size: 0.86rem; }
