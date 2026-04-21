@@ -2,7 +2,8 @@
 	import MapView from '$lib/components/MapView.svelte';
 	import Sidebar from '$lib/components/Sidebar.svelte';
 	import InspectorPanel from '$lib/components/InspectorPanel.svelte';
-	import { Filter, Map as MapIcon, Info } from 'lucide-svelte';
+	import BottomSheet from '$lib/components/ui/BottomSheet.svelte';
+	import { Filter, Map as MapIcon } from 'lucide-svelte';
 	import type { DatasetMetadata, Municipio, MunicipioClimateMonthly } from '$lib/types/municipio';
 
 	type PageData = {
@@ -15,6 +16,7 @@
 	let municipios = $state<Municipio[]>([]);
 	let climateMonthly = $state<MunicipioClimateMonthly[]>([]);
 	let selectedMunicipio = $state<Municipio | null>(null);
+	let isBottomSheetOpen = $state(false);
 	let query = $state('');
 	let showMunicipioPolygons = $state(true);
 	let showMunicipioPoints = $state(false);
@@ -23,7 +25,7 @@
 	let showIgnRivers = $state(false);
 	let showIgnReservoirs = $state(false);
 	let mapColorMetric = $state<'precip_annual_mm' | 'mixed_score'>('mixed_score');
-	let activeMobileTab = $state<'filters' | 'map' | 'inspector'>('map');
+	let activeMobileTab = $state<'filters' | 'map'>('map');
 	let hasNewSelection = $state(false);
 	let showForestLayer = $state(false);
 	let showLandUseLayer = $state(false);
@@ -215,15 +217,19 @@
 	const handleSelectMunicipio = (municipio: Municipio | null) => {
 		if (!municipio) {
 			selectedMunicipio = null;
+			isBottomSheetOpen = false;
 			return;
 		}
 		selectedMunicipio = municipio;
 		hasNewSelection = true;
+		isBottomSheetOpen = true;
+		activeMobileTab = 'map';
 	};
 
 	const handleClearSelectedMunicipio = () => {
 		selectedMunicipio = null;
 		hasNewSelection = false;
+		isBottomSheetOpen = false;
 		activeMobileTab = 'map';
 	};
 
@@ -335,23 +341,33 @@
 	<meta name="keywords" content="municipios, análisis territorial, Castilla y León, climatología, accesibilidad, naturaleza, score municipal, visor geográfico" />
 	<meta name="author" content="El Buen Vivir" />
 	<meta name="robots" content="index, follow" />
+	<meta name="theme-color" content="#2f7d85" />
 
 	<!-- Open Graph / Facebook -->
 	<meta property="og:type" content="website" />
-	<meta property="og:url" content="https://el-buen-vivir.netlify.app/" />
+	<meta property="og:url" content="https://observatorio-territorial.netlify.app/" />
 	<meta property="og:title" content="El Buen Vivir | Visor Territorial de Municipios" />
-	<meta property="og:description" content="Herramienta analítica para evaluar municipios según climatología, accesibilidad y naturaleza. Explora datos, compara territorios y toma decisiones informadas." />
+	<meta property="og:description" content="Herramienta analítica para evaluar municipios según climatología, accesibilidad y naturaleza en Castilla y León." />
 	<meta property="og:site_name" content="El Buen Vivir" />
 	<meta property="og:locale" content="es_ES" />
+	<meta property="og:image" content="https://observatorio-territorial.netlify.app/og-image.jpg" />
+	<meta property="og:image:width" content="1200" />
+	<meta property="og:image:height" content="630" />
 
-	<!-- Twitter -->
+	<!-- Twitter / X -->
 	<meta name="twitter:card" content="summary_large_image" />
-	<meta name="twitter:url" content="https://el-buen-vivir.netlify.app/" />
-	<meta name="twitter:title" content="El Buen Vivir | Visor Territorial de Municipios" />
-	<meta name="twitter:description" content="Herramienta analítica para evaluar municipios según climatología, accesibilidad y naturaleza." />
+	<meta name="twitter:url" content="https://observatorio-territorial.netlify.app/" />
+	<meta name="twitter:title" content="El Buen Vivir | Visor Territorial" />
+	<meta name="twitter:description" content="Evalúa municipios por clima, accesibilidad y naturaleza. Herramienta de análisis territorial." />
+	<meta name="twitter:image" content="https://observatorio-territorial.netlify.app/og-image.jpg" />
+
+	<!-- Telegram / WhatsApp -->
+	<meta property="telegram:channel" content="@elbuenvivir" />
 
 	<!-- Canonical -->
-	<link rel="canonical" href="https://el-buen-vivir.netlify.app/" />
+	<link rel="canonical" href="https://observatorio-territorial.netlify.app/" />
+	<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+	<link rel="apple-touch-icon" href="/favicon.svg" />
 </svelte:head>
 
 <nav class="mobile-tabs">
@@ -362,13 +378,6 @@
 		<button class="tab-btn" class:active={activeMobileTab === 'map'} onclick={() => activeMobileTab = 'map'}>
 			<MapIcon size={20} />
 			<span class="tab-label">Mapa</span>
-		</button>
-		<button class="tab-btn" class:active={activeMobileTab === 'inspector'} onclick={() => { activeMobileTab = 'inspector'; hasNewSelection = false; }}>
-			<span class="tab-icon-wrap">
-				<Info size={20} />
-				{#if hasNewSelection}<span class="notification-dot"></span>{/if}
-			</span>
-			<span class="tab-label">Info</span>
 		</button>
 	</nav>
 
@@ -457,9 +466,32 @@
 				pmtilesUrl={municipiosPmtilesUrl}
 				onMapSelection={handleSelectMunicipio}
 			/>
+			{#if selectedMunicipio}
+				<BottomSheet initialHeight="35vh" bind:isOpen={isBottomSheetOpen}>
+					{#snippet children()}
+						<InspectorPanel
+							{selectedMunicipio}
+							municipios={municipiosScoredForView}
+							shortlistedIds={shortlistedIds}
+							weights={normalizedWeights}
+							weightsRaw={{ climateWeight, accessWeight, natureWeight }}
+							sensitivityOverlap={sensitivityOverlap}
+							climateSeries={selectedClimateSeries}
+							provinceClimateSeries={selectedProvinceClimateSeries}
+							ccaaClimateSeries={selectedCcaaClimateSeries}
+							onToggleShortlist={handleToggleShortlist}
+							onClimateWeightChange={handleClimateWeightChange}
+							onAccessWeightChange={handleAccessWeightChange}
+							onNatureWeightChange={handleNatureWeightChange}
+							onPresetWeights={handlePresetWeights}
+							onClearMunicipio={handleClearSelectedMunicipio}
+						/>
+					{/snippet}
+				</BottomSheet>
+			{/if}
 		</section>
 
-		<div class="panel-wrapper" class:visible={activeMobileTab === 'inspector'}>
+		<div class="inspector-desktop">
 			<InspectorPanel
 				{selectedMunicipio}
 				municipios={municipiosScoredForView}
@@ -503,6 +535,14 @@
 	}
 	.panel-wrapper {
 		display: contents;
+	}
+	.inspector-desktop {
+		min-width: 0;
+		min-height: 0;
+		overflow-y: auto;
+		height: 100%;
+		background: rgba(251, 246, 236, 0.95);
+		border-left: 1px solid rgba(21, 32, 33, 0.12);
 	}
 	@media (max-width: 900px) {
 		.mobile-tabs {
@@ -577,6 +617,10 @@
 			height: calc(100dvh - 60px);
 			border-radius: 0;
 			box-shadow: none;
+			position: relative;
+		}
+		.map-wrap :global(.map-shell) {
+			height: 100%;
 		}
 		.map-wrap.visible,
 		.panel-wrapper.visible {
@@ -589,6 +633,9 @@
 		}
 		.panel-wrapper.visible {
 			display: block;
+		}
+		.inspector-desktop {
+			display: none;
 		}
 	}
 </style>

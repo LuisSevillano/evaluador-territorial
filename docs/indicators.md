@@ -1,4 +1,9 @@
-# Indicadores v2 - Observatorio Territorial El Buen Vivir
+# Indicadores v3 - Observatorio Territorial El Buen Vivir
+
+## Identificacion
+- `population`: poblacion total (2025). Fuente: INE (Padrón continuo) via mapSpain.
+- `population_men`: poblacion masculina (2025).
+- `population_women`: poblacion femenina (2025).
 
 ## Clima
 - `precip_annual_mm`: precipitacion anual (mm). Fuente: TerraClimate mensual. Periodo: 2014-2023. Metodo: suma de climatologia mensual agregada por poligono municipal.
