@@ -25,6 +25,7 @@
 	let snap = $state<Snap>('collapsed');
 	let isDragging = $state(false);
 	let dragVisiblePx = $state<number | null>(null);
+	let viewportHeight = $state(0);
 	let startY = 0;
 	let startVisiblePx = 0;
 
@@ -36,7 +37,7 @@
 	const toPx = (value: string) => {
 		if (typeof window === 'undefined') return 0;
 		const input = value.trim();
-		if (input.endsWith('vh')) return (Number.parseFloat(input) / 100) * window.innerHeight;
+		if (input.endsWith('vh')) return (Number.parseFloat(input) / 100) * viewportHeight;
 		if (input.endsWith('rem')) return Number.parseFloat(input) * rootFontSize();
 		if (input.endsWith('px')) return Number.parseFloat(input);
 		const parsed = Number.parseFloat(input);
@@ -48,10 +49,11 @@
 	const snapVisiblePx = (value: Snap) => {
 		if (snapPoints) {
 			const [collapsed, mid, full] = snapPoints;
+			const height = viewportHeight;
 			const points = {
-				collapsed: clamp(window.innerHeight * collapsed, 0, window.innerHeight),
-				mid: clamp(window.innerHeight * mid, 0, window.innerHeight),
-				full: clamp(window.innerHeight * full, 0, window.innerHeight)
+				collapsed: clamp(height * collapsed, 0, height),
+				mid: clamp(height * mid, 0, height),
+				full: clamp(height * full, 0, height)
 			};
 			if (value === 'collapsed') return points.collapsed;
 			if (value === 'mid') return points.mid;
@@ -82,6 +84,11 @@
 		if (snap === 'collapsed') return peekHeight;
 		if (snap === 'mid') return initialHeight;
 		return expandedHeight;
+	});
+
+	const sheetHeight = $derived.by(() => {
+		if (!snapPoints || typeof window === 'undefined') return expandedHeight;
+		return `${Math.round(snapVisiblePx('full'))}px`;
 	});
 
 	const handlePointerDown = (e: PointerEvent) => {
@@ -123,6 +130,16 @@
 	};
 
 	$effect(() => {
+		if (typeof window === 'undefined') return;
+		const syncViewportHeight = () => {
+			viewportHeight = window.innerHeight;
+		};
+		syncViewportHeight();
+		window.addEventListener('resize', syncViewportHeight);
+		return () => window.removeEventListener('resize', syncViewportHeight);
+	});
+
+	$effect(() => {
 		if (isOpen && snap === 'collapsed') {
 			snap = 'mid';
 		}
@@ -138,6 +155,7 @@
 	class:dragging={isDragging}
 	style:--initial-height={initialHeight}
 	style:--expanded-height={expandedHeight}
+	style:--sheet-height={sheetHeight}
 	style:--peek-height={peekHeight}
 	style:--visible-height={visibleHeight}
 	role="dialog"
@@ -172,8 +190,8 @@
 		bottom: 0;
 		left: 0;
 		right: 0;
-		height: var(--expanded-height, 92vh);
-		max-height: var(--expanded-height, 92vh);
+		height: var(--sheet-height, var(--expanded-height, 92vh));
+		max-height: var(--sheet-height, var(--expanded-height, 92vh));
 		background: linear-gradient(180deg, rgba(252, 248, 238, 0.97), rgba(248, 242, 226, 0.97));
 		border-top-left-radius: 1rem;
 		border-top-right-radius: 1rem;
@@ -213,7 +231,7 @@
 	.content {
 		padding: 0 0.75rem 0.75rem;
 		overflow-y: auto;
-		max-height: calc(var(--expanded-height, 92vh) - 1.6rem);
+		max-height: calc(var(--sheet-height, var(--expanded-height, 92vh)) - 1.6rem);
 	}
 
 	@media (min-width: 901px) {
