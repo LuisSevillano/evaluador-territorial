@@ -53,7 +53,5 @@ ccaa <- prov_scope |>
   select(id_ccaa, codnut2, nombre_ccaa, geometry)
 
 st_write(ccaa, paths$output_ccaa_geojson, delete_dsn = TRUE, quiet = TRUE)
-file.copy(paths$output_ccaa_geojson, paths$frontend_ccaa_geojson, overwrite = TRUE)
 
 message("OK: CCAA (desde fuente provincial oficial) exportadas en ", paths$output_ccaa_geojson)
-message("OK: Copia frontend en ", paths$frontend_ccaa_geojson)

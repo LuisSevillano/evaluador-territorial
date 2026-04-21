@@ -42,9 +42,6 @@ if (!file.exists(corine_path)) {
     write_empty_geojson(paths$output_landuse_geojson)
     write_empty_geojson(paths$output_vegetation_geojson)
     file_copy(paths$output_entorno_geojson, paths$output_clima_geojson, overwrite = TRUE)
-    file_copy(paths$output_forest_geojson, paths$frontend_forest_geojson, overwrite = TRUE)
-    file_copy(paths$output_landuse_geojson, paths$frontend_landuse_geojson, overwrite = TRUE)
-    file_copy(paths$output_vegetation_geojson, paths$frontend_vegetation_geojson, overwrite = TRUE)
     message("OK: entorno fallback neutral generado")
   } else {
     dir_create(osm_extract_dir, recurse = TRUE)
@@ -163,9 +160,6 @@ if (!file.exists(corine_path)) {
     st_write(st_transform(landuse_layer, 4326), paths$output_landuse_geojson, delete_dsn = TRUE, quiet = TRUE)
     st_write(st_transform(vegetation_layer, 4326), paths$output_vegetation_geojson, delete_dsn = TRUE, quiet = TRUE)
 
-    file_copy(paths$output_forest_geojson, paths$frontend_forest_geojson, overwrite = TRUE)
-    file_copy(paths$output_landuse_geojson, paths$frontend_landuse_geojson, overwrite = TRUE)
-    file_copy(paths$output_vegetation_geojson, paths$frontend_vegetation_geojson, overwrite = TRUE)
     message("OK: entorno fallback OSM generado")
   }
 } else {
@@ -255,10 +249,6 @@ if (!file.exists(corine_path)) {
   st_write(forest_layer, paths$output_forest_geojson, delete_dsn = TRUE, quiet = TRUE)
   st_write(landuse_layer, paths$output_landuse_geojson, delete_dsn = TRUE, quiet = TRUE)
   st_write(vegetation_layer, paths$output_vegetation_geojson, delete_dsn = TRUE, quiet = TRUE)
-
-  file_copy(paths$output_forest_geojson, paths$frontend_forest_geojson, overwrite = TRUE)
-  file_copy(paths$output_landuse_geojson, paths$frontend_landuse_geojson, overwrite = TRUE)
-  file_copy(paths$output_vegetation_geojson, paths$frontend_vegetation_geojson, overwrite = TRUE)
 
   message("OK: indicadores de entorno y capas CORINE exportados")
 }

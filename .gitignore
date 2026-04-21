@@ -20,3 +20,6 @@ output/*
 
 # Local Netlify folder
 .netlify
+
+# Frontend uses PMTiles; avoid committing heavy GeoJSON artifacts
+frontend/static/data/*.geojson
