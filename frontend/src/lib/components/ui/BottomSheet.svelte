@@ -49,7 +49,7 @@
 	const snapVisiblePx = (value: Snap) => {
 		if (snapPoints) {
 			const [collapsed, mid, full] = snapPoints;
-			const height = viewportHeight;
+			const height = viewportHeight || (typeof window === 'undefined' ? 0 : window.innerHeight);
 			const points = {
 				collapsed: clamp(height * collapsed, 0, height),
 				mid: clamp(height * mid, 0, height),
@@ -80,6 +80,9 @@
 	const visibleHeight = $derived.by(() => {
 		if (dragVisiblePx !== null && typeof window !== 'undefined') {
 			return `${Math.round(dragVisiblePx)}px`;
+		}
+		if (snapPoints && typeof window !== 'undefined') {
+			return `${Math.round(snapVisiblePx(snap))}px`;
 		}
 		if (snap === 'collapsed') return peekHeight;
 		if (snap === 'mid') return initialHeight;
@@ -201,6 +204,7 @@
 		z-index: 100;
 		overscroll-behavior: contain;
 		backdrop-filter: blur(4px);
+		overflow: hidden;
 	}
 
 	.bottom-sheet.dragging {
@@ -229,9 +233,10 @@
 	}
 
 	.content {
-		padding: 0 0.75rem 0.75rem;
+		padding: 0 0.75rem calc(0.75rem + env(safe-area-inset-bottom));
 		overflow-y: auto;
-		max-height: calc(var(--sheet-height, var(--expanded-height, 92vh)) - 1.6rem);
+		max-height: calc(var(--visible-height, var(--sheet-height, var(--expanded-height, 92vh))) - 1.6rem);
+		-webkit-overflow-scrolling: touch;
 	}
 
 	@media (min-width: 901px) {

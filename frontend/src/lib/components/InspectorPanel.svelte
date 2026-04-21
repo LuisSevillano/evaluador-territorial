@@ -109,7 +109,7 @@
 					<span>Accesibilidad</span><strong>{selectedMunicipio.travel_bucket}</strong>
 				</div>
 				<div class={`metric ${climateTone(selectedMunicipio.precip_annual_mm)}`}>
-					<span>Precipitacion</span><strong>{selectedMunicipio.precip_annual_mm} mm</strong>
+					<span>Precipitación</span><strong>{selectedMunicipio.precip_annual_mm} mm</strong>
 				</div>
 				<div class="metric">
 					<span>Invierno / Verano</span><strong
@@ -137,12 +137,12 @@
 					/>
 					{#if context?.tempAmplitude !== null}
 						<small
-							>Amplitud anual: {context?.tempAmplitude?.toFixed(1)} C (mas alto = estacionalidad mas marcada).</small
+							>Amplitud anual: {context?.tempAmplitude?.toFixed(1)} C (más alto = estacionalidad más marcada).</small
 						>
 					{/if}
 				</div>
 				<div class="chart-card">
-					<p>Precipitacion mensual</p>
+					<p>Precipitación mensual</p>
 					<ClimatePrecipBarsChart data={climateSeries} />
 					{#if context?.wettest && context?.driest}
 						<small
@@ -155,7 +155,7 @@
 			<button class="shortlist-btn" onclick={() => onToggleShortlist(selectedMunicipio.id)}>
 				{shortlistedIds.includes(selectedMunicipio.id)
 					? 'Quitar de shortlist'
-					: 'Anadir a shortlist'}
+					: 'Añadir a shortlist'}
 			</button>
 		{:else}
 			<p class="muted">Selecciona un municipio para ver detalle avanzado.</p>
@@ -166,8 +166,8 @@
 		<section class="panel score-panel">
 			<h2>Ajuste del score</h2>
 			<p class="muted">
-				Estos pesos cambian el score y el ranking; el filtro de score minimo del panel izquierdo
-				decide que municipios se muestran en mapa y tabla.
+				Estos pesos cambian el score y el ranking; el filtro de score mínimo del panel izquierdo
+				decide qué municipios se muestran en mapa y tabla.
 			</p>
 			<div class="chips-wrap compact preset-wrap">
 				<ChipButton
