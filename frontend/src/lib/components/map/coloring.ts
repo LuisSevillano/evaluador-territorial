@@ -56,7 +56,7 @@ export const buildMunicipioColorExpression = (municipios: Municipio[], mapColorM
 export const getLegendConfig = (mapColorMetric: MapColorMetric) =>
 	mapColorMetric === 'mixed_score'
 		? {
-				title: 'Score mixto',
+				title: 'Puntuación',
 				thresholds: [...scoreThresholds],
 				colors: [...scoreColors],
 				formatLabel: (value: number) => value.toFixed(2)
