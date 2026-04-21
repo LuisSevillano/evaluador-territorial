@@ -22,6 +22,12 @@
 		if (score <= 0.42) return 'Alto';
 		return 'Muy alto';
 	};
+
+	const blockLabel = (key: string) => {
+		if (key === 'clima') return 'Lluvia';
+		if (key === 'accesibilidad') return 'Acceso';
+		return 'Naturaleza';
+	};
 </script>
 
 {#if context}
@@ -62,17 +68,16 @@
 		</div>
 		<div class="block-grid">
 			{#each context.blockBreakdown as block}
-				<div>
-					<span>{block.key}</span>
-					<small
-						>bloque {block.raw.toFixed(3)} · media {block.avgRaw.toFixed(3)} · peso {(
-							block.weight * 100
-						).toFixed(0)}%</small
-					>
-					<strong>{block.contribution.toFixed(3)}</strong>
-					<em class={block.delta >= 0 ? 'up' : 'down'}
-						>{block.delta >= 0 ? '+' : ''}{block.delta.toFixed(3)} pts</em
-					>
+				{@const pctAbove = block.avgRaw > 0 ? ((block.raw - block.avgRaw) / block.avgRaw) * 100 : 0}
+				{@const barWidth = Math.max(0, Math.min(100, 50 + pctAbove * 2))}
+				<div class="block-item">
+					<span>{blockLabel(block.key)}</span>
+					<div class="bar-track">
+						<div class="bar-fill" class:positive={pctAbove >= 0} class:negative={pctAbove < 0} style="width: {barWidth}%"></div>
+					</div>
+					<em class={pctAbove >= 0 ? 'up' : 'down'}>
+						{pctAbove >= 0 ? '↑' : '↓'} {Math.abs(pctAbove).toFixed(0)}% vs media
+					</em>
 				</div>
 			{/each}
 		</div>
@@ -213,40 +218,48 @@
 		grid-template-columns: 1fr 1fr 1fr;
 		gap: 0.3rem;
 	}
-	.block-grid div {
+	.block-item {
 		padding: 0.3rem;
 		border-radius: 8px;
 		background: rgba(248, 253, 250, 0.8);
 		border: 1px solid rgba(35, 68, 64, 0.16);
+		display: grid;
+		gap: 0.2rem;
 	}
-	.block-grid span {
+	.block-item > span {
 		display: block;
 		font-size: 0.68rem;
 		text-transform: uppercase;
 		letter-spacing: 0.06em;
 		color: #35514e;
 	}
-	.block-grid small {
-		display: block;
-		margin-top: 0.1rem;
-		font-size: 0.64rem;
-		color: #4d6663;
-		line-height: 1.2;
-	}
-	.block-grid strong {
-		display: block;
-		margin-top: 0.18rem;
-		font-size: 0.82rem;
-		color: #1f3734;
-	}
 	.block-grid em {
 		display: block;
-		margin-top: 0.06rem;
+		margin-top: 0;
 		font-style: normal;
 		font-size: 0.7rem;
 	}
 	.block-grid em.up {
 		color: #0f766e;
+	}
+	.bar-track {
+		height: 6px;
+		background: rgba(209, 213, 216, 0.5);
+		border-radius: 3px;
+		margin-top: 0.08rem;
+		overflow: hidden;
+	}
+	.bar-fill {
+		height: 100%;
+		border-radius: inherit;
+		display: block;
+		transition: width 300ms ease;
+	}
+	.bar-fill.positive {
+		background: linear-gradient(90deg, #22c55e, #16a34a);
+	}
+	.bar-fill.negative {
+		background: linear-gradient(90deg, #ef4444, #dc2626);
 	}
 	.block-grid em.down {
 		color: #b91c1c;

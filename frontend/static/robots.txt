@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://el-buen-vivir.netlify.app/sitemap.xml
+Sitemap: https://observatorio-territorial.netlify.app/sitemap.xml

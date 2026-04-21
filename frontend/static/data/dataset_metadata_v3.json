@@ -1,7 +1,8 @@
 {
-  "dataset_version": "v3.0.0",
-  "generated_at_utc": "2026-04-18 07:17:30 UTC",
+  "dataset_version": "v3.1.0",
+  "generated_at_utc": "2026-04-20",
   "analysis_scope": "Castilla y Leon",
+  "population_source": "INE Padrón continuo 2025 via mapSpain",
   "climate_source": "TerraClimate (tmin, tmax, ppt)",
   "environment_source": "CORINE Land Cover (si disponible en data/raw/corine)",
   "climate_period": "2014-2023",

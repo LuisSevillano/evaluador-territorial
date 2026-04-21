@@ -5,6 +5,9 @@ export type Municipio = {
 	provincia: string;
 	lat: number;
 	lon: number;
+	population?: number;
+	population_men?: number;
+	population_women?: number;
 	precip_annual_mm: number;
 	temp_winter_mean_c: number;
 	temp_summer_mean_c: number;
