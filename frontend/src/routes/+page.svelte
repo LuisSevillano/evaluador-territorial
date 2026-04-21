@@ -37,8 +37,9 @@
 	import { createSelectionStore } from '$lib/state/selectionStore.svelte';
 	import { createUiStore } from '$lib/state/uiStore.svelte';
 	import { createFiltersStore } from '$lib/state/filtersStore.svelte';
-	import { createLayersStore } from '$lib/state/layersStore.svelte';
-	import { createRankingStore } from '$lib/state/rankingStore.svelte';
+import { createLayersStore } from '$lib/state/layersStore.svelte';
+import { createRankingStore } from '$lib/state/rankingStore.svelte';
+import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExport';
 	import {
 		activePresetFromWeights,
 		BASELINE_WEIGHTS,
@@ -287,49 +288,8 @@
 		uiStore.state.isBottomSheetOpen = panel.open;
 	};
 
-	const downloadFile = (filename: string, content: string, mimeType: string) => {
-		if (typeof window === 'undefined') return;
-		const blob = new Blob([content], { type: mimeType });
-		const url = URL.createObjectURL(blob);
-		const link = document.createElement('a');
-		link.href = url;
-		link.download = filename;
-		link.click();
-		URL.revokeObjectURL(url);
-	};
-
-	const csvCell = (value: string | number | undefined | null) => {
-		if (value === undefined || value === null) return '';
-		const text = String(value);
-		return /[",\n]/.test(text) ? `"${text.replaceAll('"', '""')}"` : text;
-	};
-
-	const handleExportShortlistCsv = () => {
-		if (shortlistMunicipios.length === 0) return;
-		const headers = ['id', 'codigo', 'nombre', 'provincia', 'travel_bucket', 'mixed_score'];
-		const rows = shortlistMunicipios.map((m) =>
-			[
-				m.id,
-				m.codigo,
-				m.nombre,
-				m.provincia,
-				m.travel_bucket,
-				m.mixed_score?.toFixed(4) ?? ''
-			]
-				.map(csvCell)
-				.join(',')
-		);
-		downloadFile('shortlist_el_buen_vivir.csv', `${headers.join(',')}\n${rows.join('\n')}`, 'text/csv;charset=utf-8');
-	};
-
-	const handleExportShortlistJson = () => {
-		if (shortlistMunicipios.length === 0) return;
-		downloadFile(
-			'shortlist_el_buen_vivir.json',
-			JSON.stringify(shortlistMunicipios, null, 2),
-			'application/json;charset=utf-8'
-		);
-	};
+	const handleExportShortlistCsv = () => exportShortlistCsv(shortlistMunicipios);
+	const handleExportShortlistJson = () => exportShortlistJson(shortlistMunicipios);
 
 	const handleClearFilters = () => {
 		filtersStore.clear();
