@@ -41,6 +41,7 @@
 		tableRows?: Municipio[];
 		sortBy?: SortField;
 		sortDirection?: 'asc' | 'desc';
+		isEvaluationMode?: boolean;
 		weights?: { climate: number; access: number; nature: number };
 		weightsRaw?: { climateWeight: number; accessWeight: number; natureWeight: number };
 		sensitivityOverlap?: number;
@@ -105,6 +106,7 @@
 		tableRows = [],
 		sortBy = 'mixed_score',
 		sortDirection = 'desc',
+		isEvaluationMode = false,
 		weights = { climate: 0.4, access: 0.3, nature: 0.3 },
 		weightsRaw = { climateWeight: 40, accessWeight: 30, natureWeight: 30 },
 		sensitivityOverlap = 0,
@@ -363,8 +365,10 @@
 			<input id="min-winter-temp" name="min-winter-temp" type="range" min="-15" max="15" step="0.5" value={minWinterTemp} oninput={(e) => onMinWinterTempChange(toNumber(e))} />
 			<label for="max-summer-temp">Temp. verano maxima: {maxSummerTemp} C</label>
 			<input id="max-summer-temp" name="max-summer-temp" type="range" min="15" max="40" step="0.5" value={maxSummerTemp} oninput={(e) => onMaxSummerTempChange(toNumber(e))} />
-			<label for="min-score">Score minimo visible: {minCompositeScore.toFixed(2)}</label>
-			<input id="min-score" name="min-score" type="range" min="0" max="1" step="0.01" value={minCompositeScore} oninput={(e) => onMinCompositeScoreChange(toNumber(e))} />
+			{#if isEvaluationMode}
+				<label for="min-score">Score minimo visible: {minCompositeScore.toFixed(2)}</label>
+				<input id="min-score" name="min-score" type="range" min="0" max="1" step="0.01" value={minCompositeScore} oninput={(e) => onMinCompositeScoreChange(toNumber(e))} />
+			{/if}
 		</div>
 
 		<div class="filter-foot">
@@ -373,30 +377,32 @@
 		</div>
 	</section>
 
-	<section class="panel mobile-score-panel">
-		<h2>Ajuste del score</h2>
-		<p class="muted">Estos pesos cambian el score y el ranking; el filtro de score minimo decide que municipios se muestran en mapa y tabla.</p>
-		<div class="chips-wrap compact preset-wrap">
-			<ChipButton label="Equilibrado" active={activePreset === 'equilibrado'} onclick={() => onPresetWeights('equilibrado')} />
-			<ChipButton label="Priorizar naturaleza" active={activePreset === 'naturaleza'} onclick={() => onPresetWeights('naturaleza')} />
-			<ChipButton label="Priorizar accesibilidad" active={activePreset === 'accesibilidad'} onclick={() => onPresetWeights('accesibilidad')} />
-			<ChipButton label="Priorizar clima" active={activePreset === 'clima'} onclick={() => onPresetWeights('clima')} />
-		</div>
-		<div class="control score-control">
-			<label for="m-rw-climate">Peso clima: {weightsRaw.climateWeight}</label>
-			<input id="m-rw-climate" name="m-rw-climate" type="range" min="0" max="100" step="1" value={weightsRaw.climateWeight} oninput={(e) => onClimateWeightChange(toNumber(e))} />
-		</div>
-		<div class="control score-control">
-			<label for="m-rw-access">Peso accesibilidad: {weightsRaw.accessWeight}</label>
-			<input id="m-rw-access" name="m-rw-access" type="range" min="0" max="100" step="1" value={weightsRaw.accessWeight} oninput={(e) => onAccessWeightChange(toNumber(e))} />
-		</div>
-		<div class="control score-control">
-			<label for="m-rw-nature">Peso naturaleza: {weightsRaw.natureWeight}</label>
-			<input id="m-rw-nature" name="m-rw-nature" type="range" min="0" max="100" step="1" value={weightsRaw.natureWeight} oninput={(e) => onNatureWeightChange(toNumber(e))} />
-		</div>
-		<p class="muted">Normalizados: clima {(weights.climate * 100).toFixed(0)}% · acces {(weights.access * 100).toFixed(0)}% · nat {(weights.nature * 100).toFixed(0)}%</p>
-		<p class="muted">Robustez top-10 vs base equilibrada: {sensitivityOverlap}/10</p>
-	</section>
+	{#if isEvaluationMode}
+		<section class="panel mobile-score-panel">
+			<h2>Ajuste del score</h2>
+			<p class="muted">Estos pesos cambian el score y el ranking; el filtro de score minimo decide que municipios se muestran en mapa y tabla.</p>
+			<div class="chips-wrap compact preset-wrap">
+				<ChipButton label="Equilibrado" active={activePreset === 'equilibrado'} onclick={() => onPresetWeights('equilibrado')} />
+				<ChipButton label="Priorizar naturaleza" active={activePreset === 'naturaleza'} onclick={() => onPresetWeights('naturaleza')} />
+				<ChipButton label="Priorizar accesibilidad" active={activePreset === 'accesibilidad'} onclick={() => onPresetWeights('accesibilidad')} />
+				<ChipButton label="Priorizar clima" active={activePreset === 'clima'} onclick={() => onPresetWeights('clima')} />
+			</div>
+			<div class="control score-control">
+				<label for="m-rw-climate">Peso clima: {weightsRaw.climateWeight}</label>
+				<input id="m-rw-climate" name="m-rw-climate" type="range" min="0" max="100" step="1" value={weightsRaw.climateWeight} oninput={(e) => onClimateWeightChange(toNumber(e))} />
+			</div>
+			<div class="control score-control">
+				<label for="m-rw-access">Peso accesibilidad: {weightsRaw.accessWeight}</label>
+				<input id="m-rw-access" name="m-rw-access" type="range" min="0" max="100" step="1" value={weightsRaw.accessWeight} oninput={(e) => onAccessWeightChange(toNumber(e))} />
+			</div>
+			<div class="control score-control">
+				<label for="m-rw-nature">Peso naturaleza: {weightsRaw.natureWeight}</label>
+				<input id="m-rw-nature" name="m-rw-nature" type="range" min="0" max="100" step="1" value={weightsRaw.natureWeight} oninput={(e) => onNatureWeightChange(toNumber(e))} />
+			</div>
+			<p class="muted">Normalizados: clima {(weights.climate * 100).toFixed(0)}% · acces {(weights.access * 100).toFixed(0)}% · nat {(weights.nature * 100).toFixed(0)}%</p>
+			<p class="muted">Robustez top-10 vs base equilibrada: {sensitivityOverlap}/10</p>
+		</section>
+	{/if}
 
 
 	<section class="panel table-panel">
