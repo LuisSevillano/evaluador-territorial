@@ -6,14 +6,12 @@
 	import type { Municipio } from '$lib/types/municipio';
 	import LandUseLegend from '$lib/components/map/LandUseLegend.svelte';
 	import MapLoadingBadge from '$lib/components/map/MapLoadingBadge.svelte';
-	import {
-		type MapColorMetric,
-		buildMunicipioColorExpression
-	} from '$lib/components/map/coloring';
+	import { type MapColorMetric, buildMunicipioColorExpression } from '$lib/components/map/coloring';
 	import 'maplibre-gl/dist/maplibre-gl.css';
 
 	type Props = {
 		municipios?: Municipio[];
+		allMunicipios?: Municipio[];
 		selectedMunicipio?: Municipio | null;
 		showMunicipioPolygons?: boolean;
 		showMunicipioPoints?: boolean;
@@ -34,6 +32,7 @@
 
 	let {
 		municipios = [],
+		allMunicipios,
 		selectedMunicipio = null,
 		showMunicipioPolygons = true,
 		showMunicipioPoints = true,
@@ -194,7 +193,8 @@
 
 		return (
 			municipios.find(
-				(m) => Number.parseInt(m.id, 10) === numericId || Number.parseInt(m.codigo, 10) === numericId
+				(m) =>
+					Number.parseInt(m.id, 10) === numericId || Number.parseInt(m.codigo, 10) === numericId
 			) ?? null
 		);
 	};
@@ -325,10 +325,11 @@
 		syncHighlightFilters();
 	};
 
-	const getMunicipiosBounds = () => {
-		if (municipios.length === 0) return null;
+	const getMunicipiosBounds = (data?: Municipio[]) => {
+		const source = data ?? allMunicipios ?? municipios;
+		if (source.length === 0) return null;
 
-		const points = municipios.filter((m) => Number.isFinite(m.lon) && Number.isFinite(m.lat));
+		const points = source.filter((m) => Number.isFinite(m.lon) && Number.isFinite(m.lat));
 		if (points.length === 0) return null;
 
 		let minLon = Number.POSITIVE_INFINITY;
@@ -347,8 +348,8 @@
 
 		const lonSpan = Math.max(maxLon - minLon, 0.01);
 		const latSpan = Math.max(maxLat - minLat, 0.01);
-		const padLon = Math.max(lonSpan * 0.2, 0.45);
-		const padLat = Math.max(latSpan * 0.2, 0.32);
+		const padLon = Math.max(lonSpan * 0.45, 0.55);
+		const padLat = Math.max(latSpan * 0.45, 0.38);
 
 		const raw: [[number, number], [number, number]] = [
 			[minLon, minLat],
@@ -365,11 +366,9 @@
 
 	const applyMaxBoundsToMunicipios = () => {
 		if (!map) return;
-		const iberianPeninsulaBounds: [[number, number], [number, number]] = [
-			[-10.6, 35.5],
-			[4.8, 44.6]
-		];
-		map.setMaxBounds(iberianPeninsulaBounds as maplibregl.LngLatBoundsLike);
+		const bounds = getMunicipiosBounds(allMunicipios);
+		if (!bounds) return;
+		map.setMaxBounds(bounds.padded as maplibregl.LngLatBoundsLike);
 	};
 
 	const fitToMunicipios = () => {
@@ -377,14 +376,11 @@
 		const bounds = getMunicipiosBounds();
 		if (!bounds) return;
 
-		map.fitBounds(
-			bounds.raw,
-			{
-				padding: { top: 36, right: 42, bottom: 44, left: 42 },
-				maxZoom: 7.4,
-				duration: 0
-			}
-		);
+		map.fitBounds(bounds.raw, {
+			padding: { top: 36, right: 42, bottom: 44, left: 42 },
+			maxZoom: 7.4,
+			duration: 0
+		});
 	};
 
 	const addMunicipiosPmtiles = () => {
@@ -540,7 +536,7 @@
 		return () => maplibregl.removeProtocol('pmtiles');
 	};
 
-		onMount(() => {
+	onMount(() => {
 		const unregisterPmtiles = registerPmtiles();
 		initialBoundsApplied = false;
 
