@@ -29,7 +29,6 @@
 		showVegetationLayer?: boolean;
 		layerOrder?: string[];
 		visibleMunicipioIds?: string[];
-		polygonDataUrl?: string;
 		pmtilesUrl?: string;
 		onMapSelection?: (municipio: Municipio | null) => void;
 	};
@@ -49,7 +48,6 @@
 		showVegetationLayer = false,
 		layerOrder = ['municipios', 'landuse', 'reservoirs', 'rivers'],
 		visibleMunicipioIds = [],
-		polygonDataUrl = '/data/municipios_v2.geojson',
 		pmtilesUrl = '/tiles/municipios.pmtiles',
 		onMapSelection = () => undefined
 	}: Props = $props();
@@ -61,7 +59,6 @@
 	const municipiosSourceId = 'municipios-centroides-source';
 	const municipiosLayerId = 'municipios-centroides-layer';
 	const municipiosPmtilesSourceId = 'municipios-pmtiles-source';
-	const municipiosPolygonsSourceId = 'municipios-geojson-fallback-source';
 	const municipiosPolygonsFillLayerId = 'municipios-polygons-fill-layer';
 	const municipiosPolygonsLineLayerId = 'municipios-polygons-line-layer';
 	const municipiosHoverLineLayerId = 'municipios-polygons-hover-line-layer';

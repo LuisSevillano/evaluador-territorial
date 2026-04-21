@@ -462,7 +462,6 @@
 				{showVegetationLayer}
 				{layerOrder}
 				{visibleMunicipioIds}
-				polygonDataUrl="/data/municipios_v2.geojson"
 				pmtilesUrl={municipiosPmtilesUrl}
 				onMapSelection={handleSelectMunicipio}
 			/>

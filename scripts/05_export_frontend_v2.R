@@ -141,8 +141,7 @@ st_write(mun_tiles, paths$output_v2_geojson, delete_dsn = TRUE, quiet = TRUE)
 monthly <- read_csv(paths$output_climate_monthly_csv, show_col_types = FALSE)
 write_file(toJSON(monthly, auto_unbox = TRUE), paths$output_climate_monthly_json)
 
-file_copy(paths$output_v2_geojson, paths$frontend_v2_geojson, overwrite = TRUE)
 file_copy(paths$output_v2_json, paths$frontend_v2_json, overwrite = TRUE)
 file_copy(paths$output_climate_monthly_json, paths$frontend_climate_monthly_json, overwrite = TRUE)
 
-message("OK: export v2 generado y copiado a frontend/static/data")
+message("OK: export v2 tabular generado y copiado a frontend/static/data")
