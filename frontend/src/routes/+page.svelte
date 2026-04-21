@@ -703,10 +703,17 @@
 					</table>
 				</div>
 			</section>
-			<BottomSheet initialHeight="34vh" expandedHeight="62vh" peekHeight="5.2rem" snapPoints={[0.12, 0.55, 0.92]} bind:isOpen={isBottomSheetOpen}>
+			<BottomSheet initialHeight="34vh" expandedHeight="62vh" peekHeight="5.2rem" snapPoints={[0.14, 0.66, 0.94]} bind:isOpen={isBottomSheetOpen}>
 				{#snippet children()}
 					<div class="sheet-tabs" role="tablist" aria-label="Panel móvil">
-						<button class:active={activeSheetTab === 'sel'} onclick={() => handleSelectSheetTab('sel')}><MapPin size={16} />Sel</button>
+						<button
+							class:active={activeSheetTab === 'sel'}
+							class:has-selection={Boolean(selectedMunicipio)}
+							onclick={() => handleSelectSheetTab('sel')}
+							aria-label={selectedMunicipio ? `Selección activa: ${selectedMunicipio.nombre}` : 'Selección'}
+						>
+							<MapPin size={16} />Sel
+						</button>
 						<button class:active={activeSheetTab === 'filtr'} onclick={() => handleSelectSheetTab('filtr')}><SlidersHorizontal size={16} />Filtr</button>
 						<button class:active={activeSheetTab === 'capas'} onclick={() => handleSelectSheetTab('capas')}><Layers size={16} />Capas</button>
 						<button class:active={activeSheetTab === 'rank'} onclick={() => handleSelectSheetTab('rank')}><BarChart3 size={16} />Rank</button>
@@ -749,66 +756,79 @@
 							<div class="sheet-block">
 								<ModeToggle mode={viewMode} onChange={(nextMode) => (viewMode = nextMode)} />
 								<p class="sheet-meta">{modeCopy[viewMode].helper}</p>
-								<label for="sheet-province">Provincia</label>
-								<select id="sheet-province" value={provinceFilter} onchange={(e) => (provinceFilter = (e.currentTarget as HTMLSelectElement).value)}>
-									{#each provinciasDisponibles as provincia}
-										<option value={provincia}>{provincia}</option>
-									{/each}
-								</select>
-								<div class="chips-row">
-									{#each travelBuckets as bucket}
-										<ChipButton label={bucket.label} size="small" compact={true} active={maxTravelBucket === bucket.value} onclick={() => (maxTravelBucket = bucket.value)} />
-									{/each}
-								</div>
-								<p class="sheet-subtitle">Filtros de climatología</p>
-								<div class="sheet-slider-grid">
-									<div class="sheet-score-item">
-										<label for="sheet-min-precip">Precipitación mínima anual: {minPrecipAnnual} mm</label>
-										<input id="sheet-min-precip" type="range" min="0" max="1800" step="10" value={minPrecipAnnual} oninput={(e) => (minPrecipAnnual = toNumber(e))} />
-									</div>
-									<div class="sheet-score-item">
-										<label for="sheet-min-winter">Temp. invierno mínima: {minWinterTemp} C</label>
-										<input id="sheet-min-winter" type="range" min="-15" max="15" step="0.5" value={minWinterTemp} oninput={(e) => (minWinterTemp = toNumber(e))} />
-									</div>
-									<div class="sheet-score-item">
-										<label for="sheet-max-summer">Temp. verano máxima: {maxSummerTemp} C</label>
-										<input id="sheet-max-summer" type="range" min="15" max="40" step="0.5" value={maxSummerTemp} oninput={(e) => (maxSummerTemp = toNumber(e))} />
-									</div>
-									<div class="sheet-score-item">
-										<label for="sheet-max-amplitude">Amplitud térmica máxima: {maxThermalAmplitude.toFixed(1)} C</label>
-										<input id="sheet-max-amplitude" type="range" min="12" max="21" step="0.1" value={maxThermalAmplitude} oninput={(e) => (maxThermalAmplitude = toNumber(e))} />
-									</div>
-								</div>
-								{#if viewMode === 'evaluacion'}
-									<p class="sheet-subtitle">Ajuste del score</p>
+								<section class="sheet-section">
+									<p class="sheet-subtitle">Filtros base</p>
+									<label for="sheet-province">Provincia</label>
+									<select id="sheet-province" value={provinceFilter} onchange={(e) => (provinceFilter = (e.currentTarget as HTMLSelectElement).value)}>
+										{#each provinciasDisponibles as provincia}
+											<option value={provincia}>{provincia}</option>
+										{/each}
+									</select>
 									<div class="chips-row">
-										<ChipButton label="Equilibrado" active={activePreset === 'equilibrado'} onclick={() => handlePresetWeights('equilibrado')} />
-										<ChipButton label="Naturaleza" active={activePreset === 'naturaleza'} onclick={() => handlePresetWeights('naturaleza')} />
-										<ChipButton label="Accesibilidad" active={activePreset === 'accesibilidad'} onclick={() => handlePresetWeights('accesibilidad')} />
-										<ChipButton label="Clima" active={activePreset === 'clima'} onclick={() => handlePresetWeights('clima')} />
-										<ChipButton label="Clima estricto" active={activePreset === 'clima_estricto'} onclick={() => handlePresetWeights('clima_estricto')} />
+										{#each travelBuckets as bucket}
+											<ChipButton label={bucket.label} size="small" compact={true} active={maxTravelBucket === bucket.value} onclick={() => (maxTravelBucket = bucket.value)} />
+										{/each}
 									</div>
+									<p class="sheet-subtitle">Filtros de climatología</p>
 									<div class="sheet-slider-grid">
 										<div class="sheet-score-item">
-											<label for="sheet-min-score">Score mínimo visible: {minCompositeScore.toFixed(2)}</label>
-											<input id="sheet-min-score" type="range" min="0" max="1" step="0.01" value={minCompositeScore} oninput={(e) => (minCompositeScore = toNumber(e))} />
+											<label for="sheet-min-precip">Precipitación mínima anual: {minPrecipAnnual} mm</label>
+											<input id="sheet-min-precip" type="range" min="0" max="1800" step="10" value={minPrecipAnnual} oninput={(e) => (minPrecipAnnual = toNumber(e))} />
 										</div>
 										<div class="sheet-score-item">
-											<label for="sheet-w-clima">Peso clima: {climateWeight}</label>
-											<input id="sheet-w-clima" type="range" min="0" max="100" step="1" value={climateWeight} oninput={(e) => handleClimateWeightChange(toNumber(e))} />
+											<label for="sheet-min-winter">Temp. invierno mínima: {minWinterTemp} C</label>
+											<input id="sheet-min-winter" type="range" min="-15" max="15" step="0.5" value={minWinterTemp} oninput={(e) => (minWinterTemp = toNumber(e))} />
 										</div>
 										<div class="sheet-score-item">
-											<label for="sheet-w-acceso">Peso accesibilidad: {accessWeight}</label>
-											<input id="sheet-w-acceso" type="range" min="0" max="100" step="1" value={accessWeight} oninput={(e) => handleAccessWeightChange(toNumber(e))} />
+											<label for="sheet-max-summer">Temp. verano máxima: {maxSummerTemp} C</label>
+											<input id="sheet-max-summer" type="range" min="15" max="40" step="0.5" value={maxSummerTemp} oninput={(e) => (maxSummerTemp = toNumber(e))} />
 										</div>
 										<div class="sheet-score-item">
-											<label for="sheet-w-nat">Peso naturaleza: {natureWeight}</label>
-											<input id="sheet-w-nat" type="range" min="0" max="100" step="1" value={natureWeight} oninput={(e) => handleNatureWeightChange(toNumber(e))} />
+											<label for="sheet-max-amplitude">Amplitud térmica máxima: {maxThermalAmplitude.toFixed(1)} C</label>
+											<input id="sheet-max-amplitude" type="range" min="12" max="21" step="0.1" value={maxThermalAmplitude} oninput={(e) => (maxThermalAmplitude = toNumber(e))} />
 										</div>
 									</div>
-									<p class="sheet-meta">Robustez top-10: {sensitivityOverlap}/10</p>
+								</section>
+								{#if viewMode === 'evaluacion'}
+									<section class="sheet-section sheet-section-score">
+										<div class="sheet-score-summary">
+											<span>Pesos C/A/N: {climateWeight}/{accessWeight}/{natureWeight}</span>
+											<span>Robustez top-10: {sensitivityOverlap}/10</span>
+										</div>
+										<p class="sheet-subtitle">Ajuste del score</p>
+										<div class="chips-row">
+											<ChipButton label="Equilibrado" active={activePreset === 'equilibrado'} onclick={() => handlePresetWeights('equilibrado')} />
+											<ChipButton label="Naturaleza" active={activePreset === 'naturaleza'} onclick={() => handlePresetWeights('naturaleza')} />
+											<ChipButton label="Accesibilidad" active={activePreset === 'accesibilidad'} onclick={() => handlePresetWeights('accesibilidad')} />
+											<ChipButton label="Clima" active={activePreset === 'clima'} onclick={() => handlePresetWeights('clima')} />
+											<ChipButton label="Clima estricto" active={activePreset === 'clima_estricto'} onclick={() => handlePresetWeights('clima_estricto')} />
+										</div>
+										<div class="sheet-slider-grid">
+											<div class="sheet-score-item">
+												<label for="sheet-min-score">Score mínimo visible: {minCompositeScore.toFixed(2)}</label>
+												<input id="sheet-min-score" type="range" min="0" max="1" step="0.01" value={minCompositeScore} oninput={(e) => (minCompositeScore = toNumber(e))} />
+											</div>
+											<div class="sheet-score-item">
+												<label for="sheet-w-clima">Peso clima: {climateWeight}</label>
+												<input id="sheet-w-clima" type="range" min="0" max="100" step="1" value={climateWeight} oninput={(e) => handleClimateWeightChange(toNumber(e))} />
+											</div>
+											<div class="sheet-score-item">
+												<label for="sheet-w-acceso">Peso accesibilidad: {accessWeight}</label>
+												<input id="sheet-w-acceso" type="range" min="0" max="100" step="1" value={accessWeight} oninput={(e) => handleAccessWeightChange(toNumber(e))} />
+											</div>
+											<div class="sheet-score-item">
+												<label for="sheet-w-nat">Peso naturaleza: {natureWeight}</label>
+												<input id="sheet-w-nat" type="range" min="0" max="100" step="1" value={natureWeight} oninput={(e) => handleNatureWeightChange(toNumber(e))} />
+											</div>
+										</div>
+									</section>
 								{/if}
-								<button class="sheet-clear" onclick={handleClearFilters}>Limpiar filtros</button>
+								<div class="sheet-actions">
+									<button class="sheet-clear" onclick={handleClearFilters}>Limpiar filtros</button>
+									{#if viewMode === 'evaluacion'}
+										<button class="sheet-clear" onclick={() => handleSelectSheetTab('rank')}>Ir a ranking</button>
+									{/if}
+								</div>
 							</div>
 						{:else if activeSheetTab === 'capas'}
 							<div class="sheet-block">
@@ -1278,6 +1298,20 @@
 			color: #2f7d85;
 			font-weight: 600;
 		}
+		.sheet-tabs button.has-selection {
+			position: relative;
+		}
+		.sheet-tabs button.has-selection::after {
+			content: '';
+			position: absolute;
+			top: 0.22rem;
+			right: 0.35rem;
+			width: 0.42rem;
+			height: 0.42rem;
+			border-radius: 999px;
+			background: #2f7d85;
+			box-shadow: 0 0 0 2px rgba(252, 248, 238, 0.95);
+		}
 		.sheet-content {
 			display: block;
 			padding-bottom: 0.3rem;
@@ -1290,6 +1324,30 @@
 		.sheet-block {
 			display: grid;
 			gap: 0.45rem;
+		}
+		.sheet-section {
+			display: grid;
+			gap: 0.4rem;
+			padding: 0.5rem;
+			border: 1px solid rgba(21, 32, 33, 0.13);
+			border-radius: 10px;
+			background: rgba(255, 255, 255, 0.45);
+		}
+		.sheet-section-score {
+			padding-top: 0.45rem;
+		}
+		.sheet-score-summary {
+			display: flex;
+			flex-wrap: wrap;
+			gap: 0.25rem;
+		}
+		.sheet-score-summary span {
+			font-size: 0.68rem;
+			padding: 0.16rem 0.45rem;
+			border-radius: 999px;
+			border: 1px solid rgba(21, 32, 33, 0.16);
+			background: rgba(255, 255, 255, 0.6);
+			color: #3d5652;
 		}
 		.sheet-slider-grid {
 			display: grid;
@@ -1332,6 +1390,12 @@
 			background: rgba(255, 255, 255, 0.8);
 			padding: 0.3rem 0.6rem;
 			font-size: 0.75rem;
+		}
+		.sheet-actions {
+			display: flex;
+			flex-wrap: wrap;
+			gap: 0.35rem;
+			padding: 0.15rem 0 calc(env(safe-area-inset-bottom) + 0.1rem);
 		}
 		.sheet-rank {
 			display: grid;
