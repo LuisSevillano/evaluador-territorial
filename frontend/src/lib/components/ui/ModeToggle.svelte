@@ -17,7 +17,7 @@
 		class:active={mode === 'exploracion'}
 		onclick={() => onChange('exploracion')}
 	>
-		Exploracion
+		Exploración
 	</button>
 	<button
 		type="button"
@@ -26,7 +26,7 @@
 		class:active={mode === 'evaluacion'}
 		onclick={() => onChange('evaluacion')}
 	>
-		Evaluacion
+		Evaluación
 	</button>
 </div>
 

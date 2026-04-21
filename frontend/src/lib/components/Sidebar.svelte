@@ -268,7 +268,7 @@
 	<header class="hero">
 		<p class="kicker">Observatorio Territorial</p>
 		<h1>El Buen Vivir</h1>
-		<p class="phase">Fase 3 · analitica de decision</p>
+		<p class="phase">Fase 3 · analítica de decisión</p>
 		<div class="stats">
 			<div>
 				<span>Resultados</span>
@@ -282,7 +282,7 @@
 	</header>
 
 	<section class="panel mode-context">
-		<h2>{isEvaluationMode ? 'Modo evaluacion' : 'Modo exploracion'}</h2>
+		<h2>{isEvaluationMode ? 'Modo evaluación' : 'Modo exploración'}</h2>
 		<p>
 			{#if isEvaluationMode}
 				Ajusta pesos y score para comparar municipios de forma cuantitativa.
@@ -293,7 +293,7 @@
 	</section>
 
 	<section class="panel">
-		<h2>{isEvaluationMode ? 'Filtros de evaluacion' : 'Filtros de exploracion'}</h2>
+		<h2>{isEvaluationMode ? 'Filtros de evaluación' : 'Filtros de exploración'}</h2>
 		<div class="control search-control">
 			<label for="search">Buscar municipio</label>
 			<div
@@ -348,7 +348,7 @@
 			</div>
 		</div>
 		<div class="control">
-			<p class="control-title">Accesibilidad maxima</p>
+			<p class="control-title">Accesibilidad máxima</p>
 			<div class="chips-wrap compact">
 				{#each travelBuckets as bucket}
 					<ChipButton
@@ -362,16 +362,16 @@
 			</div>
 		</div>
 		<div class="control compact-slider-grid">
-			<label for="min-precip">Precipitacion minima anual: {minPrecipAnnual} mm</label>
+			<label for="min-precip">Precipitación mínima anual: {minPrecipAnnual} mm</label>
 			<input id="min-precip" name="min-precip" type="range" min="0" max="1800" step="10" value={minPrecipAnnual} oninput={(e) => onMinPrecipAnnualChange(toNumber(e))} />
-			<label for="min-winter-temp">Temp. invierno minima: {minWinterTemp} C</label>
+			<label for="min-winter-temp">Temp. invierno mínima: {minWinterTemp} C</label>
 			<input id="min-winter-temp" name="min-winter-temp" type="range" min="-15" max="15" step="0.5" value={minWinterTemp} oninput={(e) => onMinWinterTempChange(toNumber(e))} />
-			<label for="max-summer-temp">Temp. verano maxima: {maxSummerTemp} C</label>
+			<label for="max-summer-temp">Temp. verano máxima: {maxSummerTemp} C</label>
 			<input id="max-summer-temp" name="max-summer-temp" type="range" min="15" max="40" step="0.5" value={maxSummerTemp} oninput={(e) => onMaxSummerTempChange(toNumber(e))} />
-			<label for="max-thermal-amplitude">Amplitud termica maxima: {maxThermalAmplitude.toFixed(1)} C</label>
+			<label for="max-thermal-amplitude">Amplitud térmica máxima: {maxThermalAmplitude.toFixed(1)} C</label>
 			<input id="max-thermal-amplitude" name="max-thermal-amplitude" type="range" min="12" max="21" step="0.1" value={maxThermalAmplitude} oninput={(e) => onMaxThermalAmplitudeChange(toNumber(e))} />
 			{#if isEvaluationMode}
-				<label for="min-score">Score minimo visible: {minCompositeScore.toFixed(2)}</label>
+				<label for="min-score">Score mínimo visible: {minCompositeScore.toFixed(2)}</label>
 				<input id="min-score" name="min-score" type="range" min="0" max="1" step="0.01" value={minCompositeScore} oninput={(e) => onMinCompositeScoreChange(toNumber(e))} />
 			{/if}
 		</div>
@@ -385,7 +385,7 @@
 	{#if isEvaluationMode}
 		<section class="panel mobile-score-panel">
 			<h2>Ajuste del score</h2>
-			<p class="muted">Estos pesos cambian el score y el ranking; el filtro de score minimo decide que municipios se muestran en mapa y tabla.</p>
+			<p class="muted">Estos pesos cambian el score y el ranking; el filtro de score mínimo decide qué municipios se muestran en mapa y tabla.</p>
 			<div class="chips-wrap compact preset-wrap">
 				<ChipButton label="Equilibrado" active={activePreset === 'equilibrado'} onclick={() => onPresetWeights('equilibrado')} />
 				<ChipButton label="Priorizar naturaleza" active={activePreset === 'naturaleza'} onclick={() => onPresetWeights('naturaleza')} />
@@ -413,7 +413,7 @@
 
 	{#if isEvaluationMode}
 		<section class="panel">
-			<h2>Ranking y decision</h2>
+			<h2>Ranking y decisión</h2>
 			<p class="muted">El ranking top 25 aparece en el panel derecho. Selecciona un municipio para revisar su ficha y ajustar pesos con contexto.</p>
 		</section>
 	{/if}
@@ -427,24 +427,24 @@
 			<p class="control-title">Color municipal</p>
 			<div class="chips-wrap compact">
 				<ChipButton label="Puntuación global" active={mapColorMetric === 'mixed_score'} onclick={() => onMapColorMetricChange('mixed_score')} />
-				<ChipButton label="Precipitacion" active={mapColorMetric === 'precip_annual_mm'} onclick={() => onMapColorMetricChange('precip_annual_mm')} />
+				<ChipButton label="Precipitación" active={mapColorMetric === 'precip_annual_mm'} onclick={() => onMapColorMetricChange('precip_annual_mm')} />
 			</div>
 			<label><input type="checkbox" checked={showIgnWmsBase} onchange={(e) => onToggleIgnWmsBase((e.currentTarget as HTMLInputElement).checked)} /><span>Base IGN WMS</span></label>
-			<label><input type="checkbox" checked={showIgnSatellite} onchange={(e) => onToggleIgnSatellite((e.currentTarget as HTMLInputElement).checked)} /><span>Satelite IGN (PNOA)</span></label>
+			<label><input type="checkbox" checked={showIgnSatellite} onchange={(e) => onToggleIgnSatellite((e.currentTarget as HTMLInputElement).checked)} /><span>Satélite IGN (PNOA)</span></label>
 		</div>
 	</section>
 
 	<section class="panel methodology">
 		<details>
-			<summary>Metodologia y trazabilidad</summary>
+			<summary>Metodología y trazabilidad</summary>
 			<div class="method-body">
 				{#if datasetMetadata}
-					<p><strong>Fuente climatica:</strong> {datasetMetadata.climate_source}</p>
-					<p><strong>Periodo:</strong> {datasetMetadata.climate_period}</p>
-					<p><strong>Agregacion municipal:</strong> {datasetMetadata.aggregation_method}</p>
+					<p><strong>Fuente climática:</strong> {datasetMetadata.climate_source}</p>
+					<p><strong>Período:</strong> {datasetMetadata.climate_period}</p>
+					<p><strong>Agregación municipal:</strong> {datasetMetadata.aggregation_method}</p>
 					<p><strong>Isocronas:</strong> {datasetMetadata.isochrones_definition}</p>
-					<p><strong>Fecha generacion:</strong> {datasetMetadata.generated_at_utc}</p>
-					<p><strong>Version dataset:</strong> {datasetMetadata.dataset_version}</p>
+					<p><strong>Fecha de generación:</strong> {datasetMetadata.generated_at_utc}</p>
+					<p><strong>Versión dataset:</strong> {datasetMetadata.dataset_version}</p>
 					<p><strong>Scoring:</strong> {datasetMetadata.scoring_method ?? 'No definido'}</p>
 				{:else}
 					<p class="muted">Sin metadata disponible en este build.</p>

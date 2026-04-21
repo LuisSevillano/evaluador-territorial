@@ -241,7 +241,7 @@
 	);
 
 	const mapColorLabel = $derived(
-		mapColorMetric === 'mixed_score' ? 'Puntuacion global' : 'Precipitacion anual'
+		mapColorMetric === 'mixed_score' ? 'Puntuación global' : 'Precipitación anual'
 	);
 
 	const topbarLegendConfig = $derived(getLegendConfig(mapColorMetric));
@@ -538,10 +538,10 @@
 </svelte:head>
 
 <header class="topbar">
-	<div class="topbar-brand">
+	<a class="topbar-brand" href="/" aria-label="Ir al inicio de El Buen Vivir">
 		<strong>El Buen Vivir</strong>
 		<small>{modeCopy[viewMode].tagline} · {municipiosFiltrados.length}/{municipios.length}</small>
-	</div>
+	</a>
 	<div class="topbar-controls">
 		<div class="topbar-legend">
 			<ColorLegend
@@ -558,16 +558,27 @@
 	</div>
 </header>
 
+<div class="topbar-meta" aria-label="Contexto del dataset">
+	<span>Castilla y León</span>
+	<span>{municipios.length.toLocaleString('es-ES')} municipios</span>
+	{#if data.datasetMetadata?.dataset_version}
+		<span>v{data.datasetMetadata.dataset_version}</span>
+	{/if}
+	{#if data.datasetMetadata?.generated_at_utc}
+		<span>{new Date(data.datasetMetadata.generated_at_utc).toLocaleDateString('es-ES')}</span>
+	{/if}
+</div>
+
 <section class="mode-strip" class:evaluation={viewMode === 'evaluacion'}>
 	{#if viewMode === 'exploracion'}
-		<p><strong>Exploracion activa.</strong> Ajusta filtros y capas para reconocer patrones territoriales.</p>
+		<p><strong>Exploración activa.</strong> Ajusta filtros y capas para reconocer patrones territoriales.</p>
 		<div class="mode-strip-metrics">
 			<span>Color mapa: {mapColorLabel}</span>
 			<span>Capas activas: {activeLayerCount}</span>
 			<span>Filtro provincia: {provinceFilter}</span>
 		</div>
 	{:else}
-		<p><strong>Evaluacion activa.</strong> El ranking usa los pesos actuales y se actualiza en tiempo real.</p>
+		<p><strong>Evaluación activa.</strong> El ranking usa los pesos actuales y se actualiza en tiempo real.</p>
 		<div class="mode-strip-metrics">
 			<span>Pesos C/A/N: {climateWeight}/{accessWeight}/{natureWeight}</span>
 			<span>Robustez top-10: {sensitivityOverlap}/10</span>
@@ -662,7 +673,7 @@
 					onMapSelection={handleSelectMunicipio}
 				/>
 			</div>
-			<section class="desktop-table" aria-label="Tabla analitica de municipios">
+			<section class="desktop-table" aria-label="Tabla analítica de municipios">
 				<div class="desktop-table-inner">
 					<table>
 						<thead>
@@ -694,7 +705,7 @@
 			</section>
 			<BottomSheet initialHeight="34vh" expandedHeight="62vh" peekHeight="5.2rem" snapPoints={[0.12, 0.55, 0.92]} bind:isOpen={isBottomSheetOpen}>
 				{#snippet children()}
-					<div class="sheet-tabs" role="tablist" aria-label="Panel movil">
+					<div class="sheet-tabs" role="tablist" aria-label="Panel móvil">
 						<button class:active={activeSheetTab === 'sel'} onclick={() => handleSelectSheetTab('sel')}><MapPin size={16} />Sel</button>
 						<button class:active={activeSheetTab === 'filtr'} onclick={() => handleSelectSheetTab('filtr')}><SlidersHorizontal size={16} />Filtr</button>
 						<button class:active={activeSheetTab === 'capas'} onclick={() => handleSelectSheetTab('capas')}><Layers size={16} />Capas</button>
@@ -749,22 +760,22 @@
 										<ChipButton label={bucket.label} size="small" compact={true} active={maxTravelBucket === bucket.value} onclick={() => (maxTravelBucket = bucket.value)} />
 									{/each}
 								</div>
-								<p class="sheet-subtitle">Filtros de climatologia</p>
+								<p class="sheet-subtitle">Filtros de climatología</p>
 								<div class="sheet-slider-grid">
 									<div class="sheet-score-item">
-										<label for="sheet-min-precip">Precipitacion minima anual: {minPrecipAnnual} mm</label>
+										<label for="sheet-min-precip">Precipitación mínima anual: {minPrecipAnnual} mm</label>
 										<input id="sheet-min-precip" type="range" min="0" max="1800" step="10" value={minPrecipAnnual} oninput={(e) => (minPrecipAnnual = toNumber(e))} />
 									</div>
 									<div class="sheet-score-item">
-										<label for="sheet-min-winter">Temp. invierno minima: {minWinterTemp} C</label>
+										<label for="sheet-min-winter">Temp. invierno mínima: {minWinterTemp} C</label>
 										<input id="sheet-min-winter" type="range" min="-15" max="15" step="0.5" value={minWinterTemp} oninput={(e) => (minWinterTemp = toNumber(e))} />
 									</div>
 									<div class="sheet-score-item">
-										<label for="sheet-max-summer">Temp. verano maxima: {maxSummerTemp} C</label>
+										<label for="sheet-max-summer">Temp. verano máxima: {maxSummerTemp} C</label>
 										<input id="sheet-max-summer" type="range" min="15" max="40" step="0.5" value={maxSummerTemp} oninput={(e) => (maxSummerTemp = toNumber(e))} />
 									</div>
 									<div class="sheet-score-item">
-										<label for="sheet-max-amplitude">Amplitud termica maxima: {maxThermalAmplitude.toFixed(1)} C</label>
+										<label for="sheet-max-amplitude">Amplitud térmica máxima: {maxThermalAmplitude.toFixed(1)} C</label>
 										<input id="sheet-max-amplitude" type="range" min="12" max="21" step="0.1" value={maxThermalAmplitude} oninput={(e) => (maxThermalAmplitude = toNumber(e))} />
 									</div>
 								</div>
@@ -779,7 +790,7 @@
 									</div>
 									<div class="sheet-slider-grid">
 										<div class="sheet-score-item">
-											<label for="sheet-min-score">Score minimo visible: {minCompositeScore.toFixed(2)}</label>
+											<label for="sheet-min-score">Score mínimo visible: {minCompositeScore.toFixed(2)}</label>
 											<input id="sheet-min-score" type="range" min="0" max="1" step="0.01" value={minCompositeScore} oninput={(e) => (minCompositeScore = toNumber(e))} />
 										</div>
 										<div class="sheet-score-item">
@@ -803,11 +814,11 @@
 							<div class="sheet-block">
 								<LayerOrderList items={layerItems} onToggle={toggleLayerVisibility} onReorder={handleLayerOrderChange} />
 								<div class="chips-row">
-									<ChipButton label="Puntuacion global" active={mapColorMetric === 'mixed_score'} onclick={() => (mapColorMetric = 'mixed_score')} />
-									<ChipButton label="Precipitacion" active={mapColorMetric === 'precip_annual_mm'} onclick={() => (mapColorMetric = 'precip_annual_mm')} />
+									<ChipButton label="Puntuación global" active={mapColorMetric === 'mixed_score'} onclick={() => (mapColorMetric = 'mixed_score')} />
+									<ChipButton label="Precipitación" active={mapColorMetric === 'precip_annual_mm'} onclick={() => (mapColorMetric = 'precip_annual_mm')} />
 								</div>
 								<label><input type="checkbox" checked={showIgnWmsBase} onchange={(e) => (showIgnWmsBase = (e.currentTarget as HTMLInputElement).checked)} /> Base IGN</label>
-								<label><input type="checkbox" checked={showIgnSatellite} onchange={(e) => (showIgnSatellite = (e.currentTarget as HTMLInputElement).checked)} /> Satelite IGN</label>
+								<label><input type="checkbox" checked={showIgnSatellite} onchange={(e) => (showIgnSatellite = (e.currentTarget as HTMLInputElement).checked)} /> Satélite IGN</label>
 							</div>
 						{:else if activeSheetTab === 'rank'}
 							<div class="sheet-rank">
@@ -815,20 +826,20 @@
 									<p class="sheet-meta">Top 25 en base a score mixto actual.</p>
 									<RankingList rows={tableRows} limit={25} compact={true} onSelect={handleSelectMunicipio} />
 								{:else}
-									<p class="sheet-meta">El ranking se utiliza en modo evaluacion.</p>
-									<button class="sheet-clear" onclick={() => { viewMode = 'evaluacion'; handleSelectSheetTab('rank'); }}>Cambiar a evaluacion</button>
+									<p class="sheet-meta">El ranking se utiliza en modo evaluación.</p>
+									<button class="sheet-clear" onclick={() => { viewMode = 'evaluacion'; handleSelectSheetTab('rank'); }}>Cambiar a evaluación</button>
 								{/if}
 							</div>
 						{:else}
-							<section class="sheet-meta-panel" aria-label="Metodologia y metadatos">
-								<h3>Datos y metodologia</h3>
+							<section class="sheet-meta-panel" aria-label="Metodología y metadatos">
+								<h3>Datos y metodología</h3>
 								{#if data.datasetMetadata}
 									<ul>
-										<li><strong>Version:</strong> {data.datasetMetadata.dataset_version}</li>
+										<li><strong>Versión:</strong> {data.datasetMetadata.dataset_version}</li>
 										<li><strong>Generado:</strong> {new Date(data.datasetMetadata.generated_at_utc).toLocaleDateString('es-ES')}</li>
-										<li><strong>Periodo clima:</strong> {data.datasetMetadata.climate_period}</li>
+										<li><strong>Período clima:</strong> {data.datasetMetadata.climate_period}</li>
 										<li><strong>Fuente clima:</strong> {data.datasetMetadata.climate_source}</li>
-										<li><strong>Scope:</strong> {data.datasetMetadata.analysis_scope}</li>
+										<li><strong>Alcance:</strong> {data.datasetMetadata.analysis_scope}</li>
 									</ul>
 								{:else}
 									<p class="sheet-meta">No hay metadatos de dataset disponibles.</p>
@@ -847,9 +858,9 @@
 		<div class="inspector-desktop">
 			{#if viewMode === 'evaluacion' && !selectedMunicipio}
 				<section class="desktop-ranking">
-					<h2>Evaluacion</h2>
+					<h2>Evaluación</h2>
 					<p>Selecciona un municipio para ver su ficha o usa este ranking para comparar.</p>
-					<div class="desktop-toggle" role="tablist" aria-label="Vista de evaluacion">
+					<div class="desktop-toggle" role="tablist" aria-label="Vista de evaluación">
 						<button
 							type="button"
 							class:active={desktopEvalPanel === 'top'}
@@ -873,13 +884,13 @@
 							<p class="muted">Municipios guardados en shortlist.</p>
 							<RankingList rows={shortlistMunicipios} limit={200} onSelect={handleSelectMunicipio} />
 						{:else}
-							<p class="muted">Tu shortlist esta vacia. Abre un municipio y pulsa "Guardar shortlist".</p>
+							<p class="muted">Tu shortlist está vacía. Abre un municipio y pulsa "Guardar shortlist".</p>
 						{/if}
 					{/if}
 
 					<section class="desktop-score-panel">
 						<h3>Ajuste del score</h3>
-						<p class="muted">Estos pesos cambian el score y el ranking; el filtro de score minimo del panel izquierdo decide que municipios se muestran en mapa y tabla.</p>
+						<p class="muted">Estos pesos cambian el score y el ranking; el filtro de score mínimo del panel izquierdo decide qué municipios se muestran en mapa y tabla.</p>
 						<div class="chips-row">
 							<ChipButton label="Equilibrado" active={activePreset === 'equilibrado'} onclick={() => handlePresetWeights('equilibrado')} />
 							<ChipButton label="Priorizar naturaleza" active={activePreset === 'naturaleza'} onclick={() => handlePresetWeights('naturaleza')} />
@@ -905,8 +916,8 @@
 				</section>
 			{:else if viewMode === 'exploracion' && !selectedMunicipio}
 				<section class="desktop-ranking">
-					<h2>Exploracion</h2>
-					<p>Explora el mapa, capas y filtros. Al seleccionar un municipio veras la ficha completa aqui.</p>
+					<h2>Exploración</h2>
+					<p>Explora el mapa, capas y filtros. Al seleccionar un municipio verás la ficha completa aquí.</p>
 					<p class="muted">En este modo ocultamos el ranking para reducir ruido.</p>
 				</section>
 			{:else}
@@ -946,6 +957,11 @@
 	.topbar-brand {
 		display: grid;
 		line-height: 1.1;
+		text-decoration: none;
+		color: inherit;
+	}
+	.topbar-brand:visited {
+		color: inherit;
 	}
 	.topbar-brand strong {
 		font-family: 'Fraunces', serif;
@@ -960,6 +976,26 @@
 		align-items: center;
 		gap: 0.6rem;
 		margin-left: auto;
+	}
+	.topbar-meta {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 0.45rem;
+		padding: 0.3rem 0.9rem;
+		border-bottom: 1px solid rgba(21, 32, 33, 0.12);
+		font-size: 0.78rem;
+		color: #3f5753;
+		background: rgba(248, 242, 229, 0.9);
+	}
+	.topbar-meta span {
+		display: inline-flex;
+		align-items: center;
+	}
+	.topbar-meta span + span::before {
+		content: '·';
+		margin-right: 0.45rem;
+		color: #788c88;
 	}
 	.topbar-legend {
 		display: block;
@@ -1001,7 +1037,7 @@
 		color: #405a56;
 	}
 	main {
-		height: calc(100dvh - 106px);
+		height: calc(100dvh - 136px);
 		display: grid;
 		grid-template-columns: 440px 1fr 360px;
 		grid-template-rows: minmax(0, 1fr);
@@ -1164,6 +1200,9 @@
 			transform-origin: right center;
 		}
 		.mode-strip {
+			display: none;
+		}
+		.topbar-meta {
 			display: none;
 		}
 		.topbar-mode {
