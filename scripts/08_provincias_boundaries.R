@@ -40,7 +40,5 @@ provincias <- prov_scope |>
   )
 
 st_write(provincias, paths$output_provincias_geojson, delete_dsn = TRUE, quiet = TRUE)
-file.copy(paths$output_provincias_geojson, paths$frontend_provincias_geojson, overwrite = TRUE)
 
 message("OK: limites provinciales (fuente oficial) exportados en ", paths$output_provincias_geojson)
-message("OK: copia frontend en ", paths$frontend_provincias_geojson)
