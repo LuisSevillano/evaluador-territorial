@@ -1,5 +1,5 @@
 export type ViewMode = 'exploracion' | 'evaluacion';
-export type SheetTab = 'sel' | 'filtr' | 'capas' | 'rank';
+export type SheetTab = 'sel' | 'filtr' | 'capas' | 'rank' | 'meta';
 export type TravelBucket = '<=1h30' | '<=2h00' | '<=2h30' | '<=3h30' | '<=4h00' | '>4h00';
 
 export type UrlState = {
@@ -53,7 +53,10 @@ export const parseUrlState = (search: string): UrlState => {
 		cw: toFiniteNumber(params.get('cw')),
 		aw: toFiniteNumber(params.get('aw')),
 		nw: toFiniteNumber(params.get('nw')),
-		tab: tab === 'sel' || tab === 'filtr' || tab === 'capas' || tab === 'rank' ? tab : undefined,
+		tab:
+			tab === 'sel' || tab === 'filtr' || tab === 'capas' || tab === 'rank' || tab === 'meta'
+				? tab
+				: undefined,
 		sel: params.get('sel') ?? undefined,
 		open: params.get('open') === '1'
 	};

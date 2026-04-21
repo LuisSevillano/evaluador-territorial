@@ -4,6 +4,7 @@
 		initialHeight?: string;
 		expandedHeight?: string;
 		peekHeight?: string;
+		snapPoints?: [number, number, number];
 		children?: import('svelte').Snippet;
 		onToggle?: () => void;
 		class?: string;
@@ -14,6 +15,7 @@
 		initialHeight = '35vh',
 		expandedHeight = '92vh',
 		peekHeight = '4.8rem',
+		snapPoints,
 		children,
 		class: className = ''
 	}: Props = $props();
@@ -44,6 +46,17 @@
 	const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value));
 
 	const snapVisiblePx = (value: Snap) => {
+		if (snapPoints) {
+			const [collapsed, mid, full] = snapPoints;
+			const points = {
+				collapsed: clamp(window.innerHeight * collapsed, 0, window.innerHeight),
+				mid: clamp(window.innerHeight * mid, 0, window.innerHeight),
+				full: clamp(window.innerHeight * full, 0, window.innerHeight)
+			};
+			if (value === 'collapsed') return points.collapsed;
+			if (value === 'mid') return points.mid;
+			return points.full;
+		}
 		const peek = toPx(peekHeight);
 		const mid = toPx(initialHeight);
 		const full = toPx(expandedHeight);

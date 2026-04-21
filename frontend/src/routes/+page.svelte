@@ -9,7 +9,7 @@
 	import LayerOrderList from '$lib/components/layers/LayerOrderList.svelte';
 	import ColorLegend from '$lib/components/ColorLegend.svelte';
 	import { getLegendConfig } from '$lib/components/map/coloring';
-	import { buildUrlState, parseUrlState } from '$lib/state/urlState';
+	import { buildUrlState, parseUrlState, type SheetTab } from '$lib/state/urlState';
 	import { modeCopy, tabForMode } from '$lib/state/viewMode';
 	import {
 		bucketOrder,
@@ -51,7 +51,7 @@
 		type SortDirection,
 		type SortField
 	} from '$lib/state/ranking';
-	import { MapPin, SlidersHorizontal, Layers, BarChart3 } from 'lucide-svelte';
+	import { MapPin, SlidersHorizontal, Layers, BarChart3, Info } from 'lucide-svelte';
 	import type { DatasetMetadata, Municipio, MunicipioClimateMonthly } from '$lib/types/municipio';
 
 	type PageData = {
@@ -74,7 +74,7 @@
 	let showIgnReservoirs = $state(false);
 	let mapColorMetric = $state<'precip_annual_mm' | 'mixed_score'>('mixed_score');
 	let viewMode = $state<'exploracion' | 'evaluacion'>('exploracion');
-	let activeSheetTab = $state<'sel' | 'filtr' | 'capas' | 'rank'>('filtr');
+	let activeSheetTab = $state<SheetTab>('filtr');
 	let isMobileView = $state(false);
 	let desktopEvalPanel = $state<'top' | 'shortlist'>('top');
 	let showForestLayer = $state(false);
@@ -281,10 +281,54 @@
 		isBottomSheetOpen = panel.open;
 	};
 
-	const handleSelectSheetTab = (tab: 'sel' | 'filtr' | 'capas' | 'rank') => {
+	const handleSelectSheetTab = (tab: SheetTab) => {
 		const panel = panelStateOnTabClick(tab);
 		activeSheetTab = panel.tab;
 		isBottomSheetOpen = panel.open;
+	};
+
+	const downloadFile = (filename: string, content: string, mimeType: string) => {
+		if (typeof window === 'undefined') return;
+		const blob = new Blob([content], { type: mimeType });
+		const url = URL.createObjectURL(blob);
+		const link = document.createElement('a');
+		link.href = url;
+		link.download = filename;
+		link.click();
+		URL.revokeObjectURL(url);
+	};
+
+	const csvCell = (value: string | number | undefined | null) => {
+		if (value === undefined || value === null) return '';
+		const text = String(value);
+		return /[",\n]/.test(text) ? `"${text.replaceAll('"', '""')}"` : text;
+	};
+
+	const handleExportShortlistCsv = () => {
+		if (shortlistMunicipios.length === 0) return;
+		const headers = ['id', 'codigo', 'nombre', 'provincia', 'travel_bucket', 'mixed_score'];
+		const rows = shortlistMunicipios.map((m) =>
+			[
+				m.id,
+				m.codigo,
+				m.nombre,
+				m.provincia,
+				m.travel_bucket,
+				m.mixed_score?.toFixed(4) ?? ''
+			]
+				.map(csvCell)
+				.join(',')
+		);
+		downloadFile('shortlist_el_buen_vivir.csv', `${headers.join(',')}\n${rows.join('\n')}`, 'text/csv;charset=utf-8');
+	};
+
+	const handleExportShortlistJson = () => {
+		if (shortlistMunicipios.length === 0) return;
+		downloadFile(
+			'shortlist_el_buen_vivir.json',
+			JSON.stringify(shortlistMunicipios, null, 2),
+			'application/json;charset=utf-8'
+		);
 	};
 
 	const handleClearFilters = () => {
@@ -648,13 +692,14 @@
 					</table>
 				</div>
 			</section>
-			<BottomSheet initialHeight="34vh" expandedHeight="62vh" peekHeight="5.2rem" bind:isOpen={isBottomSheetOpen}>
+			<BottomSheet initialHeight="34vh" expandedHeight="62vh" peekHeight="5.2rem" snapPoints={[0.12, 0.55, 0.92]} bind:isOpen={isBottomSheetOpen}>
 				{#snippet children()}
 					<div class="sheet-tabs" role="tablist" aria-label="Panel movil">
 						<button class:active={activeSheetTab === 'sel'} onclick={() => handleSelectSheetTab('sel')}><MapPin size={16} />Sel</button>
 						<button class:active={activeSheetTab === 'filtr'} onclick={() => handleSelectSheetTab('filtr')}><SlidersHorizontal size={16} />Filtr</button>
 						<button class:active={activeSheetTab === 'capas'} onclick={() => handleSelectSheetTab('capas')}><Layers size={16} />Capas</button>
 						<button class:active={activeSheetTab === 'rank'} onclick={() => handleSelectSheetTab('rank')}><BarChart3 size={16} />Rank</button>
+						<button class:active={activeSheetTab === 'meta'} onclick={() => handleSelectSheetTab('meta')}><Info size={16} />Meta</button>
 					</div>
 					<div class="sheet-content">
 						{#if activeSheetTab === 'sel'}
@@ -764,7 +809,7 @@
 								<label><input type="checkbox" checked={showIgnWmsBase} onchange={(e) => (showIgnWmsBase = (e.currentTarget as HTMLInputElement).checked)} /> Base IGN</label>
 								<label><input type="checkbox" checked={showIgnSatellite} onchange={(e) => (showIgnSatellite = (e.currentTarget as HTMLInputElement).checked)} /> Satelite IGN</label>
 							</div>
-						{:else}
+						{:else if activeSheetTab === 'rank'}
 							<div class="sheet-rank">
 								{#if viewMode === 'evaluacion'}
 									<p class="sheet-meta">Top 25 en base a score mixto actual.</p>
@@ -774,6 +819,25 @@
 									<button class="sheet-clear" onclick={() => { viewMode = 'evaluacion'; handleSelectSheetTab('rank'); }}>Cambiar a evaluacion</button>
 								{/if}
 							</div>
+						{:else}
+							<section class="sheet-meta-panel" aria-label="Metodologia y metadatos">
+								<h3>Datos y metodologia</h3>
+								{#if data.datasetMetadata}
+									<ul>
+										<li><strong>Version:</strong> {data.datasetMetadata.dataset_version}</li>
+										<li><strong>Generado:</strong> {new Date(data.datasetMetadata.generated_at_utc).toLocaleDateString('es-ES')}</li>
+										<li><strong>Periodo clima:</strong> {data.datasetMetadata.climate_period}</li>
+										<li><strong>Fuente clima:</strong> {data.datasetMetadata.climate_source}</li>
+										<li><strong>Scope:</strong> {data.datasetMetadata.analysis_scope}</li>
+									</ul>
+								{:else}
+									<p class="sheet-meta">No hay metadatos de dataset disponibles.</p>
+								{/if}
+								<div class="sheet-export-actions">
+									<button class="sheet-clear" onclick={handleExportShortlistCsv} disabled={shortlistMunicipios.length === 0}>Exportar shortlist CSV</button>
+									<button class="sheet-clear" onclick={handleExportShortlistJson} disabled={shortlistMunicipios.length === 0}>Exportar shortlist JSON</button>
+								</div>
+							</section>
 						{/if}
 					</div>
 				{/snippet}
@@ -1146,7 +1210,7 @@
 		}
 		.sheet-tabs {
 			display: grid;
-			grid-template-columns: repeat(4, minmax(0, 1fr));
+			grid-template-columns: repeat(5, minmax(0, 1fr));
 			gap: 0.25rem;
 			position: sticky;
 			top: 0;
@@ -1233,6 +1297,34 @@
 		.sheet-rank {
 			display: grid;
 			gap: 0.2rem;
+		}
+		.sheet-meta-panel {
+			display: grid;
+			gap: 0.45rem;
+		}
+		.sheet-meta-panel h3 {
+			margin: 0;
+			font-family: 'Fraunces', serif;
+			font-size: 1rem;
+		}
+		.sheet-meta-panel ul {
+			margin: 0;
+			padding-left: 1rem;
+			display: grid;
+			gap: 0.2rem;
+		}
+		.sheet-meta-panel li {
+			font-size: 0.76rem;
+			color: #3f5753;
+		}
+		.sheet-export-actions {
+			display: flex;
+			gap: 0.35rem;
+			flex-wrap: wrap;
+		}
+		.sheet-export-actions .sheet-clear[disabled] {
+			opacity: 0.5;
+			cursor: not-allowed;
 		}
 		.sheet-meta {
 			margin: 0.1rem 0 0.2rem;
