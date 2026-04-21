@@ -62,7 +62,7 @@ export const getLegendConfig = (mapColorMetric: MapColorMetric) =>
 				formatLabel: (value: number) => value.toFixed(2)
 			}
 		: {
-				title: 'Precipitacion (mm)',
+				title: 'Precipitación (mm)',
 				thresholds: [...precipThresholds],
 				colors: [...precipColors],
 				formatLabel: (value: number) => `${Math.round(value)}`
