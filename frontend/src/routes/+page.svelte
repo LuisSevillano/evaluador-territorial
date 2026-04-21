@@ -9,7 +9,7 @@
 	import LayerOrderList from '$lib/components/layers/LayerOrderList.svelte';
 	import ColorLegend from '$lib/components/ColorLegend.svelte';
 	import { getLegendConfig } from '$lib/components/map/coloring';
-	import { buildUrlState, parseUrlState, type SheetTab } from '$lib/state/urlState';
+	import { buildUrlState, parseUrlState } from '$lib/state/urlState';
 	import { modeCopy, tabForMode } from '$lib/state/viewMode';
 	import {
 		bucketOrder,
@@ -74,7 +74,7 @@
 	let showIgnReservoirs = $state(false);
 	let mapColorMetric = $state<'precip_annual_mm' | 'mixed_score'>('mixed_score');
 	let viewMode = $state<'exploracion' | 'evaluacion'>('exploracion');
-	let activeSheetTab = $state<SheetTab>('filtr');
+	let activeSheetTab = $state<'sel' | 'filtr' | 'capas' | 'rank' | 'meta'>('filtr');
 	let isMobileView = $state(false);
 	let desktopEvalPanel = $state<'top' | 'shortlist'>('top');
 	let showForestLayer = $state(false);
@@ -281,7 +281,7 @@
 		isBottomSheetOpen = panel.open;
 	};
 
-	const handleSelectSheetTab = (tab: SheetTab) => {
+	const handleSelectSheetTab = (tab: 'sel' | 'filtr' | 'capas' | 'rank' | 'meta') => {
 		const panel = panelStateOnTabClick(tab);
 		activeSheetTab = panel.tab;
 		isBottomSheetOpen = panel.open;
@@ -1153,8 +1153,8 @@
 	}
 	@media (max-width: 900px) {
 		.topbar {
-			height: 60px;
-			padding: 0.38rem 0.55rem;
+			height: 50px;
+			padding: 0.25rem 0.5rem;
 			gap: 0.4rem;
 			overflow: hidden;
 		}
@@ -1170,29 +1170,29 @@
 			display: none;
 		}
 		.topbar-brand strong {
-			font-size: 1.02rem;
+			font-size: 0.98rem;
 		}
 		.topbar-brand small {
 			display: block;
-			font-size: 0.62rem;
+			font-size: 0.58rem;
 			white-space: nowrap;
 		}
 		main {
 			display: block;
-			height: calc(100vh - 60px);
-			height: calc(100dvh - 60px);
-			min-height: calc(100vh - 60px);
-			min-height: calc(100dvh - 60px);
+			height: calc(100vh - 50px);
+			height: calc(100dvh - 50px);
+			min-height: calc(100vh - 50px);
+			min-height: calc(100dvh - 50px);
 			padding: 0;
 			gap: 0;
 			overflow: hidden;
 		}
 		.map-wrap {
 			display: block;
-			height: calc(100vh - 60px);
-			height: calc(100dvh - 60px);
-			min-height: calc(100vh - 60px);
-			min-height: calc(100dvh - 60px);
+			height: calc(100vh - 50px);
+			height: calc(100dvh - 50px);
+			min-height: calc(100vh - 50px);
+			min-height: calc(100dvh - 50px);
 			border-radius: 0;
 			box-shadow: none;
 		}
