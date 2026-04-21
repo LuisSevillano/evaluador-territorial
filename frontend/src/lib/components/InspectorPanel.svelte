@@ -85,7 +85,7 @@
 				<h3>{selectedMunicipio.nombre}</h3>
 				<button class="ghost-btn" onclick={onClearMunicipio}>Cerrar</button>
 			</div>
-			<p>{selectedMunicipio.provincia} · {selectedMunicipio.codigo}</p>
+			<p>{selectedMunicipio.provincia} · {selectedMunicipio.codigo}{selectedMunicipio.population ? ` · ${selectedMunicipio.population.toLocaleString('es-ES')} hab.` : ''}</p>
 			<MunicipioContextCard {context} />
 			<div class="metric-grid">
 				<div class="metric score"><span>Score mixto</span><strong>{selectedMunicipio.mixed_score ?? '-'}</strong></div>
@@ -182,11 +182,19 @@
 		.inspector { max-width: 100%; border-left: 0; }
 	}
 	@media (max-width: 900px) {
-		h2 { font-size: 1.02rem; }
-		p { font-size: 0.84rem; }
-		.title-row + p { font-size: 0.8rem; }
-		.control label,
-		.muted { font-size: 0.8rem; }
+		.inspector { padding: 0.5rem; gap: 0.5rem; }
+		h2 { font-size: 0.9rem; margin-bottom: 0.35rem; }
+		h3 { font-size: 1rem; }
+		p { font-size: 0.78rem; }
+		.title-row + p { font-size: 0.72rem; }
+		.metric-grid { gap: 0.35rem; margin-top: 0.45rem; }
+		.metric-grid div { padding: 0.35rem; border-radius: 6px; }
+		.metric-grid span { font-size: 0.6rem; }
+		.metric-grid strong { font-size: 0.8rem; }
+		.charts { gap: 0.4rem; margin-top: 0.45rem; }
+		.chart-card { padding: 0.35rem; border-radius: 6px; }
+		.chart-card p { font-size: 0.64rem; }
+		.shortlist-btn { padding: 0.35rem 0.5rem; font-size: 0.72rem; }
 		.score-panel { display: none; }
 	}
 </style>

@@ -6,6 +6,8 @@ library(jsonlite)
 library(readr)
 library(fs)
 
+sf_use_s2(FALSE)
+
 if (!file.exists(paths$output_final_geojson)) {
   stop("No existe dataset post-quality. Ejecuta primero scripts/04_quality_checks.R")
 }
@@ -15,6 +17,8 @@ if (!file.exists(paths$output_climate_monthly_csv)) {
 }
 
 mun <- st_read(paths$output_final_geojson, quiet = TRUE)
+mun_base <- st_read(paths$output_base_geojson, quiet = TRUE) |>
+  st_transform(4326)
 
 coords <- mun |>
   st_transform(3857) |>
@@ -78,6 +82,9 @@ mun_v2 <- mun |>
     provincia,
     lon,
     lat,
+    population,
+    population_men,
+    population_women,
     precip_annual_mm,
     temp_winter_mean_c,
     temp_summer_mean_c,
@@ -112,9 +119,24 @@ mun_v2 <- mun |>
 mun_tab <- mun_v2 |>
   st_drop_geometry()
 
+mun_tiles <- mun_base |>
+  transmute(
+    codigo,
+    nombre_base = as.character(nombre),
+    provincia_base = as.character(provincia),
+    geometry
+  ) |>
+  left_join(mun_tab, by = "codigo") |>
+  mutate(
+    id = dplyr::coalesce(id, codigo),
+    nombre = dplyr::coalesce(na_if(trimws(nombre), ""), nombre_base),
+    provincia = dplyr::coalesce(na_if(trimws(provincia), ""), provincia_base)
+  ) |>
+  select(-nombre_base, -provincia_base)
+
 write_csv(mun_tab, paths$output_v2_csv)
 write_file(toJSON(mun_tab, auto_unbox = TRUE), paths$output_v2_json)
-st_write(mun_v2, paths$output_v2_geojson, delete_dsn = TRUE, quiet = TRUE)
+st_write(mun_tiles, paths$output_v2_geojson, delete_dsn = TRUE, quiet = TRUE)
 
 monthly <- read_csv(paths$output_climate_monthly_csv, show_col_types = FALSE)
 write_file(toJSON(monthly, auto_unbox = TRUE), paths$output_climate_monthly_json)

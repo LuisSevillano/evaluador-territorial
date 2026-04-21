@@ -407,6 +407,7 @@
 					<tr>
 						<th><button onclick={() => onChangeSort('nombre')}>Municipio{sortLabel('nombre')}</button></th>
 						<th><button onclick={() => onChangeSort('provincia')}>Provincia{sortLabel('provincia')}</button></th>
+						<th>Hab.</th>
 						<th><button onclick={() => onChangeSort('travel_bucket')}>Isocrona{sortLabel('travel_bucket')}</button></th>
 						<th><button onclick={() => onChangeSort('mixed_score')}>Score{sortLabel('mixed_score')}</button></th>
 						<th><button onclick={() => onChangeSort('precip_annual_mm')}>PPT{sortLabel('precip_annual_mm')}</button></th>
@@ -419,6 +420,7 @@
 						<tr onclick={() => onSelectMunicipio(municipio)}>
 							<td>{municipio.nombre}</td>
 							<td>{municipio.provincia}</td>
+							<td>{municipio.population ? municipio.population.toLocaleString('es-ES') : '-'}</td>
 							<td>{municipio.travel_bucket}</td>
 							<td>{municipio.mixed_score ?? '-'}</td>
 							<td>{municipio.precip_annual_mm}</td>

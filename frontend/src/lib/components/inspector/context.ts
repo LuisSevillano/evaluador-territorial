@@ -6,6 +6,7 @@ export type BlockKey = 'clima' | 'accesibilidad' | 'naturaleza';
 
 export type BlockBreakdown = {
 	key: BlockKey;
+	label: string;
 	raw: number;
 	avgRaw: number;
 	weight: number;
@@ -100,6 +101,7 @@ export const buildMunicipioContext = ({
 	const breakdown: BlockBreakdown[] = [
 		{
 			key: 'clima',
+			label: 'Lluvia',
 			raw: selectedBlocks.clima,
 			avgRaw: avgBlocks.clima,
 			weight: weights.climate,
@@ -108,6 +110,7 @@ export const buildMunicipioContext = ({
 		},
 		{
 			key: 'accesibilidad',
+			label: 'Acceso',
 			raw: selectedBlocks.accesibilidad,
 			avgRaw: avgBlocks.accesibilidad,
 			weight: weights.access,
@@ -116,6 +119,7 @@ export const buildMunicipioContext = ({
 		},
 		{
 			key: 'naturaleza',
+			label: 'Naturaleza',
 			raw: selectedBlocks.naturaleza,
 			avgRaw: avgBlocks.naturaleza,
 			weight: weights.nature,
