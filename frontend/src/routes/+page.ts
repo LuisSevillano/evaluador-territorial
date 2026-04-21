@@ -2,8 +2,9 @@ import type { DatasetMetadata, Municipio, MunicipioClimateMonthly } from '$lib/t
 
 export const load = async ({ fetch }: { fetch: typeof globalThis.fetch }) => {
 	const primaryResponse = await fetch('/data/municipios_v2.json');
-	const fallbackResponse = await fetch('/data/municipios.sample.json');
-	const response = primaryResponse.ok ? primaryResponse : fallbackResponse;
+	const response = primaryResponse.ok
+		? primaryResponse
+		: await fetch('/data/municipios.sample.json');
 	const municipios = (await response.json()) as Municipio[];
 
 	const monthlyResponse = await fetch('/data/municipios_climate_monthly.json');
