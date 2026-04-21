@@ -4,13 +4,11 @@
 	import { Protocol } from 'pmtiles';
 	import type { FeatureCollection, Point } from 'geojson';
 	import type { Municipio } from '$lib/types/municipio';
-	import MapHeader from '$lib/components/map/MapHeader.svelte';
 	import LandUseLegend from '$lib/components/map/LandUseLegend.svelte';
 	import MapLoadingBadge from '$lib/components/map/MapLoadingBadge.svelte';
 	import {
 		type MapColorMetric,
-		buildMunicipioColorExpression,
-		getLegendConfig
+		buildMunicipioColorExpression
 	} from '$lib/components/map/coloring';
 	import 'maplibre-gl/dist/maplibre-gl.css';
 
@@ -95,8 +93,6 @@
 	let activeMunicipiosSourceId = municipiosPmtilesSourceId;
 	let activeMunicipiosSourceLayer: string | undefined = sourceLayerName;
 	let initialBoundsApplied = $state(false);
-
-	const legendConfig = $derived.by(() => getLegendConfig(mapColorMetric));
 
 	const paintColorExpression = $derived.by(() =>
 		buildMunicipioColorExpression(municipios, mapColorMetric)
@@ -764,7 +760,6 @@
 </script>
 
 <div class="map-shell">
-	<MapHeader {legendConfig} />
 	<div class="map-frame">
 		<div class="map" bind:this={mapContainer} aria-label="Mapa principal"></div>
 		{#if isMapLoading}
@@ -782,9 +777,7 @@
 		min-height: 0;
 		position: relative;
 		padding: 1rem;
-		display: grid;
-		grid-template-rows: auto minmax(0, 1fr);
-		gap: 0.6rem;
+		display: block;
 	}
 
 	.map {
@@ -809,8 +802,6 @@
 		.map-shell {
 			padding: 0.7rem;
 			min-height: 52dvh;
-			grid-template-rows: minmax(0, 1fr);
-			gap: 0;
 		}
 	}
 </style>

@@ -498,17 +498,19 @@
 		<strong>El Buen Vivir</strong>
 		<small>{modeCopy[viewMode].tagline} · {municipiosFiltrados.length}/{municipios.length}</small>
 	</div>
-	<div class="topbar-legend">
-		<ColorLegend
-			title={topbarLegendConfig.title}
-			thresholds={topbarLegendConfig.thresholds}
-			colors={topbarLegendConfig.colors}
-			formatLabel={topbarLegendConfig.formatLabel}
-			width={148}
-		/>
-	</div>
-	<div class="topbar-mode">
-		<ModeToggle mode={viewMode} onChange={(nextMode) => (viewMode = nextMode)} />
+	<div class="topbar-controls">
+		<div class="topbar-legend">
+			<ColorLegend
+				title={topbarLegendConfig.title}
+				thresholds={topbarLegendConfig.thresholds}
+				colors={topbarLegendConfig.colors}
+				formatLabel={topbarLegendConfig.formatLabel}
+				width={148}
+			/>
+		</div>
+		<div class="topbar-mode">
+			<ModeToggle mode={viewMode} onChange={(nextMode) => (viewMode = nextMode)} />
+		</div>
 	</div>
 </header>
 
@@ -559,9 +561,6 @@
 				activeFiltersSummary={activeFiltersSummary}
 				shortlistMunicipios={shortlistMunicipios}
 				shortlistedIds={shortlistedIds}
-				tableRows={tableRows}
-				{sortBy}
-				{sortDirection}
 				isEvaluationMode={viewMode === 'evaluacion'}
 				weights={normalizedWeights}
 				weightsRaw={{ climateWeight, accessWeight, natureWeight }}
@@ -590,7 +589,6 @@
 				onClearFilters={handleClearFilters}
 				onLayerOrderChange={handleLayerOrderChange}
 				onToggleShortlist={handleToggleShortlist}
-				onChangeSort={handleChangeSort}
 				onClimateWeightChange={handleClimateWeightChange}
 				onAccessWeightChange={handleAccessWeightChange}
 				onNatureWeightChange={handleNatureWeightChange}
@@ -599,25 +597,57 @@
 		</div>
 
 		<section class="map-wrap">
-			<MapView
-				municipios={municipiosScoredForView}
-				{selectedMunicipio}
-				{showMunicipioPolygons}
-				{showMunicipioPoints}
-				{showIgnWmsBase}
-				{showIgnSatellite}
-				{showIgnRivers}
-				{showIgnReservoirs}
-				{mapColorMetric}
-				{showForestLayer}
-				{showLandUseLayer}
-				{showVegetationLayer}
-				{layerOrder}
-				{visibleMunicipioIds}
-				{provinceFilter}
-				pmtilesUrl={municipiosPmtilesUrl}
-				onMapSelection={handleSelectMunicipio}
-			/>
+			<div class="map-desktop-zone">
+				<MapView
+					municipios={municipiosScoredForView}
+					{selectedMunicipio}
+					{showMunicipioPolygons}
+					{showMunicipioPoints}
+					{showIgnWmsBase}
+					{showIgnSatellite}
+					{showIgnRivers}
+					{showIgnReservoirs}
+					{mapColorMetric}
+					{showForestLayer}
+					{showLandUseLayer}
+					{showVegetationLayer}
+					{layerOrder}
+					{visibleMunicipioIds}
+					{provinceFilter}
+					pmtilesUrl={municipiosPmtilesUrl}
+					onMapSelection={handleSelectMunicipio}
+				/>
+			</div>
+			<section class="desktop-table" aria-label="Tabla analitica de municipios">
+				<div class="desktop-table-inner">
+					<table>
+						<thead>
+							<tr>
+								<th><button onclick={() => handleChangeSort('nombre')}>Municipio {sortBy === 'nombre' ? (sortDirection === 'asc' ? '↑' : '↓') : ''}</button></th>
+								<th><button onclick={() => handleChangeSort('provincia')}>Provincia {sortBy === 'provincia' ? (sortDirection === 'asc' ? '↑' : '↓') : ''}</button></th>
+								<th><button onclick={() => handleChangeSort('travel_bucket')}>Acc {sortBy === 'travel_bucket' ? (sortDirection === 'asc' ? '↑' : '↓') : ''}</button></th>
+								<th><button onclick={() => handleChangeSort('precip_annual_mm')}>Precip {sortBy === 'precip_annual_mm' ? (sortDirection === 'asc' ? '↑' : '↓') : ''}</button></th>
+								<th><button onclick={() => handleChangeSort('temp_winter_mean_c')}>T.inv {sortBy === 'temp_winter_mean_c' ? (sortDirection === 'asc' ? '↑' : '↓') : ''}</button></th>
+								<th><button onclick={() => handleChangeSort('temp_summer_mean_c')}>T.ver {sortBy === 'temp_summer_mean_c' ? (sortDirection === 'asc' ? '↑' : '↓') : ''}</button></th>
+								<th><button onclick={() => handleChangeSort('mixed_score')}>Score {sortBy === 'mixed_score' ? (sortDirection === 'asc' ? '↑' : '↓') : ''}</button></th>
+							</tr>
+						</thead>
+						<tbody>
+							{#each tableRows as municipio (municipio.id)}
+								<tr onclick={() => handleSelectMunicipio(municipio)}>
+									<td>{municipio.nombre}</td>
+									<td>{municipio.provincia}</td>
+									<td>{municipio.travel_bucket}</td>
+									<td>{municipio.precip_annual_mm}</td>
+									<td>{municipio.temp_winter_mean_c}</td>
+									<td>{municipio.temp_summer_mean_c}</td>
+									<td>{municipio.mixed_score?.toFixed(3) ?? '-'}</td>
+								</tr>
+							{/each}
+						</tbody>
+					</table>
+				</div>
+			</section>
 			<BottomSheet initialHeight="34vh" expandedHeight="62vh" peekHeight="5.2rem" bind:isOpen={isBottomSheetOpen}>
 				{#snippet children()}
 					<div class="sheet-tabs" role="tablist" aria-label="Panel movil">
@@ -861,12 +891,18 @@
 		font-size: 0.72rem;
 		color: #405753;
 	}
-	.topbar-mode {
-		display: block;
+	.topbar-controls {
+		display: flex;
+		align-items: center;
+		gap: 0.6rem;
+		margin-left: auto;
 	}
 	.topbar-legend {
-		display: none;
+		display: block;
 		min-width: 0;
+	}
+	.topbar-mode {
+		display: block;
 	}
 	.mode-strip {
 		display: flex;
@@ -890,6 +926,7 @@
 		gap: 0.4rem;
 		flex-wrap: wrap;
 		justify-content: flex-end;
+		align-items: center;
 	}
 	.mode-strip-metrics span {
 		font-size: 0.72rem;
@@ -916,6 +953,54 @@
 		background: rgba(251, 246, 236, 0.72);
 		box-sizing: border-box;
 		position: relative;
+		display: grid;
+		grid-template-rows: minmax(0, 1fr) minmax(180px, 34%);
+	}
+	.map-desktop-zone {
+		min-height: 0;
+	}
+	.desktop-table {
+		border-top: 1px solid rgba(21, 32, 33, 0.14);
+		background: rgba(255, 251, 243, 0.9);
+		min-height: 0;
+	}
+	.desktop-table-inner {
+		height: 100%;
+		overflow: auto;
+	}
+	.desktop-table table {
+		width: 100%;
+		border-collapse: collapse;
+		font-size: 0.8rem;
+	}
+	.desktop-table thead {
+		position: sticky;
+		top: 0;
+		z-index: 1;
+		background: rgba(245, 239, 226, 0.98);
+	}
+	.desktop-table th,
+	.desktop-table td {
+		border-bottom: 1px solid rgba(21, 32, 33, 0.12);
+		padding: 0.32rem 0.45rem;
+		white-space: nowrap;
+	}
+	.desktop-table th button {
+		width: auto;
+		border: 0;
+		padding: 0;
+		background: transparent;
+		font-size: 0.71rem;
+		text-transform: uppercase;
+		letter-spacing: 0.04em;
+		cursor: pointer;
+		color: #3f5652;
+	}
+	.desktop-table tbody tr {
+		cursor: pointer;
+	}
+	.desktop-table tbody tr:hover {
+		background: rgba(33, 102, 109, 0.08);
 	}
 	.panel-wrapper {
 		display: contents;
@@ -1011,7 +1096,6 @@
 		}
 		.topbar-legend {
 			display: block;
-			margin-left: auto;
 			transform: scale(0.8);
 			transform-origin: right center;
 		}
@@ -1049,6 +1133,12 @@
 			box-shadow: none;
 		}
 		.map-wrap :global(.map-shell) {
+			height: 100%;
+		}
+		.desktop-table {
+			display: none;
+		}
+		.map-desktop-zone {
 			height: 100%;
 		}
 		.panel-wrapper {
