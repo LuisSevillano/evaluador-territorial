@@ -105,6 +105,7 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 	const sortBy = $derived(rankingStore.state.sortBy);
 	const sortDirection = $derived(rankingStore.state.sortDirection);
 	let urlStateReady = $state(false);
+	let showDesktopEvalTable = $state(false);
 
 	const provinciasDisponibles = $derived([
 		'Todas',
@@ -466,6 +467,10 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 			Boolean(selectedMunicipio)
 		);
 	});
+
+	$effect(() => {
+		if (viewMode === 'exploracion') showDesktopEvalTable = false;
+	});
 </script>
 
 <svelte:head>
@@ -631,6 +636,14 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 					onMapSelection={handleSelectMunicipio}
 				/>
 			</div>
+			{#if viewMode === 'evaluacion'}
+				<div class="desktop-table-toggle-wrap">
+					<button type="button" class="desktop-table-toggle" onclick={() => (showDesktopEvalTable = !showDesktopEvalTable)}>
+						{showDesktopEvalTable ? 'Ocultar tabla completa' : 'Mostrar tabla completa'}
+					</button>
+				</div>
+			{/if}
+			{#if viewMode !== 'evaluacion' || showDesktopEvalTable}
 			<section class="desktop-table" aria-label="Tabla analítica de municipios">
 				<div class="desktop-table-inner">
 					<table>
@@ -661,6 +674,7 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 					</table>
 				</div>
 			</section>
+			{/if}
 			<BottomSheet initialHeight="34vh" expandedHeight="62vh" peekHeight="5.2rem" snapPoints={[0.14, 0.66, 0.94]} bind:isOpen={uiStore.state.isBottomSheetOpen}>
 				{#snippet children()}
 					<div class="sheet-tabs" role="tablist" aria-label="Panel móvil">
@@ -1012,10 +1026,26 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 		box-sizing: border-box;
 		position: relative;
 		display: grid;
-		grid-template-rows: minmax(0, 1fr) minmax(180px, 34%);
+		grid-template-rows: minmax(0, 1fr) auto minmax(150px, 26%);
 	}
 	.map-desktop-zone {
 		min-height: 0;
+	}
+	.desktop-table-toggle-wrap {
+		display: flex;
+		justify-content: flex-end;
+		padding: 0.35rem 0.5rem 0.2rem;
+		border-top: 1px solid rgba(21, 32, 33, 0.1);
+		background: rgba(255, 251, 243, 0.88);
+	}
+	.desktop-table-toggle {
+		border: 1px solid rgba(21, 32, 33, 0.2);
+		border-radius: 999px;
+		background: rgba(255, 255, 255, 0.86);
+		padding: 0.26rem 0.6rem;
+		font-size: 0.72rem;
+		color: #3f5853;
+		cursor: pointer;
 	}
 	.desktop-table {
 		border-top: 1px solid rgba(21, 32, 33, 0.14);
@@ -1128,6 +1158,12 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 		font-family: 'Fraunces', serif;
 		font-size: 1.02rem;
 	}
+	.chips-row {
+		display: flex;
+		flex-wrap: wrap;
+		column-gap: 0.35rem;
+		row-gap: 0.45rem;
+	}
 	.desktop-score-control {
 		display: grid;
 		gap: 0.28rem;
@@ -1194,6 +1230,9 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 			height: 100%;
 		}
 		.desktop-table {
+			display: none;
+		}
+		.desktop-table-toggle-wrap {
 			display: none;
 		}
 		.map-desktop-zone {
@@ -1313,9 +1352,8 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 			background: rgba(255, 255, 255, 0.86);
 		}
 		.chips-row {
-			display: flex;
-			flex-wrap: wrap;
-			gap: 0.25rem;
+			column-gap: 0.25rem;
+			row-gap: 0.25rem;
 		}
 		.sheet-clear {
 			width: auto;

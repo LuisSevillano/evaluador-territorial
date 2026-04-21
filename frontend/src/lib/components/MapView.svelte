@@ -365,9 +365,11 @@
 
 	const applyMaxBoundsToMunicipios = () => {
 		if (!map) return;
-		const bounds = getMunicipiosBounds();
-		if (!bounds) return;
-		map.setMaxBounds(bounds.padded as maplibregl.LngLatBoundsLike);
+		const iberianPeninsulaBounds: [[number, number], [number, number]] = [
+			[-10.6, 35.5],
+			[4.8, 44.6]
+		];
+		map.setMaxBounds(iberianPeninsulaBounds as maplibregl.LngLatBoundsLike);
 	};
 
 	const fitToMunicipios = () => {
