@@ -501,7 +501,7 @@
 	.chips-wrap.compact { gap: 0.3rem; }
 	.preset-wrap { margin-top: 0.35rem; }
 	.mobile-score-panel { display: none; }
-	.mobile-score-panel :global(.chips-wrap .chip-btn) { width: 100%; }
+	.mobile-score-panel :global(.chips-wrap .chip-btn) { width: auto; }
 	.mobile-score-panel .score-control { max-width: 280px; }
 	.mobile-score-panel .score-control label { font-size: 0.78rem; letter-spacing: 0.02em; color: #415954; }
 	.mobile-score-panel .score-control input[type='range'] { height: 10px; }
