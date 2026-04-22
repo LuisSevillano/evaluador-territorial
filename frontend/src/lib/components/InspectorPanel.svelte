@@ -393,7 +393,7 @@
 		margin-top: 0.35rem;
 	}
 	.inspector :global(.chips-wrap .chip-btn) {
-		width: 100%;
+		width: auto;
 	}
 	.control {
 		display: grid;
