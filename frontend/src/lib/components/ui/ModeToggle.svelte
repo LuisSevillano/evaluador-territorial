@@ -37,8 +37,7 @@
 		padding: 0.18rem;
 		border-radius: 999px;
 		border: 1px solid rgba(21, 32, 33, 0.26);
-		background: linear-gradient(180deg, rgba(255, 253, 248, 0.94), rgba(240, 230, 208, 0.9));
-		box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
+		width: fit-content;
 	}
 	button {
 		width: auto;
@@ -51,7 +50,9 @@
 		font-weight: 600;
 		color: #3f5652;
 		cursor: pointer;
-		transition: background-color 180ms ease, color 180ms ease;
+		transition:
+			background-color 180ms ease,
+			color 180ms ease;
 	}
 	button.active {
 		background: #2f7d85;
