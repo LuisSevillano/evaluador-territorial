@@ -6,6 +6,7 @@
 		thresholds: number[];
 		colors: string[];
 		formatLabel: (value: number) => string;
+		labels?: string[];
 	};
 
 	type Props = {
@@ -25,6 +26,7 @@
 			title={legendConfig.title}
 			thresholds={legendConfig.thresholds}
 			colors={legendConfig.colors}
+			labels={legendConfig.labels ?? []}
 			formatLabel={legendConfig.formatLabel}
 			width={220}
 		/>

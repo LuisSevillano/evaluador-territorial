@@ -66,3 +66,9 @@ municipios <- municipios |>
 
 st_write(municipios, paths$output_final_geojson, delete_dsn = TRUE, quiet = TRUE)
 message("OK: isocronas integradas y travel_bucket generado en ", paths$output_final_geojson)
+
+for (iso_name in names(iso_files)) {
+  target_path <- file.path(paths$frontend_isochrones_dir, basename(iso_files[[iso_name]]))
+  file.copy(iso_files[[iso_name]], target_path, overwrite = TRUE)
+}
+message("OK: isocronas copiadas a frontend/static/data/isochrones")

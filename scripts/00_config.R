@@ -3,19 +3,28 @@ options(stringsAsFactors = FALSE)
 library(fs)
 
 project_root <- path_abs(".")
-analysis_scope <- tolower(trimws(Sys.getenv("ANALYSIS_SCOPE", unset = "cyl")))
+analysis_scope <- tolower(trimws(Sys.getenv("ANALYSIS_SCOPE", unset = "norte")))
 
 prov_labels <- c(
   "05" = "Avila", "09" = "Burgos", "24" = "Leon", "34" = "Palencia", "37" = "Salamanca",
-  "40" = "Segovia", "42" = "Soria", "47" = "Valladolid", "49" = "Zamora"
+  "39" = "Cantabria", "40" = "Segovia", "42" = "Soria", "47" = "Valladolid", "48" = "Bizkaia",
+  "49" = "Zamora", "01" = "Araba/Alava", "20" = "Gipuzkoa", "26" = "La Rioja"
 )
 
 scope_config <- switch(analysis_scope,
   "avila" = list(mode = "provincia", codprov = "05", label = "Avila", n_provinces = 1),
+  "norte" = list(
+    mode = "custom_scope",
+    codnut2 = c("ES41", "ES23", "ES21", "ES13", "ES12"),
+    codprov_include = c("27", "32", "19"),
+    prov_names_include = c("Lugo", "Ourense", "Guadalajara"),
+    label = "Castilla y Leon + La Rioja + Pais Vasco + Cantabria + Asturias + Lugo + Ourense + Guadalajara",
+    n_provinces = 18
+  ),
   "cyl" = list(mode = "nut2", codnut2 = "ES41", label = "Castilla y Leon", n_provinces = 9),
   "castilla_y_leon" = list(mode = "nut2", codnut2 = "ES41", label = "Castilla y Leon", n_provinces = 9),
   "espana" = list(mode = "all", label = "Espana", n_provinces = 52),
-  stop("ANALYSIS_SCOPE no valido. Usa: avila | cyl | espana")
+  stop("ANALYSIS_SCOPE no valido. Usa: avila | norte | cyl | espana")
 )
 
 paths <- list(
@@ -59,10 +68,12 @@ paths <- list(
   frontend_landuse_geojson = path(project_root, "frontend", "static", "data", "usos_suelo.geojson"),
   frontend_vegetation_geojson = path(project_root, "frontend", "static", "data", "cobertura_vegetal.geojson"),
   frontend_ccaa_geojson = path(project_root, "frontend", "static", "data", "ccaa_boundaries.geojson"),
-  frontend_provincias_geojson = path(project_root, "frontend", "static", "data", "provincias_boundaries.geojson")
+  frontend_provincias_geojson = path(project_root, "frontend", "static", "data", "provincias_boundaries.geojson"),
+  frontend_isochrones_dir = path(project_root, "frontend", "static", "data", "isochrones")
 )
 
 invisible(dir_create(paths$output_dir, recurse = TRUE))
 invisible(dir_create(path_dir(paths$frontend_json), recurse = TRUE))
+invisible(dir_create(paths$frontend_isochrones_dir, recurse = TRUE))
 
 message("Scope activo: ", scope_config$label, " (ANALYSIS_SCOPE=", analysis_scope, ")")

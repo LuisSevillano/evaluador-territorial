@@ -1,6 +1,7 @@
 export const createLayersStore = () => {
 	const state = $state({
 		showMunicipioPolygons: true,
+		showIsochronesLayer: false,
 		showMunicipioPoints: false,
 		showIgnWmsBase: true,
 		showIgnSatellite: false,
@@ -9,7 +10,7 @@ export const createLayersStore = () => {
 		showForestLayer: false,
 		showLandUseLayer: false,
 		showVegetationLayer: false,
-		layerOrder: ['municipios', 'landuse', 'reservoirs', 'rivers'] as string[]
+		layerOrder: ['municipios', 'isochrones', 'landuse', 'reservoirs', 'rivers'] as string[]
 	});
 
 	return { state };

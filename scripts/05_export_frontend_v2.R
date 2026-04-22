@@ -51,7 +51,9 @@ mun$diversity_norm <- round(minmax_norm(mun$landcover_diversity, invert = FALSE)
 
 travel_order <- c("<=1h30", "<=2h00", "<=2h30", "<=3h30", "<=4h00", ">4h00")
 travel_score <- setNames(rev(seq_along(travel_order)), travel_order)
-mun$accesibilidad_norm <- round((travel_score[mun$travel_bucket] - 1) / (length(travel_order) - 1), 4)
+access_floor <- 0.2
+access_raw <- (travel_score[mun$travel_bucket] - 1) / (length(travel_order) - 1)
+mun$accesibilidad_norm <- round(access_floor + (1 - access_floor) * access_raw, 4)
 
 mun$climate_block_score <- round(
   rowMeans(cbind(mun$precip_norm, mun$temp_verano_norm, mun$temp_invierno_norm), na.rm = TRUE),
@@ -73,6 +75,10 @@ mun$mixed_score <- round(
     w_nature * mun$nature_block_score,
   4
 )
+
+population <- if ("population" %in% names(mun)) mun$population else rep(NA_real_, nrow(mun))
+population_men <- if ("population_men" %in% names(mun)) mun$population_men else rep(NA_real_, nrow(mun))
+population_women <- if ("population_women" %in% names(mun)) mun$population_women else rep(NA_real_, nrow(mun))
 
 mun_v2 <- mun |>
   transmute(

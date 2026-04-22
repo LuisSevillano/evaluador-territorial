@@ -89,6 +89,7 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 	const accessWeight = $derived(filtersStore.state.accessWeight);
 	const natureWeight = $derived(filtersStore.state.natureWeight);
 	const showMunicipioPolygons = $derived(layersStore.state.showMunicipioPolygons);
+	const showIsochronesLayer = $derived(layersStore.state.showIsochronesLayer);
 	const showMunicipioPoints = $derived(layersStore.state.showMunicipioPoints);
 	const showIgnWmsBase = $derived(layersStore.state.showIgnWmsBase);
 	const showIgnSatellite = $derived(layersStore.state.showIgnSatellite);
@@ -208,6 +209,7 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 
 	const layerVisibility = (): LayerVisibilityState => ({
 		showMunicipioPolygons,
+		showIsochronesLayer,
 		showLandUseLayer,
 		showVegetationLayer,
 		showForestLayer,
@@ -217,6 +219,7 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 
 	const toggleLayerVisibility = (layerKey: string, checked: boolean) => {
 		if (layerKey === 'municipios') layersStore.state.showMunicipioPolygons = checked;
+		else if (layerKey === 'isochrones') layersStore.state.showIsochronesLayer = checked;
 		else if (layerKey === 'landuse') layersStore.state.showLandUseLayer = checked;
 		else if (layerKey === 'vegetation') layersStore.state.showVegetationLayer = checked;
 		else if (layerKey === 'forest') layersStore.state.showForestLayer = checked;
@@ -234,6 +237,7 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 
 	const activeLayerCount = $derived(
 		(showMunicipioPolygons ? 1 : 0) +
+			(showIsochronesLayer ? 1 : 0) +
 			(showLandUseLayer ? 1 : 0) +
 			(showVegetationLayer ? 1 : 0) +
 			(showForestLayer ? 1 : 0) +
@@ -244,7 +248,7 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 	);
 
 	const mapColorLabel = $derived(
-		mapColorMetric === 'mixed_score' ? 'Puntuación global' : 'Precipitación anual'
+		mapColorMetric === 'mixed_score' ? 'Puntuacion global' : 'Precipitacion anual'
 	);
 
 	const topbarLegendConfig = $derived(getLegendConfig(mapColorMetric));
@@ -522,8 +526,9 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 				title={topbarLegendConfig.title}
 				thresholds={topbarLegendConfig.thresholds}
 				colors={topbarLegendConfig.colors}
+				labels={topbarLegendConfig.labels}
 				formatLabel={topbarLegendConfig.formatLabel}
-				width={148}
+				width={220}
 			/>
 		</div>
 		<div class="topbar-mode">
@@ -559,6 +564,7 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 				allMunicipiosCount={municipios.length}
 				{selectedMunicipio}
 				{showMunicipioPolygons}
+				{showIsochronesLayer}
 				{showIgnWmsBase}
 				{showIgnSatellite}
 				{showIgnRivers}
@@ -589,6 +595,7 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 				onQueryChange={(value) => (filtersStore.state.query = value)}
 				onSelectMunicipio={handleSelectMunicipio}
 				onToggleMunicipioPolygons={(value) => (layersStore.state.showMunicipioPolygons = value)}
+				onToggleIsochronesLayer={(value) => (layersStore.state.showIsochronesLayer = value)}
 				onToggleIgnWmsBase={(value) => (layersStore.state.showIgnWmsBase = value)}
 				onToggleIgnSatellite={(value: boolean) => (layersStore.state.showIgnSatellite = value)}
 				onToggleIgnRivers={(value: boolean) => (layersStore.state.showIgnRivers = value)}
@@ -621,6 +628,7 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 					allMunicipios={municipios}
 					{selectedMunicipio}
 					{showMunicipioPolygons}
+					{showIsochronesLayer}
 					{showMunicipioPoints}
 					{showIgnWmsBase}
 					{showIgnSatellite}
