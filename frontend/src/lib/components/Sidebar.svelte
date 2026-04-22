@@ -11,6 +11,7 @@
 		allMunicipiosCount?: number;
 		selectedMunicipio?: Municipio | null;
 		showMunicipioPolygons?: boolean;
+		showIsochronesLayer?: boolean;
 		showIgnWmsBase?: boolean;
 		showIgnSatellite?: boolean;
 		showIgnRivers?: boolean;
@@ -41,6 +42,7 @@
 		onQueryChange?: (value: string) => void;
 		onSelectMunicipio?: (municipio: Municipio) => void;
 		onToggleMunicipioPolygons?: (value: boolean) => void;
+		onToggleIsochronesLayer?: (value: boolean) => void;
 		onToggleIgnWmsBase?: (value: boolean) => void;
 		onToggleIgnSatellite?: (value: boolean) => void;
 		onToggleIgnRivers?: (value: boolean) => void;
@@ -74,6 +76,7 @@
 		allMunicipiosCount = 0,
 		selectedMunicipio = null,
 		showMunicipioPolygons = true,
+		showIsochronesLayer = false,
 		showIgnWmsBase = false,
 		showIgnSatellite = false,
 		showIgnRivers = false,
@@ -90,7 +93,7 @@
 		maxSummerTemp = 40,
 		maxThermalAmplitude = 21,
 		minCompositeScore = 0,
-		layerOrder = ['municipios', 'landuse', 'reservoirs', 'rivers'],
+		layerOrder = ['municipios', 'isochrones', 'landuse', 'reservoirs', 'rivers'],
 		activeFiltersSummary = [],
 		shortlistedIds = [],
 		shortlistMunicipios = [],
@@ -104,6 +107,7 @@
 		onQueryChange = () => undefined,
 		onSelectMunicipio = () => undefined,
 		onToggleMunicipioPolygons = () => undefined,
+		onToggleIsochronesLayer = () => undefined,
 		onToggleIgnWmsBase = () => undefined,
 		onToggleIgnSatellite = () => undefined,
 		onToggleIgnRivers = () => undefined,
@@ -217,6 +221,7 @@
 
 	const layerLabels: Record<string, string> = {
 		municipios: 'Municipios',
+		isochrones: 'Isocronas (overlay)',
 		landuse: 'Usos del suelo',
 		vegetation: 'Cobertura vegetal',
 		forest: 'Masa forestal',
@@ -226,6 +231,7 @@
 
 	const isLayerVisible = (layerKey: string) => {
 		if (layerKey === 'municipios') return showMunicipioPolygons;
+		if (layerKey === 'isochrones') return showIsochronesLayer;
 		if (layerKey === 'landuse') return showLandUseLayer;
 		if (layerKey === 'vegetation') return showVegetationLayer;
 		if (layerKey === 'forest') return showForestLayer;
@@ -236,6 +242,7 @@
 
 	const toggleLayerVisibility = (layerKey: string, checked: boolean) => {
 		if (layerKey === 'municipios') onToggleMunicipioPolygons(checked);
+		else if (layerKey === 'isochrones') onToggleIsochronesLayer(checked);
 		else if (layerKey === 'landuse') onToggleLandUseLayer(checked);
 		else if (layerKey === 'vegetation') onToggleVegetationLayer(checked);
 		else if (layerKey === 'forest') onToggleForestLayer(checked);
@@ -446,6 +453,9 @@
 					<p><strong>Fecha de generación:</strong> {datasetMetadata.generated_at_utc}</p>
 					<p><strong>Versión dataset:</strong> {datasetMetadata.dataset_version}</p>
 					<p><strong>Scoring:</strong> {datasetMetadata.scoring_method ?? 'No definido'}</p>
+					{#if typeof datasetMetadata.accessibility_normalization_floor === 'number'}
+						<p><strong>Suelo accesibilidad:</strong> {(datasetMetadata.accessibility_normalization_floor * 100).toFixed(0)}%</p>
+					{/if}
 				{:else}
 					<p class="muted">Sin metadata disponible en este build.</p>
 				{/if}

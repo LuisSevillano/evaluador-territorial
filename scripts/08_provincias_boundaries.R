@@ -28,6 +28,12 @@ prov_scope <- switch(
     prov |> filter(slugify(as.character(NAMEUNIT)) == target_name_slug)
   },
   "nut2" = prov |> filter(CODNUT2 == scope_config$codnut2),
+  "multi_nut2" = prov |> filter(CODNUT2 %in% scope_config$codnut2),
+  "custom_scope" = prov |>
+    filter(
+      CODNUT2 %in% scope_config$codnut2 |
+        slugify(as.character(NAMEUNIT)) %in% slugify(scope_config$prov_names_include)
+    ),
   "all" = prov
 )
 

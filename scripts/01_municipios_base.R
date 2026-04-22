@@ -8,13 +8,22 @@ if (!file.exists(paths$shapefile)) {
 }
 
 provincias_cyl <- c(
+  "19" = "Guadalajara",
   "05" = "Avila",
   "09" = "Burgos",
   "24" = "Leon",
+  "27" = "Lugo",
   "34" = "Palencia",
+  "32" = "Ourense",
+  "33" = "Asturias",
+  "39" = "Cantabria",
   "37" = "Salamanca",
   "40" = "Segovia",
   "42" = "Soria",
+  "01" = "Araba/Alava",
+  "20" = "Gipuzkoa",
+  "26" = "La Rioja",
+  "48" = "Bizkaia",
   "47" = "Valladolid",
   "49" = "Zamora"
 )
@@ -33,6 +42,9 @@ municipios_base <- switch(
   scope_config$mode,
   "provincia" = municipios_tag |> filter(codprov == scope_config$codprov),
   "nut2" = municipios_tag |> filter(CODNUT2 == scope_config$codnut2),
+  "multi_nut2" = municipios_tag |> filter(CODNUT2 %in% scope_config$codnut2),
+  "custom_scope" = municipios_tag |>
+    filter(CODNUT2 %in% scope_config$codnut2 | codprov %in% scope_config$codprov_include),
   "all" = municipios_tag
 )
 

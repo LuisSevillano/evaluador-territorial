@@ -14,6 +14,7 @@
 		allMunicipios?: Municipio[];
 		selectedMunicipio?: Municipio | null;
 		showMunicipioPolygons?: boolean;
+		showIsochronesLayer?: boolean;
 		showMunicipioPoints?: boolean;
 		showIgnWmsBase?: boolean;
 		showIgnSatellite?: boolean;
@@ -35,6 +36,7 @@
 		allMunicipios,
 		selectedMunicipio = null,
 		showMunicipioPolygons = true,
+		showIsochronesLayer = false,
 		showMunicipioPoints = true,
 		showIgnWmsBase = false,
 		showIgnSatellite = false,
@@ -44,7 +46,7 @@
 		showForestLayer = false,
 		showLandUseLayer = false,
 		showVegetationLayer = false,
-		layerOrder = ['municipios', 'landuse', 'reservoirs', 'rivers'],
+		layerOrder = ['municipios', 'isochrones', 'landuse', 'reservoirs', 'rivers'],
 		visibleMunicipioIds = [],
 		provinceFilter = 'Todas',
 		pmtilesUrl = '/tiles/municipios.pmtiles',
@@ -60,11 +62,50 @@
 	const municipiosPmtilesSourceId = 'municipios-pmtiles-source';
 	const municipiosPolygonsFillLayerId = 'municipios-polygons-fill-layer';
 	const municipiosPolygonsLineLayerId = 'municipios-polygons-line-layer';
+	const isochroneLayers = [
+		{
+			key: 'iso_04h00m',
+			sourceId: 'isochrones-04h00m-source',
+			layerId: 'isochrones-04h00m-line',
+			url: '/data/isochrones/iso_diff_03h30m_04h00m.geojson',
+			color: '#7b1f1f'
+		},
+		{
+			key: 'iso_03h30m',
+			sourceId: 'isochrones-03h30m-source',
+			layerId: 'isochrones-03h30m-line',
+			url: '/data/isochrones/iso_diff_02h30m_03h30m.geojson',
+			color: '#d97706'
+		},
+		{
+			key: 'iso_02h30m',
+			sourceId: 'isochrones-02h30m-source',
+			layerId: 'isochrones-02h30m-line',
+			url: '/data/isochrones/iso_diff_02h00m_02h30m.geojson',
+			color: '#4d7c0f'
+		},
+		{
+			key: 'iso_02h00m',
+			sourceId: 'isochrones-02h00m-source',
+			layerId: 'isochrones-02h00m-line',
+			url: '/data/isochrones/iso_diff_01h30m_02h00m.geojson',
+			color: '#1f8a70'
+		},
+		{
+			key: 'iso_01h30m',
+			sourceId: 'isochrones-01h30m-source',
+			layerId: 'isochrones-01h30m-line',
+			url: '/data/isochrones/iso_diff_01h30m.geojson',
+			color: '#0f4c5c'
+		}
+	] as const;
 	const municipiosHoverLineLayerId = 'municipios-polygons-hover-line-layer';
 	const municipiosSelectedLineLayerId = 'municipios-polygons-selected-line-layer';
 	const provinciasPmtilesSourceId = 'provincias-pmtiles-source';
 	const provinciasGeojsonSourceId = 'provincias-geojson-source';
 	const provinciasLineLayerId = 'provincias-line-layer';
+	const ccaaPmtilesSourceId = 'ccaa-pmtiles-source';
+	const ccaaLineLayerId = 'ccaa-line-layer';
 	const ignWmsSourceId = 'ign-wms-source';
 	const ignWmsLayerId = 'ign-wms-layer';
 	const ignSatelliteSourceId = 'ign-satellite-wms-source';
@@ -83,6 +124,7 @@
 	const landUseSourceLayerName = 'usos_suelo';
 	const sourceLayerName = 'municipios';
 	const provinciasSourceLayerName = 'provincias';
+	const ccaaSourceLayerName = 'ccaa';
 	const municipiosMinVisibleZoom = 5;
 	let hoveredFeatureId: string | number | null = null;
 	let isMapLoading = $state(true);
@@ -259,6 +301,7 @@
 
 	const mapLayerIds: Record<string, string> = {
 		municipios: municipiosPolygonsFillLayerId,
+		isochrones: isochroneLayers[0].layerId,
 		landuse: landUseLayerId,
 		vegetation: vegetationLayerId,
 		forest: forestLayerId,
@@ -269,11 +312,19 @@
 	const applyLayerOrdering = () => {
 		if (!map) return;
 		for (const layerKey of layerOrder) {
+			if (layerKey === 'isochrones') {
+				for (const isochrone of isochroneLayers) {
+					if (map.getLayer(isochrone.layerId))
+						map.moveLayer(isochrone.layerId, provinciasLineLayerId);
+				}
+				continue;
+			}
 			const layerId = mapLayerIds[layerKey];
 			if (!layerId || !map.getLayer(layerId)) continue;
 			map.moveLayer(layerId, provinciasLineLayerId);
 		}
 		if (map.getLayer(provinciasLineLayerId)) map.moveLayer(provinciasLineLayerId);
+		if (map.getLayer(ccaaLineLayerId)) map.moveLayer(ccaaLineLayerId);
 		if (map.getLayer(municipiosPolygonsLineLayerId)) map.moveLayer(municipiosPolygonsLineLayerId);
 		if (map.getLayer(municipiosHoverLineLayerId)) map.moveLayer(municipiosHoverLineLayerId);
 		if (map.getLayer(municipiosSelectedLineLayerId)) map.moveLayer(municipiosSelectedLineLayerId);
@@ -414,8 +465,8 @@
 				minzoom: municipiosMinVisibleZoom,
 				paint: {
 					'line-color': '#113a46',
-					'line-width': ['interpolate', ['linear'], ['zoom'], 4, 0.35, 9, 1.3],
-					'line-opacity': 0.82
+					'line-width': ['interpolate', ['linear'], ['zoom'], 4, 0.28, 9, 0.95],
+					'line-opacity': 0.56
 				}
 			});
 
@@ -434,6 +485,40 @@
 		} catch (error) {
 			console.error('PMTiles de municipios no disponible; no se cargara fallback GeoJSON.', error);
 			return false;
+		}
+	};
+
+	const addIsochroneLayers = () => {
+		if (!map) return;
+		for (const isochrone of isochroneLayers) {
+			try {
+				if (!map.getSource(isochrone.sourceId)) {
+					map.addSource(isochrone.sourceId, {
+						type: 'geojson',
+						data: isochrone.url
+					});
+				}
+				if (!map.getLayer(isochrone.layerId)) {
+					map.addLayer({
+						id: isochrone.layerId,
+						type: 'fill',
+						source: isochrone.sourceId,
+						paint: {
+							'fill-color': isochrone.color,
+							'fill-opacity': 0.5
+						}
+					});
+				}
+			} catch (error) {
+				console.error(`No se pudo cargar ${isochrone.url}`, error);
+			}
+		}
+	};
+
+	const setIsochroneVisibility = (visible: boolean) => {
+		if (!map) return;
+		for (const isochrone of isochroneLayers) {
+			setLayerVisibility(isochrone.layerId, visible);
 		}
 	};
 
@@ -530,6 +615,29 @@
 		}
 	};
 
+	const addCcaaBoundaries = () => {
+		if (!map) return;
+		try {
+			map.addSource(ccaaPmtilesSourceId, {
+				type: 'vector',
+				url: 'pmtiles:///tiles/ccaa.pmtiles'
+			});
+			map.addLayer({
+				id: ccaaLineLayerId,
+				type: 'line',
+				source: ccaaPmtilesSourceId,
+				'source-layer': ccaaSourceLayerName,
+				paint: {
+					'line-color': '#162a2f',
+					'line-width': ['interpolate', ['linear'], ['zoom'], 4, 1.8, 8, 3.1],
+					'line-opacity': 0.76
+				}
+			});
+		} catch (error) {
+			console.error('No se pudo cargar CCAA PMTiles (sin fallback GeoJSON).', error);
+		}
+	};
+
 	const registerPmtiles = () => {
 		const protocol = new Protocol();
 		maplibregl.addProtocol('pmtiles', protocol.tile);
@@ -586,6 +694,8 @@
 			addMunicipiosPmtiles();
 			addIgnHydroWmsLayers();
 			addProvinciasBoundaries();
+			addCcaaBoundaries();
+			addIsochroneLayers();
 
 			map.addSource(municipiosSourceId, {
 				type: 'geojson',
@@ -598,6 +708,7 @@
 			setLayerVisibility(ignReservoirsLayerId, showIgnReservoirs);
 			setLayerVisibility(municipiosPolygonsFillLayerId, showMunicipioPolygons);
 			setLayerVisibility(municipiosPolygonsLineLayerId, showMunicipioPolygons);
+			setIsochroneVisibility(showIsochronesLayer);
 			setLayerVisibility(municipiosHoverLineLayerId, showMunicipioPolygons);
 			setLayerVisibility(municipiosSelectedLineLayerId, showMunicipioPolygons);
 			applyPolygonFilter();
@@ -670,6 +781,7 @@
 		setLayerVisibility(ignReservoirsLayerId, showIgnReservoirs);
 		setLayerVisibility(municipiosPolygonsFillLayerId, showMunicipioPolygons);
 		setLayerVisibility(municipiosPolygonsLineLayerId, showMunicipioPolygons);
+		setIsochroneVisibility(showIsochronesLayer);
 		setLayerVisibility(municipiosHoverLineLayerId, showMunicipioPolygons);
 		setLayerVisibility(municipiosSelectedLineLayerId, showMunicipioPolygons);
 		setLayerVisibility(municipiosLayerId, showMunicipioPoints);

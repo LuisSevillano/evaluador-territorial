@@ -15,7 +15,8 @@ metadata <- list(
   climate_period = "2014-2023",
   aggregation_method = "Media zonal por poligono municipal (exactextractr) sobre climatologia mensual",
   isochrones_definition = "Bucle de isocronas precalculadas y bucket por primera cobertura del centroide municipal",
-  scoring_method = "Score mixto por bloques normalizados: clima 40%, accesibilidad 30%, naturaleza 30%",
+  scoring_method = "Score mixto por bloques normalizados: clima 40%, accesibilidad 30%, naturaleza 30%. La accesibilidad usa suelo metodologico del 20% para evitar anulacion total por lejania extrema",
+  accessibility_normalization_floor = 0.2,
   scoring_weights = list(climate = 0.4, accessibility = 0.3, nature = 0.3)
 )
 
@@ -32,6 +33,7 @@ lines <- c(
   "## Accesibilidad",
   "- `iso_01h30m`, `iso_02h00m`, `iso_02h30m`, `iso_03h30m`, `iso_04h00m`: pertenencia booleana por centroide municipal dentro de isocrona precalculada.",
   "- `travel_bucket`: bucket de accesibilidad derivado por prioridad de isocrona minima que contiene el centroide.",
+  "- `accesibilidad_norm`: normalizacion por buckets con suelo metodologico de 0.20 para evitar que territorios lejanos colapsen a cero.",
   "",
   "## Limitaciones",
   "- Clima agregado a escala municipal desde raster (no microclima de parcela).",
