@@ -58,6 +58,7 @@ export type DatasetMetadata = {
 	aggregation_method: string;
 	isochrones_definition: string;
 	scoring_method?: string;
+	accessibility_normalization_floor?: number;
 	scoring_weights?: {
 		climate: number;
 		accessibility: number;

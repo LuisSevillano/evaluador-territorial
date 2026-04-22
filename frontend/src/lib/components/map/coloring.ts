@@ -29,8 +29,7 @@ export const buildMunicipioColorExpression = (municipios: Municipio[], mapColorM
 			Number.isFinite(municipio.nature_block_score) &&
 			Number.isFinite(municipio.mixed_score);
 		const hasPrecipData = Number.isFinite(municipio.precip_annual_mm);
-		const hasMetricData =
-			mapColorMetric === 'mixed_score' ? hasScoreInputs : hasPrecipData;
+		const hasMetricData = mapColorMetric === 'mixed_score' ? hasScoreInputs : hasPrecipData;
 		const isMissingData = !hasOfficialName || !hasMetricData;
 
 		const value =
@@ -39,10 +38,9 @@ export const buildMunicipioColorExpression = (municipios: Municipio[], mapColorM
 				: (municipio.precip_annual_mm ?? 0);
 		const color = isMissingData
 			? missingDataColor
-			:
-			mapColorMetric === 'mixed_score'
-				? resolveBucketColor(value, scoreThresholds, scoreColors)
-				: resolveBucketColor(value, precipThresholds, precipColors);
+			: mapColorMetric === 'mixed_score'
+				? resolveBucketColor(value as number, scoreThresholds, scoreColors)
+				: resolveBucketColor(value as number, precipThresholds, precipColors);
 
 		expression.push(municipio.id, color);
 		const strippedId = String(Number.parseInt(municipio.id, 10));
@@ -56,14 +54,16 @@ export const buildMunicipioColorExpression = (municipios: Municipio[], mapColorM
 export const getLegendConfig = (mapColorMetric: MapColorMetric) =>
 	mapColorMetric === 'mixed_score'
 		? {
-				title: 'Puntuación',
+				title: 'Puntuacion territorial',
 				thresholds: [...scoreThresholds],
 				colors: [...scoreColors],
-				formatLabel: (value: number) => value.toFixed(2)
-			}
+				formatLabel: (value: number) => value.toFixed(2),
+				labels: ['Muy baja', 'Baja', 'Media', 'Alta', 'Muy alta']
+		  }
 		: {
-				title: 'Precipitación (mm)',
+					title: 'Gradiente de precipitacion',
 				thresholds: [...precipThresholds],
 				colors: [...precipColors],
-				formatLabel: (value: number) => `${Math.round(value)}`
-			};
+				formatLabel: (value: number) => `${Math.round(value)}`,
+				labels: ['Seco', 'Semiseco', 'Intermedio', 'Humedo', 'Muy humedo']
+			  };

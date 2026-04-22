@@ -5,6 +5,14 @@ library(dplyr)
 
 sf_use_s2(FALSE)
 
+slugify <- function(x) {
+  x_ascii <- iconv(x, from = "UTF-8", to = "ASCII//TRANSLIT")
+  x_ascii <- tolower(x_ascii)
+  x_ascii <- gsub("[^a-z0-9]+", "_", x_ascii)
+  x_ascii <- gsub("^_+|_+$", "", x_ascii)
+  x_ascii
+}
+
 if (!file.exists(paths$provinces_shapefile)) {
   stop("No se encontro el shapefile provincial oficial: ", paths$provinces_shapefile)
 }
@@ -39,6 +47,12 @@ prov_scope <- switch(
   scope_config$mode,
   "provincia" = prov |> filter(CODNUT2 == "ES41"),
   "nut2" = prov |> filter(CODNUT2 == scope_config$codnut2),
+  "multi_nut2" = prov |> filter(CODNUT2 %in% scope_config$codnut2),
+  "custom_scope" = prov |>
+    filter(
+      CODNUT2 %in% scope_config$codnut2 |
+        slugify(as.character(NAMEUNIT)) %in% slugify(scope_config$prov_names_include)
+    ),
   "all" = prov
 )
 

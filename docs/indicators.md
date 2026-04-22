@@ -1,9 +1,4 @@
-# Indicadores v3 - Observatorio Territorial El Buen Vivir
-
-## Identificacion
-- `population`: poblacion total (2025). Fuente: INE (Padrón continuo) via mapSpain.
-- `population_men`: poblacion masculina (2025).
-- `population_women`: poblacion femenina (2025).
+# Indicadores v2 - Observatorio Territorial El Buen Vivir
 
 ## Clima
 - `precip_annual_mm`: precipitacion anual (mm). Fuente: TerraClimate mensual. Periodo: 2014-2023. Metodo: suma de climatologia mensual agregada por poligono municipal.
@@ -15,6 +10,7 @@
 ## Accesibilidad
 - `iso_01h30m`, `iso_02h00m`, `iso_02h30m`, `iso_03h30m`, `iso_04h00m`: pertenencia booleana por centroide municipal dentro de isocrona precalculada.
 - `travel_bucket`: bucket de accesibilidad derivado por prioridad de isocrona minima que contiene el centroide.
+- `accesibilidad_norm`: normalizacion por buckets con suelo metodologico de 0.20 para evitar que territorios lejanos colapsen a cero.
 
 ## Limitaciones
 - Clima agregado a escala municipal desde raster (no microclima de parcela).
@@ -35,5 +31,5 @@
 
 ## Trazabilidad del dataset
 - `dataset_version`: v3.0.0
-- `generated_at_utc`: 2026-04-18 07:17:30 UTC
-- `analysis_scope`: Castilla y Leon
+- `generated_at_utc`: 2026-04-22 06:31:15 UTC
+- `analysis_scope`: Castilla y Leon + La Rioja + Pais Vasco + Cantabria + Asturias + Lugo + Ourense + Guadalajara
