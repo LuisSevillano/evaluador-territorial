@@ -16,7 +16,7 @@
 		showIgnSatellite?: boolean;
 		showIgnRivers?: boolean;
 		showIgnReservoirs?: boolean;
-		mapColorMetric?: 'precip_annual_mm' | 'mixed_score';
+		mapColorMetric?: 'precip_annual_mm' | 'mixed_score' | 'transporte_norm' | 'servicio_renfe_norm';
 		showForestLayer?: boolean;
 		showLandUseLayer?: boolean;
 		showVegetationLayer?: boolean;
@@ -47,7 +47,7 @@
 		onToggleIgnSatellite?: (value: boolean) => void;
 		onToggleIgnRivers?: (value: boolean) => void;
 		onToggleIgnReservoirs?: (value: boolean) => void;
-		onMapColorMetricChange?: (value: 'precip_annual_mm' | 'mixed_score') => void;
+		onMapColorMetricChange?: (value: 'precip_annual_mm' | 'mixed_score' | 'transporte_norm' | 'servicio_renfe_norm') => void;
 		onToggleForestLayer?: (value: boolean) => void;
 		onToggleLandUseLayer?: (value: boolean) => void;
 		onToggleVegetationLayer?: (value: boolean) => void;
@@ -272,10 +272,8 @@
 </script>
 
 <aside class="sidebar">
-	<header class="hero">
-		<p class="kicker">Observatorio Territorial</p>
-		<h1>El Buen Vivir</h1>
-		<p class="phase">Fase 3 · analítica de decisión</p>
+	<header class="hero hero-stats">
+		<p class="kicker">Resumen operativo</p>
 		<div class="stats">
 			<div>
 				<span>Resultados</span>
@@ -435,6 +433,8 @@
 			<div class="chips-wrap compact">
 				<ChipButton label="Puntuación global" active={mapColorMetric === 'mixed_score'} onclick={() => onMapColorMetricChange('mixed_score')} />
 				<ChipButton label="Precipitación" active={mapColorMetric === 'precip_annual_mm'} onclick={() => onMapColorMetricChange('precip_annual_mm')} />
+				<ChipButton label="Transporte OSM" active={mapColorMetric === 'transporte_norm'} onclick={() => onMapColorMetricChange('transporte_norm')} />
+				<ChipButton label="Servicio Renfe" active={mapColorMetric === 'servicio_renfe_norm'} onclick={() => onMapColorMetricChange('servicio_renfe_norm')} />
 			</div>
 			<label><input type="checkbox" checked={showIgnWmsBase} onchange={(e) => onToggleIgnWmsBase((e.currentTarget as HTMLInputElement).checked)} /><span>Base IGN WMS</span></label>
 			<label><input type="checkbox" checked={showIgnSatellite} onchange={(e) => onToggleIgnSatellite((e.currentTarget as HTMLInputElement).checked)} /><span>Satélite IGN (PNOA)</span></label>
@@ -468,10 +468,9 @@
 	.sidebar { width: 100%; max-width: 440px; height: 100%; max-height: 100%; min-height: 0; overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain; scrollbar-gutter: stable; background: linear-gradient(170deg, rgba(245, 238, 224, 0.86), rgba(232, 220, 196, 0.94)); border-right: 1px solid rgba(21, 32, 33, 0.18); padding: 0.9rem; display: grid; gap: 0.8rem; box-sizing: border-box; }
 	.sidebar > * { min-width: 0; }
 	.hero { padding: 0.95rem; border: 1px solid rgba(21, 32, 33, 0.22); border-radius: 14px; background: linear-gradient(135deg, rgba(255, 252, 245, 0.85), rgba(238, 225, 198, 0.78)); box-shadow: 0 8px 20px rgba(21, 32, 33, 0.12); }
+	.hero-stats { padding: 0.75rem 0.85rem; }
 	.kicker { margin: 0; font-size: 0.72rem; letter-spacing: 0.14em; text-transform: uppercase; color: #41534f; }
-	h1 { margin: 0.35rem 0 0; font-family: 'Fraunces', serif; font-size: 1.72rem; line-height: 1.03; }
-	.phase { margin: 0.4rem 0 0; font-size: 0.84rem; color: #354845; }
-	.stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.55rem; margin-top: 0.85rem; }
+	.stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.55rem; margin-top: 0.45rem; }
 	.stats div { min-width: 0; padding: 0.5rem; border-radius: 10px; background: rgba(255, 255, 255, 0.6); border: 1px solid rgba(21, 32, 33, 0.14); }
 	.stats span { display: block; font-size: 0.69rem; text-transform: uppercase; letter-spacing: 0.08em; color: #4d5f5a; }
 	.stats strong { display: block; font-family: 'Fraunces', serif; font-size: clamp(1rem, 2.3vw, 1.2rem); line-height: 1.06; overflow-wrap: anywhere; }
