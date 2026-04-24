@@ -1,5 +1,6 @@
 <script lang="ts">
 	import MapView from '$lib/components/MapView.svelte';
+	import type { MapColorMetric } from '$lib/components/map/coloring';
 	import Sidebar from '$lib/components/Sidebar.svelte';
 	import InspectorPanel from '$lib/components/InspectorPanel.svelte';
 	import BottomSheet from '$lib/components/ui/BottomSheet.svelte';
@@ -214,7 +215,9 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 		showVegetationLayer,
 		showForestLayer,
 		showIgnReservoirs,
-		showIgnRivers
+		showIgnRivers,
+		showIgnWmsBase,
+		showIgnSatellite
 	});
 
 	const toggleLayerVisibility = (layerKey: string, checked: boolean) => {
@@ -525,8 +528,8 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 			<ColorLegend
 				title={topbarLegendConfig.title}
 				thresholds={topbarLegendConfig.thresholds}
-				colors={topbarLegendConfig.colors}
-				labels={topbarLegendConfig.labels}
+				colors={topbarLegendConfig.colors as any[]}
+				labels={topbarLegendConfig.labels as any[]}
 				formatLabel={topbarLegendConfig.formatLabel}
 				width={220}
 			/>
