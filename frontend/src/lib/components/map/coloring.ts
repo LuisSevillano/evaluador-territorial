@@ -106,10 +106,10 @@ export const buildMunicipioColorExpression = (municipios: Municipio[], mapColorM
 	return expression;
 };
 
-export const getLegendConfig = (mapColorMetric: MapColorMetric): LegendConfig =>
+	export const getLegendConfig = (mapColorMetric: MapColorMetric): LegendConfig =>
 	mapColorMetric === 'mixed_score'
 		? {
-				title: 'Puntuacion territorial',
+				title: 'Puntuación territorial',
 				thresholds: [...scoreThresholds],
 				colors: [...scoreColors],
 				formatLabel: (value: number) => value.toFixed(2),
@@ -121,7 +121,7 @@ export const getLegendConfig = (mapColorMetric: MapColorMetric): LegendConfig =>
 					thresholds: [...transporteThresholds],
 					colors: [...transporteColors],
 					formatLabel: (value: number) => (value * 100).toFixed(0) + '%',
-					labels: ['Muy lejos', 'Lejos', 'Cercano', 'Muy cercano', 'Optimo']
+					labels: ['Muy lejos', 'Lejos', 'Cercano', 'Muy cercano', 'Óptimo']
 				}
 			: mapColorMetric === 'servicio_renfe_norm'
 				? {
@@ -129,7 +129,7 @@ export const getLegendConfig = (mapColorMetric: MapColorMetric): LegendConfig =>
 						thresholds: [...renfeServiceThresholds],
 						colors: [...renfeServiceColors],
 						formatLabel: (value: number) => (value * 100).toFixed(0) + '%',
-						labels: ['Muy bajo', 'Bajo', 'Medio', 'Alto', 'Optimo']
+						labels: ['Muy bajo', 'Bajo', 'Medio', 'Alto', 'Óptimo']
 				  }
 				: mapColorMetric === 'travel_bucket'
 					? {
@@ -140,9 +140,9 @@ export const getLegendConfig = (mapColorMetric: MapColorMetric): LegendConfig =>
 							labels: [...travelBucketOrder]
 					  }
 				: {
-						title: 'Gradiente de precipitacion',
+						title: 'Gradiente de precipitación',
 						thresholds: [...precipThresholds],
 						colors: [...precipColors],
 						formatLabel: (value: number) => `${Math.round(value)}`,
-						labels: ['Seco', 'Semiseco', 'Intermedio', 'Humedo', 'Muy humedo']
+						labels: ['Seco', 'Semiseco', 'Intermedio', 'Húmedo', 'Muy húmedo']
 					};

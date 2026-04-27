@@ -76,7 +76,7 @@
 	});
 </script>
 
-<svg bind:this={el} viewBox="0 0 320 104" class="chart" aria-label="Grafico precipitacion mensual"
+<svg bind:this={el} viewBox="0 0 320 104" class="chart" aria-label="Gráfico de precipitación mensual"
 ></svg>
 
 <style>

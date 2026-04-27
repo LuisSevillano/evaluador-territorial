@@ -44,15 +44,15 @@
 		</div>
 		<div class="explainer">
 			<p>
-				La puntuación en este municipio impulsa mas <b>{context.topDriver.key}</b> ({context
+				La puntuación en este municipio impulsa más <b>{context.topDriver.key}</b> ({context
 					.topDriver.delta >= 0
 					? '+'
-					: ''}{context.topDriver.delta.toFixed(3)} pts) y penaliza mas
+					: ''}{context.topDriver.delta.toFixed(3)} pts) y penaliza más
 				<b>{context.mainPenalty.key}</b>
 				({context.mainPenalty.delta >= 0 ? '+' : ''}{context.mainPenalty.delta.toFixed(3)} pts).
 			</p>
 			<p>
-				Posicion {context.rank}/{context.total} ({context.percentile.toFixed(0)} percentil), score {context.selectedScore.toFixed(
+				Posición {context.rank}/{context.total} ({context.percentile.toFixed(0)} percentil), score {context.selectedScore.toFixed(
 					3
 				)}.
 			</p>

@@ -161,7 +161,7 @@
 	});
 </script>
 
-<svg bind:this={el} viewBox="0 0 320 104" class="chart" aria-label="Grafico temperatura mensual"
+<svg bind:this={el} viewBox="0 0 320 104" class="chart" aria-label="Gráfico de temperatura mensual"
 ></svg>
 
 <style>

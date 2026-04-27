@@ -1,6 +1,7 @@
+import type { MapColorMetric } from '$lib/components/map/coloring';
+
 export type ViewMode = 'exploracion' | 'evaluacion';
 export type SheetTab = 'sel' | 'filtr' | 'capas' | 'rank' | 'meta';
-export type MapColorMetric = 'precip_annual_mm' | 'mixed_score';
 
 export const createUiStore = () => {
 	const state = $state({
