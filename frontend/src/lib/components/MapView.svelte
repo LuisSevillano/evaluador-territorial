@@ -890,31 +890,33 @@
 <div class="map-shell">
 	<div class="map-frame">
 		<div class="map" bind:this={mapContainer} aria-label="Mapa principal"></div>
-		<div class="map-quick-controls" role="group" aria-label="Controles rápidos del mapa">
-			<button
-				type="button"
-				class:active={showIgnWmsBase && !showIgnSatellite}
-				onclick={() => {
-					onToggleIgnWmsBase(true);
-					onToggleIgnSatellite(false);
-				}}
-			>
-				Base IGN
-			</button>
-			<button
-				type="button"
-				class:active={showIgnSatellite}
-				onclick={() => {
-					onToggleIgnSatellite(true);
-					onToggleIgnWmsBase(false);
-				}}
-			>
-				Satelite
-			</button>
+		<div class="map-overlay-stack">
+			<div class="map-quick-controls" role="group" aria-label="Controles rápidos del mapa">
+				<button
+					type="button"
+					class:active={showIgnWmsBase && !showIgnSatellite}
+					onclick={() => {
+						onToggleIgnWmsBase(true);
+						onToggleIgnSatellite(false);
+					}}
+				>
+					Base IGN
+				</button>
+				<button
+					type="button"
+					class:active={showIgnSatellite}
+					onclick={() => {
+						onToggleIgnSatellite(true);
+						onToggleIgnWmsBase(false);
+					}}
+				>
+					Satelite
+				</button>
+			</div>
+			{#if isMapLoading}
+				<MapLoadingBadge />
+			{/if}
 		</div>
-		{#if isMapLoading}
-			<MapLoadingBadge />
-		{/if}
 	</div>
 	{#if showLandUseLayer}
 		<LandUseLegend palette={landUsePalette} />
@@ -949,9 +951,6 @@
 	}
 
 	.map-quick-controls {
-		position: absolute;
-		top: 0.95rem;
-		right: 3.35rem;
 		z-index: 8;
 		display: inline-flex;
 		gap: 0;
@@ -982,15 +981,25 @@
 		color: #f7f4ec;
 	}
 
+	.map-overlay-stack {
+		position: absolute;
+		top: 0.9rem;
+		left: 0.9rem;
+		z-index: 20;
+		display: grid;
+		gap: 0.35rem;
+		justify-items: start;
+	}
+
 	@media (max-width: 900px) {
 		.map-shell {
 			padding: 0.7rem;
 			min-height: 52dvh;
 		}
 
-		.map-quick-controls {
-			top: 0.85rem;
-			right: 3.2rem;
+		.map-overlay-stack {
+			top: 0.8rem;
+			left: 0.8rem;
 		}
 	}
 </style>

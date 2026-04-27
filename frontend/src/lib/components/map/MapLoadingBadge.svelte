@@ -2,10 +2,9 @@
 
 <style>
 	.loading {
-		position: absolute;
-		top: 0.5rem;
-		left: 0.5rem;
-		z-index: 20;
+		display: inline-flex;
+		align-items: center;
+		z-index: 9;
 		padding: 0.22rem 0.48rem;
 		border-radius: 999px;
 		border: 1px solid rgba(16, 44, 54, 0.14);
