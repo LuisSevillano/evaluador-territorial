@@ -250,9 +250,14 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 			(showIgnSatellite ? 1 : 0)
 	);
 
-	const mapColorLabel = $derived(
-		mapColorMetric === 'mixed_score' ? 'Puntuacion global' : 'Precipitacion anual'
-	);
+	const mapColorLabel = $derived.by(() => {
+		if (mapColorMetric === 'mixed_score') return 'Puntuacion global';
+		if (mapColorMetric === 'precip_annual_mm') return 'Precipitacion anual';
+		if (mapColorMetric === 'travel_bucket') return 'Tiempo de desplazamiento';
+		if (mapColorMetric === 'transporte_norm') return 'Transporte OSM';
+		if (mapColorMetric === 'servicio_renfe_norm') return 'Servicio Renfe';
+		return 'Puntuacion global';
+	});
 
 	const topbarLegendConfig = $derived(getLegendConfig(mapColorMetric));
 
@@ -320,8 +325,18 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 		layersStore.state.layerOrder = nextOrder;
 	};
 
+	const setMapColorMetric = (value: MapColorMetric) => {
+		uiStore.state.mapColorMetric = value;
+		layersStore.state.showMunicipioPolygons = true;
+		if (value === 'travel_bucket') {
+			layersStore.state.showIsochronesLayer = true;
+			return;
+		}
+		layersStore.state.showIsochronesLayer = false;
+	};
+
 	const handlePresetWeights = (preset: Preset) => {
-		uiStore.state.mapColorMetric = 'mixed_score';
+		setMapColorMetric('mixed_score');
 		const weights = weightsForPreset(preset);
 		filtersStore.state.climateWeight = weights.climateWeight;
 		filtersStore.state.accessWeight = weights.accessWeight;
@@ -330,17 +345,17 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 
 	const handleClimateWeightChange = (value: number) => {
 		filtersStore.state.climateWeight = value;
-		uiStore.state.mapColorMetric = 'mixed_score';
+		setMapColorMetric('mixed_score');
 	};
 
 	const handleAccessWeightChange = (value: number) => {
 		filtersStore.state.accessWeight = value;
-		uiStore.state.mapColorMetric = 'mixed_score';
+		setMapColorMetric('mixed_score');
 	};
 
 	const handleNatureWeightChange = (value: number) => {
 		filtersStore.state.natureWeight = value;
-		uiStore.state.mapColorMetric = 'mixed_score';
+		setMapColorMetric('mixed_score');
 	};
 
 
@@ -465,7 +480,7 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 
 	$effect(() => {
 		if (viewMode === 'evaluacion') {
-			uiStore.state.mapColorMetric = 'mixed_score';
+			setMapColorMetric('mixed_score');
 		}
 		uiStore.state.activeSheetTab = tabForMode(
 			viewMode,
@@ -603,7 +618,7 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 				onToggleIgnSatellite={(value: boolean) => (layersStore.state.showIgnSatellite = value)}
 				onToggleIgnRivers={(value: boolean) => (layersStore.state.showIgnRivers = value)}
 				onToggleIgnReservoirs={(value: boolean) => (layersStore.state.showIgnReservoirs = value)}
-				onMapColorMetricChange={(value) => (uiStore.state.mapColorMetric = value)}
+				onMapColorMetricChange={setMapColorMetric}
 				onToggleForestLayer={(value) => (layersStore.state.showForestLayer = value)}
 				onToggleLandUseLayer={(value) => (layersStore.state.showLandUseLayer = value)}
 				onToggleVegetationLayer={(value) => (layersStore.state.showVegetationLayer = value)}
@@ -638,6 +653,8 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 					{showIgnRivers}
 					{showIgnReservoirs}
 					{mapColorMetric}
+					onToggleIgnSatellite={(value) => (layersStore.state.showIgnSatellite = value)}
+					onToggleIgnWmsBase={(value) => (layersStore.state.showIgnWmsBase = value)}
 					{showForestLayer}
 					{showLandUseLayer}
 					{showVegetationLayer}
@@ -818,9 +835,10 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 							<div class="sheet-block">
 								<LayerOrderList items={layerItems} onToggle={toggleLayerVisibility} onReorder={handleLayerOrderChange} />
 								<div class="chips-row">
-									<ChipButton label="Puntuación global" active={mapColorMetric === 'mixed_score'} onclick={() => (uiStore.state.mapColorMetric = 'mixed_score')} />
-									<ChipButton label="Precipitación" active={mapColorMetric === 'precip_annual_mm'} onclick={() => (uiStore.state.mapColorMetric = 'precip_annual_mm')} />
-								</div>
+								<ChipButton label="Puntuación global" active={mapColorMetric === 'mixed_score'} onclick={() => setMapColorMetric('mixed_score')} />
+								<ChipButton label="Precipitación" active={mapColorMetric === 'precip_annual_mm'} onclick={() => setMapColorMetric('precip_annual_mm')} />
+								<ChipButton label="Tiempo de desplazamiento" active={mapColorMetric === 'travel_bucket'} onclick={() => setMapColorMetric('travel_bucket')} />
+							</div>
 								<label><input type="checkbox" checked={showIgnWmsBase} onchange={(e) => (layersStore.state.showIgnWmsBase = (e.currentTarget as HTMLInputElement).checked)} /> Base IGN</label>
 								<label><input type="checkbox" checked={showIgnSatellite} onchange={(e) => (layersStore.state.showIgnSatellite = (e.currentTarget as HTMLInputElement).checked)} /> Satélite IGN</label>
 							</div>

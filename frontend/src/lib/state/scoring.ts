@@ -15,15 +15,15 @@ export type WeightsNormalized = {
 };
 
 export const DEFAULT_WEIGHTS_RAW: WeightsRaw = {
-	climateWeight: 45,
-	accessWeight: 20,
-	natureWeight: 35
+	climateWeight: 40,
+	accessWeight: 30,
+	natureWeight: 30
 };
 
 export const DEFAULT_WEIGHTS_NORMALIZED: WeightsNormalized = {
-	climate: 0.45,
-	access: 0.2,
-	nature: 0.35
+	climate: 0.4,
+	access: 0.3,
+	nature: 0.3
 };
 
 export const BASELINE_WEIGHTS: WeightsNormalized = DEFAULT_WEIGHTS_NORMALIZED;
