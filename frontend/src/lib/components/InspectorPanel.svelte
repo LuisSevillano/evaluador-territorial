@@ -108,6 +108,18 @@
 				<div class={`metric ${accessTone(selectedMunicipio.travel_bucket)}`}>
 					<span>Accesibilidad</span><strong>{selectedMunicipio.travel_bucket}</strong>
 				</div>
+				<div class="metric">
+					<span>Dist. estación tren (OSM)</span><strong>{selectedMunicipio.dist_estacion_tren_km ?? '-'} km</strong>
+				</div>
+				<div class="metric">
+					<span>Dist. parada bus (OSM)</span><strong>{selectedMunicipio.dist_parada_bus_km ?? '-'} km</strong>
+				</div>
+				<div class="metric">
+					<span>Estación Renfe</span><strong>{selectedMunicipio.dist_renfe_km ?? '-'} km</strong>
+				</div>
+				<div class="metric">
+					<span>Servicio Renfe</span><strong>{selectedMunicipio.renfe_tipo_servicio ?? '-'} ({selectedMunicipio.renfe_salidas_dia ?? 0} salidas)</strong>
+				</div>
 				<div class={`metric ${climateTone(selectedMunicipio.precip_annual_mm)}`}>
 					<span>Precipitación</span><strong>{selectedMunicipio.precip_annual_mm} mm</strong>
 				</div>
@@ -236,9 +248,9 @@
 				/>
 			</div>
 			<p class="muted">
-				Normalizados: clima {(weights.climate * 100).toFixed(0)}% · acces {(
+				Normalizados: clima {(weights.climate * 100).toFixed(0)}% · accesibilidad {(
 					weights.access * 100
-				).toFixed(0)}% · nat {(weights.nature * 100).toFixed(0)}%
+				).toFixed(0)}% · naturaleza {(weights.nature * 100).toFixed(0)}%
 			</p>
 			<p class="muted">Robustez top-10 vs base equilibrada: {sensitivityOverlap}/10</p>
 		</section>

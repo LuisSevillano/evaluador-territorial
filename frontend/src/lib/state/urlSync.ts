@@ -11,6 +11,7 @@ type SyncState = {
 	minWinterTemp: number;
 	maxSummerTemp: number;
 	maxThermalAmplitude: number;
+	maxThermalAmplitudeDefault: number;
 	minCompositeScore: number;
 	climateWeight: number;
 	accessWeight: number;
@@ -33,7 +34,7 @@ export const applyUrlToState = (search: string, current: SyncState) => {
 	if (parsed.ppt !== undefined) next.minPrecipAnnual = clampNumber(parsed.ppt, 0, 1800);
 	if (parsed.tw !== undefined) next.minWinterTemp = clampNumber(parsed.tw, -15, 15);
 	if (parsed.ts !== undefined) next.maxSummerTemp = clampNumber(parsed.ts, 15, 40);
-	if (parsed.ta !== undefined) next.maxThermalAmplitude = clampNumber(parsed.ta, 12, 21);
+	if (parsed.ta !== undefined) next.maxThermalAmplitude = clampNumber(parsed.ta, 12, 40);
 	if (parsed.score !== undefined) next.minCompositeScore = clampNumber(parsed.score, 0, 1);
 
 	if (parsed.cw !== undefined) next.climateWeight = clampNumber(parsed.cw, 0, 100);
@@ -66,7 +67,10 @@ export const buildUrlFromState = (state: SyncState) =>
 		ppt: state.minPrecipAnnual !== 0 ? state.minPrecipAnnual : undefined,
 		tw: state.minWinterTemp !== -10 ? state.minWinterTemp : undefined,
 		ts: state.maxSummerTemp !== 40 ? state.maxSummerTemp : undefined,
-		ta: state.maxThermalAmplitude < 21 ? Number(state.maxThermalAmplitude.toFixed(1)) : undefined,
+		ta:
+			state.maxThermalAmplitude !== state.maxThermalAmplitudeDefault
+				? Number(state.maxThermalAmplitude.toFixed(1))
+				: undefined,
 		score: state.minCompositeScore > 0 ? state.minCompositeScore : undefined,
 		cw: state.viewMode === 'evaluacion' ? state.climateWeight : undefined,
 		aw: state.viewMode === 'evaluacion' ? state.accessWeight : undefined,

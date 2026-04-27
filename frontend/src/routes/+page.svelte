@@ -8,9 +8,14 @@
 	import RankingList from '$lib/components/RankingList.svelte';
 	import ChipButton from '$lib/components/ui/ChipButton.svelte';
 	import LayerOrderList from '$lib/components/layers/LayerOrderList.svelte';
+	import FilterHelp from '$lib/components/ui/FilterHelp.svelte';
+	import MunicipioSearch from '$lib/components/ui/MunicipioSearch.svelte';
+	import ClimateFilters from '$lib/components/filters/ClimateFilters.svelte';
 	import ColorLegend from '$lib/components/ColorLegend.svelte';
 	import { getLegendConfig } from '$lib/components/map/coloring';
 	import { applyUrlToState, buildUrlFromState } from '$lib/state/urlSync';
+	import { normalizeProvinceName } from '$lib/state/provinces';
+	import { FILTER_HELP } from '$lib/state/filterHelp';
 	import { modeCopy, tabForMode } from '$lib/state/viewMode';
 	import {
 		bucketOrder,
@@ -85,6 +90,14 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 	const minWinterTemp = $derived(filtersStore.state.minWinterTemp);
 	const maxSummerTemp = $derived(filtersStore.state.maxSummerTemp);
 	const maxThermalAmplitude = $derived(filtersStore.state.maxThermalAmplitude);
+	const maxThermalAmplitudeLimit = $derived.by(() => {
+		const amplitudes = municipios
+			.map((m) => m.temp_jul_mean_c - m.temp_jan_mean_c)
+			.filter((value) => Number.isFinite(value));
+		if (amplitudes.length === 0) return 25;
+		const maxDatasetAmplitude = Math.max(...amplitudes);
+		return Math.max(25, Math.ceil(maxDatasetAmplitude / 5) * 5);
+	});
 	const minCompositeScore = $derived(filtersStore.state.minCompositeScore);
 	const climateWeight = $derived(filtersStore.state.climateWeight);
 	const accessWeight = $derived(filtersStore.state.accessWeight);
@@ -108,10 +121,11 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 	const sortDirection = $derived(rankingStore.state.sortDirection);
 	let urlStateReady = $state(false);
 	let showDesktopEvalTable = $state(false);
+	let didHydrateThermalAmplitudeDefault = $state(false);
 
 	const provinciasDisponibles = $derived([
 		'Todas',
-		...Array.from(new Set(municipios.map((m) => m.provincia)))
+		...Array.from(new Set(municipios.map((m) => normalizeProvinceName(m.provincia))))
 			.filter((provincia) => provincia && provincia !== '53')
 			.sort((a, b) => a.localeCompare(b, 'es'))
 	]);
@@ -139,12 +153,9 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 
 	const municipiosFiltradosBase = $derived(
 		municipiosScoredForView.filter((m) => {
-			const queryText = query.trim().toLowerCase();
-			const queryOk =
-				queryText.length === 0 ||
-				m.nombre.toLowerCase().includes(queryText) ||
-				m.provincia.toLowerCase().includes(queryText);
-			const provinceOk = provinceFilter === 'Todas' || m.provincia === provinceFilter;
+			const provinceOk =
+				provinceFilter === 'Todas' ||
+				normalizeProvinceName(m.provincia) === normalizeProvinceName(provinceFilter);
 			const bucketOk =
 				(bucketOrder[m.travel_bucket as TravelBucket] ?? bucketOrder['>4h00']) <=
 				bucketOrder[maxTravelBucket];
@@ -164,7 +175,7 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 			const scoreOk = Number.isFinite(m.mixed_score)
 				? m.mixed_score >= minCompositeScore
 				: true;
-			return queryOk && provinceOk && bucketOk && precipOk && winterOk && summerOk && amplitudeOk && scoreOk;
+			return provinceOk && bucketOk && precipOk && winterOk && summerOk && amplitudeOk && scoreOk;
 		})
 	);
 
@@ -197,7 +208,7 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 			minPrecipAnnual !== 0 ? `ppt>=${minPrecipAnnual}` : null,
 			minWinterTemp !== -10 ? `t_inv>=${minWinterTemp}` : null,
 			maxSummerTemp !== 40 ? `t_ver<=${maxSummerTemp}` : null,
-			maxThermalAmplitude < 21 ? `amp<=${maxThermalAmplitude.toFixed(1)}` : null,
+			maxThermalAmplitude < maxThermalAmplitudeLimit ? `amp<=${maxThermalAmplitude.toFixed(1)}` : null,
 			minCompositeScore > 0 ? `score>=${minCompositeScore.toFixed(2)}` : null
 		].filter(Boolean) as string[]
 	);
@@ -251,12 +262,12 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 	);
 
 	const mapColorLabel = $derived.by(() => {
-		if (mapColorMetric === 'mixed_score') return 'Puntuacion global';
-		if (mapColorMetric === 'precip_annual_mm') return 'Precipitacion anual';
+		if (mapColorMetric === 'mixed_score') return 'Puntuación global';
+		if (mapColorMetric === 'precip_annual_mm') return 'Precipitación anual';
 		if (mapColorMetric === 'travel_bucket') return 'Tiempo de desplazamiento';
 		if (mapColorMetric === 'transporte_norm') return 'Transporte OSM';
 		if (mapColorMetric === 'servicio_renfe_norm') return 'Servicio Renfe';
-		return 'Puntuacion global';
+		return 'Puntuación global';
 	});
 
 	const topbarLegendConfig = $derived(getLegendConfig(mapColorMetric));
@@ -306,6 +317,7 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 
 	const handleClearFilters = () => {
 		filtersStore.clear();
+		filtersStore.state.maxThermalAmplitude = maxThermalAmplitudeLimit;
 	};
 
 	const handleToggleShortlist = (municipioId: string) => {
@@ -385,6 +397,7 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 			minWinterTemp,
 			maxSummerTemp,
 			maxThermalAmplitude,
+			maxThermalAmplitudeDefault: maxThermalAmplitudeLimit,
 			minCompositeScore,
 			climateWeight,
 			accessWeight,
@@ -401,12 +414,18 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 		});
 		Object.assign(filtersStore.state, {
 			query: next.query ?? filtersStore.state.query,
-			provinceFilter: next.provinceFilter ?? filtersStore.state.provinceFilter,
+			provinceFilter:
+				next.provinceFilter !== undefined
+					? normalizeProvinceName(next.provinceFilter)
+					: filtersStore.state.provinceFilter,
 			maxTravelBucket: next.maxTravelBucket ?? filtersStore.state.maxTravelBucket,
 			minPrecipAnnual: next.minPrecipAnnual ?? filtersStore.state.minPrecipAnnual,
 			minWinterTemp: next.minWinterTemp ?? filtersStore.state.minWinterTemp,
 			maxSummerTemp: next.maxSummerTemp ?? filtersStore.state.maxSummerTemp,
-			maxThermalAmplitude: next.maxThermalAmplitude ?? filtersStore.state.maxThermalAmplitude,
+			maxThermalAmplitude:
+				next.maxThermalAmplitude !== undefined
+					? Math.min(next.maxThermalAmplitude, maxThermalAmplitudeLimit)
+					: filtersStore.state.maxThermalAmplitude,
 			minCompositeScore: next.minCompositeScore ?? filtersStore.state.minCompositeScore,
 			climateWeight: next.climateWeight ?? filtersStore.state.climateWeight,
 			accessWeight: next.accessWeight ?? filtersStore.state.accessWeight,
@@ -415,6 +434,16 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 		selectionStore.state.pendingSelectedMunicipioId = pendingSelectedMunicipioId;
 
 		urlStateReady = true;
+	});
+
+	$effect(() => {
+		if (typeof window === 'undefined' || !urlStateReady) return;
+		if (didHydrateThermalAmplitudeDefault) return;
+		const hasAmplitudeInUrl = new URLSearchParams(window.location.search).has('ta');
+		if (!hasAmplitudeInUrl && filtersStore.state.maxThermalAmplitude === 21 && maxThermalAmplitudeLimit > 21) {
+			filtersStore.state.maxThermalAmplitude = maxThermalAmplitudeLimit;
+		}
+		didHydrateThermalAmplitudeDefault = true;
 	});
 
 	$effect(() => {
@@ -428,6 +457,7 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 			minWinterTemp,
 			maxSummerTemp,
 			maxThermalAmplitude,
+			maxThermalAmplitudeDefault: maxThermalAmplitudeLimit,
 			minCompositeScore,
 			climateWeight,
 			accessWeight,
@@ -566,7 +596,7 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 	{:else}
 		<p><strong>Evaluación activa.</strong> El ranking usa los pesos actuales y se actualiza en tiempo real.</p>
 		<div class="mode-strip-metrics">
-			<span>Pesos C/A/N: {climateWeight}/{accessWeight}/{natureWeight}</span>
+			<span>Clima: {climateWeight} · Accesibilidad: {accessWeight} · Naturaleza: {natureWeight}</span>
 			<span>Robustez top-10: {sensitivityOverlap}/10</span>
 			<span>Top actual: {topCandidate ? `${topCandidate.nombre} (${topCandidate.mixed_score?.toFixed(3) ?? '-'})` : 'sin datos'}</span>
 		</div>
@@ -598,6 +628,7 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 				{minWinterTemp}
 				{maxSummerTemp}
 				{maxThermalAmplitude}
+				{maxThermalAmplitudeLimit}
 				{minCompositeScore}
 				{layerOrder}
 				activeFiltersSummary={activeFiltersSummary}
@@ -661,6 +692,8 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 					{layerOrder}
 					{visibleMunicipioIds}
 					{provinceFilter}
+					{isMobileView}
+					{isBottomSheetOpen}
 					pmtilesUrl={municipiosPmtilesUrl}
 					onMapSelection={handleSelectMunicipio}
 				/>
@@ -759,41 +792,55 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 								<p class="sheet-meta">{modeCopy[viewMode].helper}</p>
 								<section class="sheet-section">
 									<p class="sheet-subtitle">Filtros base</p>
-									<label for="sheet-province">Provincia</label>
+									<div class="sheet-score-item">
+										<label for="sheet-search">Buscar municipio</label>
+										<MunicipioSearch
+											query={query}
+											municipios={municipiosScoredForView}
+											searchMunicipios={municipiosFiltradosBase}
+											inputId="sheet-search"
+											variant="sheet"
+											onQueryChange={(value) => (filtersStore.state.query = value)}
+											onSelectMunicipio={handleSelectMunicipio}
+										/>
+									</div>
+									<div class="sheet-label-help-row sheet-label-help-row-nowrap">
+										<label for="sheet-province">Provincia</label>
+										<FilterHelp text={FILTER_HELP.province} />
+									</div>
 								<select id="sheet-province" value={provinceFilter} onchange={(e) => (filtersStore.state.provinceFilter = (e.currentTarget as HTMLSelectElement).value)}>
 										{#each provinciasDisponibles as provincia}
 											<option value={provincia}>{provincia}</option>
 										{/each}
 									</select>
+									<p class="sheet-subtitle sheet-subtitle-help">Accesibilidad máxima <FilterHelp text={FILTER_HELP.accessibility} /></p>
 									<div class="chips-row">
 										{#each travelBuckets as bucket}
 											<ChipButton label={bucket.label} size="small" compact={true} active={maxTravelBucket === bucket.value} onclick={() => (filtersStore.state.maxTravelBucket = bucket.value)} />
 										{/each}
 									</div>
 									<p class="sheet-subtitle">Filtros de climatología</p>
-									<div class="sheet-slider-grid">
-										<div class="sheet-score-item">
-											<label for="sheet-min-precip">Precipitación mínima anual: {minPrecipAnnual} mm</label>
-											<input id="sheet-min-precip" type="range" min="0" max="1800" step="10" value={minPrecipAnnual} oninput={(e) => (filtersStore.state.minPrecipAnnual = toNumber(e))} />
-										</div>
-										<div class="sheet-score-item">
-											<label for="sheet-min-winter">Temp. invierno mínima: {minWinterTemp} C</label>
-											<input id="sheet-min-winter" type="range" min="-15" max="15" step="0.5" value={minWinterTemp} oninput={(e) => (filtersStore.state.minWinterTemp = toNumber(e))} />
-										</div>
-										<div class="sheet-score-item">
-											<label for="sheet-max-summer">Temp. verano máxima: {maxSummerTemp} C</label>
-											<input id="sheet-max-summer" type="range" min="15" max="40" step="0.5" value={maxSummerTemp} oninput={(e) => (filtersStore.state.maxSummerTemp = toNumber(e))} />
-										</div>
-										<div class="sheet-score-item">
-											<label for="sheet-max-amplitude">Amplitud térmica máxima: {maxThermalAmplitude.toFixed(1)} C</label>
-											<input id="sheet-max-amplitude" type="range" min="12" max="21" step="0.1" value={maxThermalAmplitude} oninput={(e) => (filtersStore.state.maxThermalAmplitude = toNumber(e))} />
-										</div>
-									</div>
+									<ClimateFilters
+										variant="sheet"
+										idPrefix="sheet"
+										{minPrecipAnnual}
+										{minWinterTemp}
+										{maxSummerTemp}
+										{maxThermalAmplitude}
+										{maxThermalAmplitudeLimit}
+										isEvaluationMode={viewMode === 'evaluacion'}
+										{minCompositeScore}
+										onMinPrecipAnnualChange={(value) => (filtersStore.state.minPrecipAnnual = value)}
+										onMinWinterTempChange={(value) => (filtersStore.state.minWinterTemp = value)}
+										onMaxSummerTempChange={(value) => (filtersStore.state.maxSummerTemp = value)}
+										onMaxThermalAmplitudeChange={(value) => (filtersStore.state.maxThermalAmplitude = value)}
+										onMinCompositeScoreChange={(value) => (filtersStore.state.minCompositeScore = value)}
+									/>
 								</section>
 								{#if viewMode === 'evaluacion'}
 									<section class="sheet-section sheet-section-score">
 										<div class="sheet-score-summary">
-											<span>Pesos C/A/N: {climateWeight}/{accessWeight}/{natureWeight}</span>
+											<span>Clima: {climateWeight} · Accesibilidad: {accessWeight} · Naturaleza: {natureWeight}</span>
 											<span>Robustez top-10: {sensitivityOverlap}/10</span>
 										</div>
 										<p class="sheet-subtitle">Ajuste del score</p>
@@ -804,13 +851,9 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 											<ChipButton label="Clima" active={activePreset === 'clima'} onclick={() => handlePresetWeights('clima')} />
 											<ChipButton label="Clima estricto" active={activePreset === 'clima_estricto'} onclick={() => handlePresetWeights('clima_estricto')} />
 										</div>
-										<div class="sheet-slider-grid">
-											<div class="sheet-score-item">
-												<label for="sheet-min-score">Score mínimo visible: {minCompositeScore.toFixed(2)}</label>
-												<input id="sheet-min-score" type="range" min="0" max="1" step="0.01" value={minCompositeScore} oninput={(e) => (filtersStore.state.minCompositeScore = toNumber(e))} />
-											</div>
-											<div class="sheet-score-item">
-												<label for="sheet-w-clima">Peso clima: {climateWeight}</label>
+									<div class="sheet-slider-grid">
+										<div class="sheet-score-item">
+											<label for="sheet-w-clima">Peso clima: {climateWeight}</label>
 												<input id="sheet-w-clima" type="range" min="0" max="100" step="1" value={climateWeight} oninput={(e) => handleClimateWeightChange(toNumber(e))} />
 											</div>
 											<div class="sheet-score-item">
@@ -833,12 +876,15 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 							</div>
 						{:else if activeSheetTab === 'capas'}
 							<div class="sheet-block">
-								<LayerOrderList items={layerItems} onToggle={toggleLayerVisibility} onReorder={handleLayerOrderChange} />
+							<p class="sheet-subtitle sheet-subtitle-help">Color municipal <FilterHelp text={FILTER_HELP.mapColor} /></p>
 								<div class="chips-row">
 								<ChipButton label="Puntuación global" active={mapColorMetric === 'mixed_score'} onclick={() => setMapColorMetric('mixed_score')} />
 								<ChipButton label="Precipitación" active={mapColorMetric === 'precip_annual_mm'} onclick={() => setMapColorMetric('precip_annual_mm')} />
 								<ChipButton label="Tiempo de desplazamiento" active={mapColorMetric === 'travel_bucket'} onclick={() => setMapColorMetric('travel_bucket')} />
+								<ChipButton label="Transporte OSM" active={mapColorMetric === 'transporte_norm'} onclick={() => setMapColorMetric('transporte_norm')} />
+								<ChipButton label="Servicio Renfe" active={mapColorMetric === 'servicio_renfe_norm'} onclick={() => setMapColorMetric('servicio_renfe_norm')} />
 							</div>
+								<LayerOrderList items={layerItems} onToggle={toggleLayerVisibility} onReorder={handleLayerOrderChange} />
 								<label><input type="checkbox" checked={showIgnWmsBase} onchange={(e) => (layersStore.state.showIgnWmsBase = (e.currentTarget as HTMLInputElement).checked)} /> Base IGN</label>
 								<label><input type="checkbox" checked={showIgnSatellite} onchange={(e) => (layersStore.state.showIgnSatellite = (e.currentTarget as HTMLInputElement).checked)} /> Satélite IGN</label>
 							</div>
@@ -932,7 +978,7 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 							<label for="desktop-rw-nature">Peso naturaleza: {natureWeight}</label>
 							<input id="desktop-rw-nature" type="range" min="0" max="100" step="1" value={natureWeight} oninput={(e) => handleNatureWeightChange(toNumber(e))} />
 						</div>
-						<p class="muted">Normalizados: clima {(normalizedWeights.climate * 100).toFixed(0)}% · acces {(normalizedWeights.access * 100).toFixed(0)}% · nat {(normalizedWeights.nature * 100).toFixed(0)}%</p>
+						<p class="muted">Normalizados: clima {(normalizedWeights.climate * 100).toFixed(0)}% · accesibilidad {(normalizedWeights.access * 100).toFixed(0)}% · naturaleza {(normalizedWeights.nature * 100).toFixed(0)}%</p>
 						<p class="muted">Robustez top-10 vs base equilibrada: {sensitivityOverlap}/10</p>
 					</section>
 				</section>
@@ -995,7 +1041,7 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 	.topbar-controls {
 		display: flex;
 		align-items: center;
-		gap: 0.6rem;
+		gap: 2rem;
 		margin-left: auto;
 	}
 	.topbar-legend {
@@ -1368,6 +1414,24 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 			display: grid;
 			gap: 0.2rem;
 		}
+		.sheet-label-help-row {
+			display: inline-flex;
+			align-items: center;
+			gap: 0.3rem;
+			flex-wrap: nowrap;
+		}
+		.sheet-label-help-row label {
+			display: inline;
+			min-width: 0;
+			line-height: 1.15;
+		}
+		.sheet-label-help-row :global(.help-wrap) {
+			flex: 0 0 auto;
+			margin-top: 0;
+		}
+		.sheet-label-help-row-nowrap label {
+			white-space: nowrap;
+		}
 		.sheet-block label {
 			font-size: 0.75rem;
 			color: #3f5753;
@@ -1380,11 +1444,28 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 			text-transform: uppercase;
 			color: #3d5551;
 		}
+		.sheet-subtitle-help {
+			display: inline-flex;
+			align-items: center;
+			gap: 0.3rem;
+			white-space: nowrap;
+		}
+		.sheet-subtitle-help :global(.help-wrap) {
+			flex: 0 0 auto;
+		}
+		@media (max-width: 435px) {
+			.sheet-label-help-row label,
+			.sheet-subtitle-help {
+				font-size: 0.68rem;
+			}
+		}
 		.sheet-block select {
 			border: 1px solid rgba(21, 32, 33, 0.2);
 			border-radius: 8px;
-			padding: 0.4rem 0.5rem;
+			height: 30px;
+			padding: 0 0.5rem;
 			font-size: 0.8rem;
+			line-height: 1.2;
 			background: rgba(255, 255, 255, 0.86);
 		}
 		.chips-row {

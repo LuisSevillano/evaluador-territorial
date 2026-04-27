@@ -4,6 +4,7 @@
 	import { Protocol } from 'pmtiles';
 	import type { FeatureCollection, Point } from 'geojson';
 	import type { Municipio } from '$lib/types/municipio';
+	import { normalizeProvinceName } from '$lib/state/provinces';
 	import LandUseLegend from '$lib/components/map/LandUseLegend.svelte';
 	import MapLoadingBadge from '$lib/components/map/MapLoadingBadge.svelte';
 	import { type MapColorMetric, buildMunicipioColorExpression } from '$lib/components/map/coloring';
@@ -31,6 +32,8 @@
 		onMapSelection?: (municipio: Municipio | null) => void;
 		onToggleIgnSatellite?: (visible: boolean) => void;
 		onToggleIgnWmsBase?: (visible: boolean) => void;
+		isMobileView?: boolean;
+		isBottomSheetOpen?: boolean;
 	};
 
 	let {
@@ -54,7 +57,9 @@
 		pmtilesUrl = '/tiles/municipios.pmtiles',
 		onMapSelection = () => undefined,
 		onToggleIgnSatellite = () => undefined,
-		onToggleIgnWmsBase = () => undefined
+		onToggleIgnWmsBase = () => undefined,
+		isMobileView = false,
+		isBottomSheetOpen = false
 	}: Props = $props();
 
 	let mapContainer: HTMLDivElement;
@@ -134,10 +139,10 @@
 	let isMapLoading = $state(true);
 	let loadedOverlayLayers = $state({ forest: false, landuse: false, vegetation: false });
 	let lastSelectedFilterId: string | null = null;
-	let lastFittedProvince: string | null = null;
 	let activeMunicipiosSourceId = municipiosPmtilesSourceId;
 	let activeMunicipiosSourceLayer: string | undefined = sourceLayerName;
 	let initialBoundsApplied = $state(false);
+	let lastAutoFitSignature = $state('');
 
 	const paintColorExpression = $derived.by(() =>
 		buildMunicipioColorExpression(municipios, mapColorMetric)
@@ -428,14 +433,66 @@
 
 	const fitToMunicipios = () => {
 		if (!map) return;
-		const bounds = getMunicipiosBounds();
+		const bounds = getMunicipiosBounds(getWorkingMunicipios());
 		if (!bounds) return;
 
 		map.fitBounds(bounds.raw, {
-			padding: { top: 36, right: 42, bottom: 44, left: 42 },
+			padding: getFitPadding(),
 			maxZoom: 7.4,
 			duration: 0
 		});
+	};
+
+	const getWorkingMunicipios = () => {
+		const source = municipios;
+		if (source.length === 0) return source;
+		if (!visibleMunicipioIds || visibleMunicipioIds.length === 0) return source;
+
+		const idSet = new Set(visibleMunicipioIds);
+		const filtered = source.filter((m) => idSet.has(m.id) || idSet.has(m.codigo));
+		return filtered.length > 0 ? filtered : source;
+	};
+
+	const getFitPadding = (): maplibregl.PaddingOptions => {
+		if (isMobileView) {
+			return {
+				top: 72,
+				right: 24,
+				bottom: isBottomSheetOpen ? 300 : 120,
+				left: 24
+			};
+		}
+
+		return {
+			top: 56,
+			right: 88,
+			bottom: 70,
+			left: 88
+		};
+	};
+
+	const autoFitToWorkingMunicipios = (duration = 450) => {
+		if (!map || !mapReady || selectedMunicipio) return;
+		const bounds = getMunicipiosBounds(getWorkingMunicipios());
+		if (!bounds) return;
+
+		const signature = [
+			isMobileView ? 'm' : 'd',
+			isBottomSheetOpen ? 'open' : 'closed',
+			provinceFilter,
+			String(visibleMunicipioIds.length),
+			...bounds.raw.flat().map((n) => n.toFixed(4))
+		].join('|');
+
+		if (signature === lastAutoFitSignature) return;
+
+		map.fitBounds(bounds.raw, {
+			padding: getFitPadding(),
+			maxZoom: normalizeProvinceName(provinceFilter) === 'Todas' ? 7.4 : 9,
+			duration
+		});
+
+		lastAutoFitSignature = signature;
 	};
 
 	const addMunicipiosPmtiles = () => {
@@ -487,7 +544,7 @@
 
 			return true;
 		} catch (error) {
-			console.error('PMTiles de municipios no disponible; no se cargara fallback GeoJSON.', error);
+			console.error('PMTiles de municipios no disponible; no se cargará fallback GeoJSON.', error);
 			return false;
 		}
 	};
@@ -611,7 +668,7 @@
 				'source-layer': provinciasSourceLayerName,
 				paint: {
 					'line-color': '#ffffff',
-					'line-width': ['interpolate', ['linear'], ['zoom'], 4, 1, 7, 2],
+					'line-width': ['interpolate', ['linear'], ['zoom'], 4, 1, 7, 1.5],
 					'line-opacity': 1
 				}
 			});
@@ -634,7 +691,7 @@
 				'source-layer': ccaaSourceLayerName,
 				paint: {
 					'line-color': '#000000',
-					'line-width': ['interpolate', ['linear'], ['zoom'], 4, 2.2, 8, 3.8],
+					'line-width': ['interpolate', ['linear'], ['zoom'], 4, 1, 8, 2],
 					'line-opacity': 1
 				}
 			});
@@ -748,6 +805,7 @@
 			mapReady = true;
 			if (!initialBoundsApplied) {
 				fitToMunicipios();
+				lastAutoFitSignature = '';
 				initialBoundsApplied = true;
 			}
 			isMapLoading = false;
@@ -825,59 +883,14 @@
 	$effect(() => {
 		if (!map || !mapReady) return;
 		if (selectedMunicipio) return;
-
-		if (provinceFilter === 'Todas') {
-			if (lastFittedProvince !== null) {
-				fitToMunicipios();
-			}
-			lastFittedProvince = null;
-			return;
-		}
-
-		if (lastFittedProvince === provinceFilter) return;
-
-		const provincePoints = municipios.filter(
-			(m) => m.provincia === provinceFilter && Number.isFinite(m.lon) && Number.isFinite(m.lat)
-		);
-		if (provincePoints.length === 0) return;
-
-		let minLon = Infinity;
-		let maxLon = -Infinity;
-		let minLat = Infinity;
-		let maxLat = -Infinity;
-
-		for (const point of provincePoints) {
-			if (point.lon < minLon) minLon = point.lon;
-			if (point.lon > maxLon) maxLon = point.lon;
-			if (point.lat < minLat) minLat = point.lat;
-			if (point.lat > maxLat) maxLat = point.lat;
-		}
-
-		if (!Number.isFinite(minLon + maxLon + minLat + maxLat)) return;
-
-		const lonPad = Math.max((maxLon - minLon) * 0.12, 0.08);
-		const latPad = Math.max((maxLat - minLat) * 0.12, 0.06);
-
-		map.fitBounds(
-			[
-				[Math.max(-180, minLon - lonPad), Math.max(-85, minLat - latPad)],
-				[Math.min(180, maxLon + lonPad), Math.min(85, maxLat + latPad)]
-			],
-			{
-				padding: { top: 42, right: 40, bottom: 42, left: 40 },
-				maxZoom: 9,
-				duration: 500
-			}
-		);
-
-		lastFittedProvince = provinceFilter;
+		autoFitToWorkingMunicipios();
 	});
 </script>
 
 <div class="map-shell">
 	<div class="map-frame">
 		<div class="map" bind:this={mapContainer} aria-label="Mapa principal"></div>
-		<div class="map-quick-controls" role="group" aria-label="Controles rapidos del mapa">
+		<div class="map-quick-controls" role="group" aria-label="Controles rápidos del mapa">
 			<button
 				type="button"
 				class:active={showIgnWmsBase && !showIgnSatellite}
@@ -959,7 +972,9 @@
 		padding: 0.34rem 0.72rem;
 		border-radius: 999px;
 		cursor: pointer;
-		transition: background-color 180ms ease, color 180ms ease;
+		transition:
+			background-color 180ms ease,
+			color 180ms ease;
 	}
 
 	.map-quick-controls button.active {

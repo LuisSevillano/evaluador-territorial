@@ -2,6 +2,10 @@
 	import type { DatasetMetadata, Municipio, MunicipioClimateMonthly } from '$lib/types/municipio';
 	import LayerOrderList from '$lib/components/layers/LayerOrderList.svelte';
 	import ChipButton from '$lib/components/ui/ChipButton.svelte';
+	import FilterHelp from '$lib/components/ui/FilterHelp.svelte';
+	import MunicipioSearch from '$lib/components/ui/MunicipioSearch.svelte';
+	import ClimateFilters from '$lib/components/filters/ClimateFilters.svelte';
+	import { FILTER_HELP } from '$lib/state/filterHelp';
 	import { DEFAULT_WEIGHTS_NORMALIZED, DEFAULT_WEIGHTS_RAW } from '$lib/state/scoring';
 	import type { MapColorMetric } from '$lib/components/map/coloring';
 
@@ -28,6 +32,7 @@
 		minWinterTemp?: number;
 		maxSummerTemp?: number;
 		maxThermalAmplitude?: number;
+		maxThermalAmplitudeLimit?: number;
 		minCompositeScore?: number;
 		layerOrder?: string[];
 		activeFiltersSummary?: string[];
@@ -93,6 +98,7 @@
 		minWinterTemp = -10,
 		maxSummerTemp = 40,
 		maxThermalAmplitude = 21,
+		maxThermalAmplitudeLimit = 21,
 		minCompositeScore = 0,
 		layerOrder = ['municipios', 'isochrones', 'landuse', 'reservoirs', 'rivers'],
 		activeFiltersSummary = [],
@@ -133,79 +139,12 @@
 		onPresetWeights = () => undefined
 	}: Props = $props();
 
-	let isSearchFocused = $state(false);
-
 	const scoringActiveText = $derived(
 		`clima ${(weights.climate * 100).toFixed(0)}% · accesibilidad ${(weights.access * 100).toFixed(0)}% · naturaleza ${(weights.nature * 100).toFixed(0)}%`
 	);
 
-	const searchSuggestions = $derived.by(() => {
-		const source = searchMunicipios.length > 0 ? searchMunicipios : municipios;
-		const normalized = query.trim().toLowerCase();
-
-		if (!normalized) {
-			return [...source]
-				.sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'))
-				.slice(0, 10);
-		}
-
-		return source
-			.map((municipio) => {
-				const nombre = municipio.nombre.toLowerCase();
-				const haystack = `${municipio.nombre} ${municipio.provincia}`.toLowerCase();
-				const starts = nombre.startsWith(normalized);
-				const includes = haystack.includes(normalized);
-				if (!includes) return null;
-				return { municipio, starts };
-			})
-			.filter((item): item is { municipio: Municipio; starts: boolean } => item !== null)
-			.sort((a, b) => {
-				if (a.starts !== b.starts) return a.starts ? -1 : 1;
-				return a.municipio.nombre.localeCompare(b.municipio.nombre, 'es');
-			})
-			.map((item) => item.municipio)
-			.slice(0, 10);
-	});
-
-	const showSearchSuggestions = $derived(isSearchFocused && searchSuggestions.length > 0);
-
-	const handleSearchBlur = () => {
-		setTimeout(() => {
-			isSearchFocused = false;
-		}, 90);
-	};
-
-	const handleSearchKeydown = (event: KeyboardEvent) => {
-		if (event.key === 'Escape') {
-			isSearchFocused = false;
-			return;
-		}
-
-		if (event.key === 'Enter' && searchSuggestions.length > 0) {
-			event.preventDefault();
-			handleSelectSuggestion(searchSuggestions[0]);
-		}
-	};
-
-	const handleSelectSuggestion = (municipio: Municipio) => {
-		onSelectMunicipio(municipio);
-		onQueryChange(municipio.nombre);
-		isSearchFocused = false;
-	};
-
-	const handleSuggestionPointerDown = (event: PointerEvent, municipio: Municipio) => {
-		event.preventDefault();
-		handleSelectSuggestion(municipio);
-	};
-
-	const handleSuggestionClick = (event: MouseEvent, municipio: Municipio) => {
-		if (event.detail === 0) handleSelectSuggestion(municipio);
-	};
-
 	const totalMunicipios = $derived(municipios.length);
 	const within2h = $derived(municipios.filter((m) => m.iso_02h00m).length);
-
-	const toNumber = (event: Event) => Number((event.currentTarget as HTMLInputElement).value);
 
 	const activePreset = $derived.by(() => {
 		const c = weightsRaw.climateWeight;
@@ -223,6 +162,8 @@
 		if (c === 70 && a === 15 && n === 15) return 'clima_estricto';
 		return null;
 	});
+
+	const toNumber = (event: Event) => Number((event.currentTarget as HTMLInputElement).value);
 
 	const layerLabels: Record<string, string> = {
 		municipios: 'Municipios',
@@ -305,47 +246,21 @@
 	<section class="panel">
 		<h2>{isEvaluationMode ? 'Filtros de evaluación' : 'Filtros de exploración'}</h2>
 		<div class="control search-control">
-			<label for="search">Buscar municipio</label>
-			<div
-				class="search-shell"
-				role="combobox"
-				aria-expanded={showSearchSuggestions}
-				aria-controls="municipio-search-suggestions"
-			>
-				<input
-					id="search"
-					name="municipio-search"
-					autocomplete="off"
-					type="search"
-					placeholder="Ej. Soria…"
-					value={query}
-					onfocus={() => (isSearchFocused = true)}
-					onblur={handleSearchBlur}
-					onkeydown={handleSearchKeydown}
-					oninput={(e) => onQueryChange((e.currentTarget as HTMLInputElement).value)}
-				/>
-				{#if showSearchSuggestions}
-					<div class="search-dropdown">
-						<ul class="search-suggestions" id="municipio-search-suggestions" role="listbox">
-							{#each searchSuggestions as municipio (municipio.id)}
-								<li>
-									<button
-										class="suggestion-btn"
-										onpointerdown={(event) => handleSuggestionPointerDown(event, municipio)}
-										onclick={(event) => handleSuggestionClick(event, municipio)}
-									>
-										<span>{municipio.nombre}</span>
-										<small>{municipio.provincia}</small>
-									</button>
-								</li>
-							{/each}
-						</ul>
-					</div>
-				{/if}
+			<div class="label-help-row">
+				<label for="search">Buscar municipio</label>
+				<FilterHelp text={FILTER_HELP.search} />
 			</div>
+			<MunicipioSearch
+				query={query}
+				{municipios}
+				{searchMunicipios}
+				inputId="search"
+				onQueryChange={onQueryChange}
+				onSelectMunicipio={onSelectMunicipio}
+			/>
 		</div>
 		<div class="control">
-			<p class="control-title">Provincia</p>
+			<p class="control-title control-title-help">Provincia <FilterHelp text={FILTER_HELP.province} /></p>
 			<div class="chips-wrap compact province-chips">
 				{#each provinciasDisponibles as provincia}
 					<ChipButton
@@ -358,7 +273,7 @@
 			</div>
 		</div>
 		<div class="control">
-			<p class="control-title">Accesibilidad máxima</p>
+			<p class="control-title control-title-help">Accesibilidad máxima <FilterHelp text={FILTER_HELP.accessibility} /></p>
 			<div class="chips-wrap compact">
 				{#each travelBuckets as bucket}
 					<ChipButton
@@ -371,19 +286,23 @@
 				{/each}
 			</div>
 		</div>
-		<div class="control compact-slider-grid">
-			<label for="min-precip">Precipitación mínima anual: {minPrecipAnnual} mm</label>
-			<input id="min-precip" name="min-precip" type="range" min="0" max="1800" step="10" value={minPrecipAnnual} oninput={(e) => onMinPrecipAnnualChange(toNumber(e))} />
-			<label for="min-winter-temp">Temp. invierno mínima: {minWinterTemp} C</label>
-			<input id="min-winter-temp" name="min-winter-temp" type="range" min="-15" max="15" step="0.5" value={minWinterTemp} oninput={(e) => onMinWinterTempChange(toNumber(e))} />
-			<label for="max-summer-temp">Temp. verano máxima: {maxSummerTemp} C</label>
-			<input id="max-summer-temp" name="max-summer-temp" type="range" min="15" max="40" step="0.5" value={maxSummerTemp} oninput={(e) => onMaxSummerTempChange(toNumber(e))} />
-			<label for="max-thermal-amplitude">Amplitud térmica máxima: {maxThermalAmplitude.toFixed(1)} C</label>
-			<input id="max-thermal-amplitude" name="max-thermal-amplitude" type="range" min="12" max="21" step="0.1" value={maxThermalAmplitude} oninput={(e) => onMaxThermalAmplitudeChange(toNumber(e))} />
-			{#if isEvaluationMode}
-				<label for="min-score">Score mínimo visible: {minCompositeScore.toFixed(2)}</label>
-				<input id="min-score" name="min-score" type="range" min="0" max="1" step="0.01" value={minCompositeScore} oninput={(e) => onMinCompositeScoreChange(toNumber(e))} />
-			{/if}
+		<div class="control">
+			<ClimateFilters
+				variant="desktop"
+				idPrefix="desktop"
+				{minPrecipAnnual}
+				{minWinterTemp}
+				{maxSummerTemp}
+				{maxThermalAmplitude}
+				{maxThermalAmplitudeLimit}
+				{isEvaluationMode}
+				{minCompositeScore}
+				onMinPrecipAnnualChange={onMinPrecipAnnualChange}
+				onMinWinterTempChange={onMinWinterTempChange}
+				onMaxSummerTempChange={onMaxSummerTempChange}
+				onMaxThermalAmplitudeChange={onMaxThermalAmplitudeChange}
+				onMinCompositeScoreChange={onMinCompositeScoreChange}
+			/>
 		</div>
 
 		<div class="filter-foot">
@@ -415,7 +334,7 @@
 				<label for="m-rw-nature">Peso naturaleza: {weightsRaw.natureWeight}</label>
 				<input id="m-rw-nature" name="m-rw-nature" type="range" min="0" max="100" step="1" value={weightsRaw.natureWeight} oninput={(e) => onNatureWeightChange(toNumber(e))} />
 			</div>
-			<p class="muted">Normalizados: clima {(weights.climate * 100).toFixed(0)}% · acces {(weights.access * 100).toFixed(0)}% · nat {(weights.nature * 100).toFixed(0)}%</p>
+			<p class="muted">Normalizados: clima {(weights.climate * 100).toFixed(0)}% · accesibilidad {(weights.access * 100).toFixed(0)}% · naturaleza {(weights.nature * 100).toFixed(0)}%</p>
 			<p class="muted">Robustez top-10 vs base equilibrada: {sensitivityOverlap}/10</p>
 		</section>
 	{/if}
@@ -432,9 +351,7 @@
 	<section class="panel">
 		<h2>Capas</h2>
 		<div class="layers">
-			<p class="muted">Arrastra para cambiar el orden de pintado (arriba = se pinta encima).</p>
-			<LayerOrderList items={layerItems} onToggle={toggleLayerVisibility} onReorder={onLayerOrderChange} />
-			<p class="control-title">Color municipal</p>
+			<p class="control-title control-title-help">Color municipal <FilterHelp text={FILTER_HELP.mapColor} /></p>
 			<div class="chips-wrap compact">
 				<ChipButton label="Puntuación global" active={mapColorMetric === 'mixed_score'} onclick={() => onMapColorMetricChange('mixed_score')} />
 				<ChipButton label="Precipitación" active={mapColorMetric === 'precip_annual_mm'} onclick={() => onMapColorMetricChange('precip_annual_mm')} />
@@ -442,6 +359,8 @@
 				<ChipButton label="Transporte OSM" active={mapColorMetric === 'transporte_norm'} onclick={() => onMapColorMetricChange('transporte_norm')} />
 				<ChipButton label="Servicio Renfe" active={mapColorMetric === 'servicio_renfe_norm'} onclick={() => onMapColorMetricChange('servicio_renfe_norm')} />
 			</div>
+			<p class="muted">Arrastra para cambiar el orden de pintado (arriba = se pinta encima).</p>
+			<LayerOrderList items={layerItems} onToggle={toggleLayerVisibility} onReorder={onLayerOrderChange} />
 			<label><input type="checkbox" checked={showIgnWmsBase} onchange={(e) => onToggleIgnWmsBase((e.currentTarget as HTMLInputElement).checked)} /><span>Base IGN WMS</span></label>
 			<label><input type="checkbox" checked={showIgnSatellite} onchange={(e) => onToggleIgnSatellite((e.currentTarget as HTMLInputElement).checked)} /><span>Satélite IGN (PNOA)</span></label>
 		</div>
@@ -487,22 +406,9 @@
 	.mode-context p { font-size: 0.78rem; line-height: 1.35; color: #48615d; }
 	.control-title { margin: 0; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.06em; color: #405753; }
 	.control > label { font-size: 0.78rem; letter-spacing: 0.02em; color: #425955; }
+	.label-help-row { display: inline-flex; align-items: center; gap: 0.32rem; flex-wrap: wrap; }
+	.control-title-help { display: inline-flex; align-items: center; gap: 0.32rem; flex-wrap: wrap; }
 	.search-control { position: relative; z-index: 24; }
-	.search-shell { position: relative; margin-top: 0.1rem; }
-	input[type='search'] { width: 100%; margin-top: 0.35rem; padding: 0.62rem 0.7rem; border: 1px solid rgba(21, 32, 33, 0.2); border-radius: 10px; background: rgba(255, 255, 255, 0.78); }
-	.search-dropdown {
-		position: absolute;
-		top: calc(100% + 0.32rem);
-		left: 0;
-		right: 0;
-		background: rgba(255, 252, 246, 0.98);
-		border: 1px solid rgba(21, 32, 33, 0.24);
-		border-radius: 12px;
-		box-shadow: 0 12px 24px rgba(21, 32, 33, 0.16);
-		backdrop-filter: blur(2px);
-		overflow: hidden;
-		z-index: 30;
-	}
 	.chips-wrap { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-top: 0.25rem; }
 	.chips-wrap.compact { gap: 0.3rem; }
 	.preset-wrap { margin-top: 0.35rem; }
@@ -515,32 +421,14 @@
 
 	:global(.chips-wrap.compact .chip-btn.compact) { width: 44px; padding-left: 0; padding-right: 0; }
 	:global(.chips-wrap.compact .chip-btn.compact:first-child) { width: 58px; }
-	.search-suggestions { list-style: none; padding: 0.24rem; margin: 0; display: grid; gap: 0.2rem; max-height: 248px; overflow-y: auto; }
-	.suggestion-btn {
-		width: 100%;
-		text-align: left;
-		border: 0;
-		border-radius: 8px;
-		background: transparent;
-		padding: 0.42rem 0.5rem;
-		display: grid;
-		cursor: pointer;
-		transition: background-color 140ms ease, transform 140ms ease;
-		font-size: 0.8rem;
-		line-height: 1.2;
-	}
-	.suggestion-btn:hover { background: rgba(47, 125, 133, 0.12); transform: translateX(1px); }
-	.suggestion-btn:focus-visible { outline: 2px solid #2f7d85; outline-offset: 2px; }
-	.filter-foot .clear { cursor: pointer; }
-	small { color: #48615d; font-size: 0.72rem; }
-	.layers,.control { display: grid; gap: 0.45rem; margin-bottom: 0.55rem; }
-	.compact-slider-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 0.55rem; row-gap: 0.2rem; align-items: center; }
-	.compact-slider-grid label { font-size: 0.74rem; }
-	.compact-slider-grid input[type='range'] { margin-bottom: 0.1rem; }
+	.filter-foot .clear { cursor: pointer; border: 1px solid rgba(21, 32, 33, 0.22); border-radius: 999px; background: rgba(255, 255, 255, 0.8); padding: 0.3rem 0.6rem; color: #2f4743; font-size: 0.75rem; transition: background-color 120ms ease, transform 120ms ease; }
+	.filter-foot .clear:hover { background: rgba(255, 255, 255, 0.94); transform: translateY(-0.5px); }
+	.layers,.control { display: grid; gap: 0rem; margin-bottom: 0.75rem; }
+	.layers { gap: 0.45rem; }
 	.layers label { display: flex; gap: 0.45rem; align-items: center; font-size: 0.8rem; }
 	.filter-foot { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; margin: 0.35rem 0; }
 	.filter-foot p { font-size: 0.76rem; color: #3f5653; }
-	.filter-foot .clear { width: auto; font-size: 0.74rem; }
+	.filter-foot .clear { width: auto; }
 	.muted { color: #48615d; font-size: 0.76rem; line-height: 1.35; }
 	.methodology details { border: 1px dashed rgba(21, 32, 33, 0.22); border-radius: 10px; background: rgba(255, 255, 255, 0.5); }
 	.methodology summary { cursor: pointer; padding: 0.55rem 0.65rem; font-family: 'Fraunces', serif; font-size: 0.86rem; }
@@ -550,7 +438,6 @@
 		h2 { font-size: 1.02rem; }
 		.control > label,
 		.mobile-score-panel .score-control label,
-		.compact-slider-grid label,
 		.layers label { font-size: 0.8rem; }
 		.methodology summary { font-size: 0.9rem; }
 		.method-body { font-size: 0.8rem; }
