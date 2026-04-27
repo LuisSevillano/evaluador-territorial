@@ -1,0 +1,8 @@
+source_id,demarcacion,source_type,url,layer_name,enabled,priority,notes
+chd_masas_rio,Duero,wfs,https://mirame.chduero.es/geoserver/wfs,mirame:Masa_Rio_Permanencia,1,5,Masas de rio vigentes con atributo de permanencia
+ign_wfs,Ambito nacional,wfs,https://servicios.idee.es/wfs-inspire/hidrografia,hy-p:Watercourse,1,90,Fallback nacional geometrico
+chd_zip,Duero,zip,,,0,10,Completar URL oficial CHD de masas de agua tipo rio en ZIP
+cht_zip,Tajo,zip,,,0,10,Completar URL oficial CHT de masas de agua tipo rio
+chms_zip,Mino-Sil,zip,,,0,10,Completar URL oficial CHMS de masas de agua tipo rio
+cantabrico_zip,Cantabrico,zip,,,0,10,Completar URL oficial demarcacion cantabrica de masas de agua tipo rio
+ebro_zip,Ebro,zip,,,0,10,Completar URL oficial CHE de masas de agua tipo rio
