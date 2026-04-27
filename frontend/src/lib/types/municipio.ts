@@ -37,6 +37,13 @@ export type Municipio = {
 	access_block_score?: number;
 	nature_block_score?: number;
 	mixed_score?: number;
+	dist_estacion_tren_km?: number;
+	dist_parada_bus_km?: number;
+	transporte_norm?: number;
+	dist_renfe_km?: number;
+	renfe_salidas_dia?: number;
+	renfe_tipo_servicio?: string;
+	servicio_renfe_norm?: number;
 };
 
 export type MunicipioClimateMonthly = {
