@@ -147,6 +147,10 @@
 		gap: 0.2rem;
 	}
 
+	.desktop-grid .item {
+		display: contents;
+	}
+
 	.full-width {
 		grid-column: 1 / -1;
 	}
@@ -178,6 +182,15 @@
 	.desktop-grid input[type='range'] {
 		max-width: 150px;
 		justify-self: end;
+		align-self: center;
+	}
+
+	.desktop-grid .label-help-row {
+		gap: 0.32rem;
+	}
+
+	.desktop-grid .label-help-row label {
+		font-size: 0.74rem;
 	}
 
 	@media (max-width: 435px) {
