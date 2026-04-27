@@ -29,6 +29,8 @@
 		provinceFilter?: string;
 		pmtilesUrl?: string;
 		onMapSelection?: (municipio: Municipio | null) => void;
+		onToggleIgnSatellite?: (visible: boolean) => void;
+		onToggleIgnWmsBase?: (visible: boolean) => void;
 	};
 
 	let {
@@ -50,7 +52,9 @@
 		visibleMunicipioIds = [],
 		provinceFilter = 'Todas',
 		pmtilesUrl = '/tiles/municipios.pmtiles',
-		onMapSelection = () => undefined
+		onMapSelection = () => undefined,
+		onToggleIgnSatellite = () => undefined,
+		onToggleIgnWmsBase = () => undefined
 	}: Props = $props();
 
 	let mapContainer: HTMLDivElement;
@@ -323,9 +327,9 @@
 			if (!layerId || !map.getLayer(layerId)) continue;
 			map.moveLayer(layerId, provinciasLineLayerId);
 		}
+		if (map.getLayer(municipiosPolygonsLineLayerId)) map.moveLayer(municipiosPolygonsLineLayerId);
 		if (map.getLayer(provinciasLineLayerId)) map.moveLayer(provinciasLineLayerId);
 		if (map.getLayer(ccaaLineLayerId)) map.moveLayer(ccaaLineLayerId);
-		if (map.getLayer(municipiosPolygonsLineLayerId)) map.moveLayer(municipiosPolygonsLineLayerId);
 		if (map.getLayer(municipiosHoverLineLayerId)) map.moveLayer(municipiosHoverLineLayerId);
 		if (map.getLayer(municipiosSelectedLineLayerId)) map.moveLayer(municipiosSelectedLineLayerId);
 	};
@@ -501,11 +505,12 @@
 				if (!map.getLayer(isochrone.layerId)) {
 					map.addLayer({
 						id: isochrone.layerId,
-						type: 'fill',
+						type: 'line',
 						source: isochrone.sourceId,
 						paint: {
-							'fill-color': isochrone.color,
-							'fill-opacity': 0.5
+							'line-color': isochrone.color,
+							'line-width': ['interpolate', ['linear'], ['zoom'], 5, 1.2, 8, 2.4, 10, 3.6],
+							'line-opacity': 0.9
 						}
 					});
 				}
@@ -628,9 +633,9 @@
 				source: ccaaPmtilesSourceId,
 				'source-layer': ccaaSourceLayerName,
 				paint: {
-					'line-color': '#162a2f',
-					'line-width': ['interpolate', ['linear'], ['zoom'], 4, 1.8, 8, 3.1],
-					'line-opacity': 0.76
+					'line-color': '#000000',
+					'line-width': ['interpolate', ['linear'], ['zoom'], 4, 2.2, 8, 3.8],
+					'line-opacity': 1
 				}
 			});
 		} catch (error) {
@@ -872,6 +877,28 @@
 <div class="map-shell">
 	<div class="map-frame">
 		<div class="map" bind:this={mapContainer} aria-label="Mapa principal"></div>
+		<div class="map-quick-controls" role="group" aria-label="Controles rapidos del mapa">
+			<button
+				type="button"
+				class:active={showIgnWmsBase && !showIgnSatellite}
+				onclick={() => {
+					onToggleIgnWmsBase(true);
+					onToggleIgnSatellite(false);
+				}}
+			>
+				Base IGN
+			</button>
+			<button
+				type="button"
+				class:active={showIgnSatellite}
+				onclick={() => {
+					onToggleIgnSatellite(true);
+					onToggleIgnWmsBase(false);
+				}}
+			>
+				Satelite
+			</button>
+		</div>
 		{#if isMapLoading}
 			<MapLoadingBadge />
 		{/if}
@@ -908,10 +935,47 @@
 		height: 100%;
 	}
 
+	.map-quick-controls {
+		position: absolute;
+		top: 0.95rem;
+		right: 3.35rem;
+		z-index: 8;
+		display: inline-flex;
+		gap: 0;
+		padding: 0.18rem;
+		border-radius: 999px;
+		border: 1px solid rgba(21, 32, 33, 0.26);
+		background: rgba(255, 252, 245, 0.9);
+		box-shadow: 0 4px 10px rgba(16, 44, 54, 0.2);
+	}
+
+	.map-quick-controls button {
+		width: auto;
+		border: 0;
+		background: transparent;
+		color: #3f5652;
+		font-size: 0.74rem;
+		font-weight: 600;
+		padding: 0.34rem 0.72rem;
+		border-radius: 999px;
+		cursor: pointer;
+		transition: background-color 180ms ease, color 180ms ease;
+	}
+
+	.map-quick-controls button.active {
+		background: #2f7d85;
+		color: #f7f4ec;
+	}
+
 	@media (max-width: 900px) {
 		.map-shell {
 			padding: 0.7rem;
 			min-height: 52dvh;
+		}
+
+		.map-quick-controls {
+			top: 0.85rem;
+			right: 3.2rem;
 		}
 	}
 </style>

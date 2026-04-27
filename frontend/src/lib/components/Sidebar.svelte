@@ -3,6 +3,7 @@
 	import LayerOrderList from '$lib/components/layers/LayerOrderList.svelte';
 	import ChipButton from '$lib/components/ui/ChipButton.svelte';
 	import { DEFAULT_WEIGHTS_NORMALIZED, DEFAULT_WEIGHTS_RAW } from '$lib/state/scoring';
+	import type { MapColorMetric } from '$lib/components/map/coloring';
 
 		type Props = {
 		query?: string;
@@ -16,7 +17,7 @@
 		showIgnSatellite?: boolean;
 		showIgnRivers?: boolean;
 		showIgnReservoirs?: boolean;
-		mapColorMetric?: 'precip_annual_mm' | 'mixed_score' | 'transporte_norm' | 'servicio_renfe_norm';
+		mapColorMetric?: MapColorMetric;
 		showForestLayer?: boolean;
 		showLandUseLayer?: boolean;
 		showVegetationLayer?: boolean;
@@ -47,7 +48,7 @@
 		onToggleIgnSatellite?: (value: boolean) => void;
 		onToggleIgnRivers?: (value: boolean) => void;
 		onToggleIgnReservoirs?: (value: boolean) => void;
-		onMapColorMetricChange?: (value: 'precip_annual_mm' | 'mixed_score' | 'transporte_norm' | 'servicio_renfe_norm') => void;
+		onMapColorMetricChange?: (value: MapColorMetric) => void;
 		onToggleForestLayer?: (value: boolean) => void;
 		onToggleLandUseLayer?: (value: boolean) => void;
 		onToggleVegetationLayer?: (value: boolean) => void;
@@ -133,6 +134,10 @@
 	}: Props = $props();
 
 	let isSearchFocused = $state(false);
+
+	const scoringActiveText = $derived(
+		`clima ${(weights.climate * 100).toFixed(0)}% · accesibilidad ${(weights.access * 100).toFixed(0)}% · naturaleza ${(weights.nature * 100).toFixed(0)}%`
+	);
 
 	const searchSuggestions = $derived.by(() => {
 		const source = searchMunicipios.length > 0 ? searchMunicipios : municipios;
@@ -433,6 +438,7 @@
 			<div class="chips-wrap compact">
 				<ChipButton label="Puntuación global" active={mapColorMetric === 'mixed_score'} onclick={() => onMapColorMetricChange('mixed_score')} />
 				<ChipButton label="Precipitación" active={mapColorMetric === 'precip_annual_mm'} onclick={() => onMapColorMetricChange('precip_annual_mm')} />
+				<ChipButton label="Tiempo de desplazamiento" active={mapColorMetric === 'travel_bucket'} onclick={() => onMapColorMetricChange('travel_bucket')} />
 				<ChipButton label="Transporte OSM" active={mapColorMetric === 'transporte_norm'} onclick={() => onMapColorMetricChange('transporte_norm')} />
 				<ChipButton label="Servicio Renfe" active={mapColorMetric === 'servicio_renfe_norm'} onclick={() => onMapColorMetricChange('servicio_renfe_norm')} />
 			</div>
@@ -452,7 +458,8 @@
 					<p><strong>Isocronas:</strong> {datasetMetadata.isochrones_definition}</p>
 					<p><strong>Fecha de generación:</strong> {datasetMetadata.generated_at_utc}</p>
 					<p><strong>Versión dataset:</strong> {datasetMetadata.dataset_version}</p>
-					<p><strong>Scoring:</strong> {datasetMetadata.scoring_method ?? 'No definido'}</p>
+					<p><strong>Scoring base dataset:</strong> {datasetMetadata.scoring_method ?? 'No definido'}</p>
+					<p><strong>Scoring activo:</strong> {scoringActiveText}</p>
 					{#if typeof datasetMetadata.accessibility_normalization_floor === 'number'}
 						<p><strong>Suelo accesibilidad:</strong> {(datasetMetadata.accessibility_normalization_floor * 100).toFixed(0)}%</p>
 					{/if}

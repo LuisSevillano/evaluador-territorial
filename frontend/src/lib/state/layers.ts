@@ -1,6 +1,6 @@
 export const layerLabels: Record<string, string> = {
 	municipios: 'Municipios',
-	isochrones: 'Isocronas (overlay)',
+	isochrones: 'Isocronas (lineas)',
 	landuse: 'Usos del suelo',
 	vegetation: 'Cobertura vegetal',
 	forest: 'Masa forestal',
@@ -16,6 +16,8 @@ export type LayerVisibilityState = {
 	showForestLayer: boolean;
 	showIgnReservoirs: boolean;
 	showIgnRivers: boolean;
+	showIgnWmsBase: boolean;
+	showIgnSatellite: boolean;
 };
 
 export const isLayerVisible = (layerKey: string, state: LayerVisibilityState): boolean => {
