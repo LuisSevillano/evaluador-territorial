@@ -31,5 +31,5 @@
 
 ## Trazabilidad del dataset
 - `dataset_version`: v3.0.0
-- `generated_at_utc`: 2026-04-22 06:31:15 UTC
+- `generated_at_utc`: 2026-04-27 17:22:56 UTC
 - `analysis_scope`: Castilla y Leon + La Rioja + Pais Vasco + Cantabria + Asturias + Lugo + Ourense + Guadalajara
