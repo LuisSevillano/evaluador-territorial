@@ -18,6 +18,25 @@ output/*
 !data/output/parquet/.gitkeep
 !data/output/pmtiles/.gitkeep
 
+# Block heavy geospatial artifacts everywhere by default
+*.pmtiles
+*.mbtiles
+*.gpkg
+*.fgb
+*.shp
+*.dbf
+*.shx
+*.prj
+*.cpg
+*.tif
+*.tiff
+*.gpkg-wal
+*.gpkg-shm
+
+# Keep only frontend runtime tiles versioned
+!frontend/static/tiles/
+!frontend/static/tiles/*.pmtiles
+
 # Local Netlify folder
 .netlify
 

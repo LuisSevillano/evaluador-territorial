@@ -358,6 +358,7 @@
 				<ChipButton label="Tiempo de desplazamiento" active={mapColorMetric === 'travel_bucket'} onclick={() => onMapColorMetricChange('travel_bucket')} />
 				<ChipButton label="Transporte OSM" active={mapColorMetric === 'transporte_norm'} onclick={() => onMapColorMetricChange('transporte_norm')} />
 				<ChipButton label="Servicio Renfe" active={mapColorMetric === 'servicio_renfe_norm'} onclick={() => onMapColorMetricChange('servicio_renfe_norm')} />
+				<ChipButton label="Acceso a baño" active={mapColorMetric === 'river_access_score'} onclick={() => onMapColorMetricChange('river_access_score')} />
 			</div>
 			<p class="muted">Arrastra para cambiar el orden de pintado (arriba = se pinta encima).</p>
 			<LayerOrderList items={layerItems} onToggle={toggleLayerVisibility} onReorder={onLayerOrderChange} />
