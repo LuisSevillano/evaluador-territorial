@@ -14,3 +14,8 @@
 
 - Para entorno natural real, cargar CORINE en `data/raw/corine/corine_cyl.geojson`.
 - Las capas `masa_forestal`, `usos_suelo`, `cobertura_vegetal` quedan preparadas y se alimentan desde pipeline.
+
+## Pendientes
+
+- [ ] Integrar datos de COHISPANIA 2023 por municipio (solo atributos): extraer `NAMEUNIT` + valores y resolver join con `codigo` municipal del dataset propio mediante matching de nombre normalizado.
+- [ ] Completar join de hidrologia recreativa: enlazar municipios con rios y zonas banables (distancia/proximidad y cobertura), validando reglas de negocio y cobertura final del indicador.

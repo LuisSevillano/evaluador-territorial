@@ -22,6 +22,20 @@
 - `artificial_pct`: porcentaje municipal de coberturas artificiales (CORINE 1xx).
 - `naturality_index`: indice simple de naturalidad (0-100).
 - `landcover_diversity`: diversidad de coberturas (Shannon normalizado 0-100).
+- `river_access_score`: score simple (0-100) de accesibilidad a cursos fluviales relevantes con potencial recreativo.
+- `river_access_class`: clase cualitativa del acceso fluvial (`Muy alta`, `Alta`, `Media`, `Baja`, `Muy baja`).
+- `river_nearest_name`: nombre del tramo candidato mas cercano.
+- `river_nearest_distance_km`: distancia minima (km) al tramo candidato mas cercano.
+- `river_nearest_confidence`: confianza (0-100) de que el tramo mas cercano representa un curso fluvial relevante.
+- `river_candidate_count_10km`: numero de tramos candidatos en un radio de 10 km.
+- `river_method_version`: version metodologica del filtro/score fluvial aplicado.
+
+## Nota metodologica acceso fluvial
+- Esta variable NO mide calidad sanitaria del agua.
+- Esta variable NO identifica oficialmente zonas de bano.
+- Esta variable aproxima acceso municipal a cursos fluviales relevantes con potencial recreativo.
+- Se construye combinando distancia al tramo candidato y confianza del tramo (diagnostico por senales positivas y exclusiones).
+- Se evita depender de un unico campo fragil (`ficticio`, `orden`, `persistencia`) como regla dura unica.
 
 ## Scoring compuesto
 - `climate_block_score`: bloque clima (media de precip_norm, temp_verano_norm, temp_invierno_norm).

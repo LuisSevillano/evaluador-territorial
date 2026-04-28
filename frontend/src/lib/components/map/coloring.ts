@@ -5,6 +5,7 @@ export type MapColorMetric =
 	| 'precip_annual_mm'
 	| 'transporte_norm'
 	| 'servicio_renfe_norm'
+	| 'river_access_score'
 	| 'travel_bucket';
 
 export type LegendConfig = {
@@ -15,7 +16,7 @@ export type LegendConfig = {
 	labels?: readonly string[];
 };
 
-export const scoreThresholds = [0.24, 0.3, 0.36, 0.42] as const;
+export const scoreThresholds = [0.319, 0.354, 0.3885, 0.4283] as const;
 export const scoreColors = ['#8c1d18', '#d94841', '#f59f00', '#66c24a', '#15803d'] as const;
 
 export const precipThresholds = [500, 700, 900, 1100] as const;
@@ -26,6 +27,8 @@ export const transporteColors = ['#15803d', '#66c24a', '#f59f00', '#d94841', '#8
 
 export const renfeServiceThresholds = [0.2, 0.4, 0.6, 0.8] as const;
 export const renfeServiceColors = ['#15803d', '#66c24a', '#f59f00', '#d94841', '#8c1d18'] as const;
+export const riverAccessThresholds = [20, 40, 60, 80] as const;
+export const riverAccessColors = ['#8c1d18', '#d94841', '#f59f00', '#66c24a', '#15803d'] as const;
 
 export const travelBucketOrder = ['<=1h30', '<=2h00', '<=2h30', '<=3h30', '<=4h00', '>4h00'] as const;
 export const travelBucketColors = ['#0f4c5c', '#1f8a70', '#4d7c0f', '#d97706', '#7b1f1f', '#5f5f5f'] as const;
@@ -66,6 +69,9 @@ export const buildMunicipioColorExpression = (municipios: Municipio[], mapColorM
 		} else if (mapColorMetric === 'servicio_renfe_norm') {
 			hasMetricData = Number.isFinite(municipio.servicio_renfe_norm);
 			value = municipio.servicio_renfe_norm ?? 0;
+		} else if (mapColorMetric === 'river_access_score') {
+			hasMetricData = Number.isFinite(municipio.river_access_score);
+			value = municipio.river_access_score ?? 0;
 		} else if (mapColorMetric === 'travel_bucket') {
 			hasMetricData = typeof municipio.travel_bucket === 'string' && municipio.travel_bucket.length > 0;
 		}
@@ -91,9 +97,11 @@ export const buildMunicipioColorExpression = (municipios: Municipio[], mapColorM
 				? resolveBucketColor(value as number, scoreThresholds, scoreColors)
 				: mapColorMetric === 'precip_annual_mm'
 					? resolveBucketColor(value as number, precipThresholds, precipColors)
-					: mapColorMetric === 'travel_bucket'
-						? travelBucketColor
-					: mapColorMetric === 'servicio_renfe_norm'
+				: mapColorMetric === 'travel_bucket'
+					? travelBucketColor
+				: mapColorMetric === 'river_access_score'
+					? resolveBucketColor(value as number, riverAccessThresholds, riverAccessColors)
+				: mapColorMetric === 'servicio_renfe_norm'
 						? resolveBucketColor(value as number, renfeServiceThresholds, renfeServiceColors)
 						: resolveBucketColor(value as number, transporteThresholds, transporteColors);
 
@@ -130,6 +138,14 @@ export const buildMunicipioColorExpression = (municipios: Municipio[], mapColorM
 						colors: [...renfeServiceColors],
 						formatLabel: (value: number) => (value * 100).toFixed(0) + '%',
 						labels: ['Muy bajo', 'Bajo', 'Medio', 'Alto', 'Óptimo']
+				  }
+			: mapColorMetric === 'river_access_score'
+				? {
+					title: 'Acceso fluvial recreativo',
+					thresholds: [...riverAccessThresholds],
+					colors: [...riverAccessColors],
+					formatLabel: (value: number) => `${Math.round(value)}`,
+					labels: ['Muy baja', 'Baja', 'Media', 'Alta', 'Muy alta']
 				  }
 				: mapColorMetric === 'travel_bucket'
 					? {

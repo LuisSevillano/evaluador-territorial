@@ -8,6 +8,7 @@ steps <- list(
   list(path = "scripts/03b_isochrones_difference.R", label = "Isochronas diferenciales"),
   list(path = "scripts/04c_download_rios.R", label = "Rios y cuencas (IGN WFS)"),
   list(path = "scripts/04d_buffers_rios.R", label = "Buffers rios 10/20km"),
+  list(path = "scripts/04g_banio_score_simple.R", label = "Acceso fluvial recreativo (simple)"),
   list(path = "scripts/04_transporte_distance.R", label = "Transporte (OSM)"),
   list(path = "scripts/04b_transporte_renfe.R", label = "Transporte (Renfe)"),
   list(path = "scripts/04_quality_checks.R", label = "Control de calidad"),
