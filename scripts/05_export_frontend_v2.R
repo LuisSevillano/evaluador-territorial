@@ -20,6 +20,35 @@ mun <- st_read(paths$output_final_geojson, quiet = TRUE)
 mun_base <- st_read(paths$output_base_geojson, quiet = TRUE) |>
   st_transform(4326)
 
+river_access_csv_candidates <- c(
+  path(paths$output_dir, "municipios_river_access.csv"),
+  path(paths$output_dir, "burgos_river_access.csv")
+)
+river_access_csv <- river_access_csv_candidates[file.exists(river_access_csv_candidates)][1]
+if (!is.na(river_access_csv)) {
+  river_access <- read_csv(river_access_csv, show_col_types = FALSE) |>
+    select(
+      codigo,
+      river_access_score,
+      river_access_class,
+      river_nearest_name,
+      river_nearest_distance_km,
+      river_nearest_confidence,
+      river_candidate_count_10km,
+      river_method_version
+    )
+  mun <- mun |>
+    left_join(river_access, by = "codigo")
+} else {
+  mun$river_access_score <- NA_real_
+  mun$river_access_class <- NA_character_
+  mun$river_nearest_name <- NA_character_
+  mun$river_nearest_distance_km <- NA_real_
+  mun$river_nearest_confidence <- NA_real_
+  mun$river_candidate_count_10km <- NA_integer_
+  mun$river_method_version <- NA_character_
+}
+
 coords <- mun |>
   st_transform(3857) |>
   st_geometry() |>
@@ -48,6 +77,7 @@ mun$water_norm <- round(minmax_norm(mun$water_pct, invert = FALSE), 4)
 mun$artificial_norm <- round(minmax_norm(mun$artificial_pct, invert = TRUE), 4)
 mun$naturality_norm <- round(minmax_norm(mun$naturality_index, invert = FALSE), 4)
 mun$diversity_norm <- round(minmax_norm(mun$landcover_diversity, invert = FALSE), 4)
+mun$river_access_norm <- round(minmax_norm(mun$river_access_score, invert = FALSE), 4)
 
 travel_order <- c("<=1h30", "<=2h00", "<=2h30", "<=3h30", "<=4h00", ">4h00")
 travel_score <- setNames(rev(seq_along(travel_order)), travel_order)
@@ -60,8 +90,28 @@ mun$climate_block_score <- round(
   4
 )
 mun$access_block_score <- round(mun$accesibilidad_norm, 4)
+nature_weights <- c(
+  forest_norm = 0.30,
+  water_norm = 0.20,
+  naturality_norm = 0.25,
+  diversity_norm = 0.15,
+  river_access_norm = 0.10
+)
+
+nature_matrix <- cbind(
+  forest_norm = mun$forest_norm,
+  water_norm = mun$water_norm,
+  naturality_norm = mun$naturality_norm,
+  diversity_norm = mun$diversity_norm,
+  river_access_norm = mun$river_access_norm
+)
+
 mun$nature_block_score <- round(
-  rowMeans(cbind(mun$forest_norm, mun$water_norm, mun$naturality_norm, mun$diversity_norm), na.rm = TRUE),
+  apply(nature_matrix, 1, function(row_vals) {
+    valid <- is.finite(row_vals)
+    if (!any(valid)) return(NA_real_)
+    sum(row_vals[valid] * nature_weights[valid]) / sum(nature_weights[valid])
+  }),
   4
 )
 
@@ -117,11 +167,19 @@ mun_v2 <- mun |>
     artificial_pct,
     naturality_index,
     landcover_diversity,
+    river_access_score,
+    river_access_class,
+    river_nearest_name,
+    river_nearest_distance_km,
+    river_nearest_confidence,
+    river_candidate_count_10km,
+    river_method_version,
     forest_norm,
     water_norm,
     artificial_norm,
     naturality_norm,
     diversity_norm,
+    river_access_norm,
     accesibilidad_norm,
     climate_block_score,
     access_block_score,

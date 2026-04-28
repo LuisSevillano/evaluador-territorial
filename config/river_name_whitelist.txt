@@ -1,0 +1,17 @@
+# River name whitelist (normalized names)
+duero
+ebro
+arlanza
+gandara
+pisuerga
+esla
+tormes
+tietar
+alberche
+cea
+carrion
+arandilla
+duraton
+riaza
+agueda
+miño

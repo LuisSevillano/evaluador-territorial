@@ -138,6 +138,12 @@
 						>{selectedMunicipio.forest_pct ?? '-'} / {selectedMunicipio.water_pct ?? '-'}</strong
 					>
 				</div>
+				<div class="metric">
+					<span>Acceso a baño</span><strong>{selectedMunicipio.river_access_class ?? '-'} ({selectedMunicipio.river_access_score ?? '-'} )</strong>
+				</div>
+				<div class="metric">
+					<span>Río más cercano</span><strong>{selectedMunicipio.river_nearest_name ?? '-'} ({selectedMunicipio.river_nearest_distance_km ?? '-'} km)</strong>
+				</div>
 			</div>
 			<div class="charts">
 				<div class="chart-card">

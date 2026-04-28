@@ -70,6 +70,7 @@ paths <- list(
   rivers_raw_dir = path(project_root, "data", "raw", "hydro"),
   rivers_cache_dir = path(project_root, "data", "intermediate", "hydro"),
   hydro_sources_csv = path(project_root, "config", "hydro_sources.csv"),
+  river_whitelist_txt = path(project_root, "config", "river_name_whitelist.txt"),
   docs_indicators = path(project_root, "docs", "indicators.md"),
   frontend_v2_geojson = path(project_root, "frontend", "static", "data", "municipios_v2.geojson"),
   frontend_v2_json = path(project_root, "frontend", "static", "data", "municipios_v2.json"),
