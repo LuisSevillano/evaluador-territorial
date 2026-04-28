@@ -69,14 +69,15 @@
 		<div class="block-grid">
 			{#each context.blockBreakdown as block}
 				{@const pctAbove = block.avgRaw > 0 ? ((block.raw - block.avgRaw) / block.avgRaw) * 100 : 0}
-				{@const barWidth = Math.max(0, Math.min(100, 50 + pctAbove * 2))}
+				{@const baseWidth = Math.max(0, Math.min(100, 50 + pctAbove * 2))}
+				{@const barWidth = Math.abs(pctAbove) < 0.1 ? baseWidth : Math.max(6, baseWidth)}
 				<div class="block-item">
 					<span>{blockLabel(block.key)}</span>
 					<div class="bar-track">
 						<div class="bar-fill" class:positive={pctAbove >= 0} class:negative={pctAbove < 0} style="width: {barWidth}%"></div>
 					</div>
 					<em class={pctAbove >= 0 ? 'up' : 'down'}>
-						{pctAbove >= 0 ? '↑' : '↓'} {Math.abs(pctAbove).toFixed(0)}% vs media
+					{pctAbove >= 0 ? '↑' : '↓'} {Math.abs(pctAbove).toFixed(0)}% vs mediana global
 					</em>
 				</div>
 			{/each}
