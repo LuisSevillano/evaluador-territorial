@@ -33,6 +33,14 @@ export type Municipio = {
 	artificial_norm?: number;
 	naturality_norm?: number;
 	diversity_norm?: number;
+	river_access_norm?: number;
+	river_access_score?: number;
+	river_access_class?: string;
+	river_nearest_name?: string;
+	river_nearest_distance_km?: number;
+	river_nearest_confidence?: number;
+	river_candidate_count_10km?: number;
+	river_method_version?: string;
 	climate_block_score?: number;
 	access_block_score?: number;
 	nature_block_score?: number;

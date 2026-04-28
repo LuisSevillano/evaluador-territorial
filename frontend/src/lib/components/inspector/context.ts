@@ -44,6 +44,14 @@ const mean = (values: number[]) => {
 	return values.reduce((acc, value) => acc + value, 0) / values.length;
 };
 
+const median = (values: number[]) => {
+	if (values.length === 0) return 0;
+	const sorted = [...values].sort((a, b) => a - b);
+	const middle = Math.floor(sorted.length / 2);
+	if (sorted.length % 2 === 0) return (sorted[middle - 1] + sorted[middle]) / 2;
+	return sorted[middle];
+};
+
 const scoreBlocks = (municipio: Municipio) => ({
 	clima: municipio.climate_block_score ?? municipio.precip_norm ?? 0.5,
 	accesibilidad: municipio.access_block_score ?? municipio.accesibilidad_norm ?? 0.5,
@@ -93,9 +101,9 @@ export const buildMunicipioContext = ({
 
 	const selectedBlocks = scoreBlocks(selectedMunicipio);
 	const avgBlocks = {
-		clima: mean(municipios.map((m) => scoreBlocks(m).clima)),
-		accesibilidad: mean(municipios.map((m) => scoreBlocks(m).accesibilidad)),
-		naturaleza: mean(municipios.map((m) => scoreBlocks(m).naturaleza))
+		clima: median(municipios.map((m) => scoreBlocks(m).clima)),
+		accesibilidad: median(municipios.map((m) => scoreBlocks(m).accesibilidad)),
+		naturaleza: median(municipios.map((m) => scoreBlocks(m).naturaleza))
 	};
 
 	const breakdown: BlockBreakdown[] = [
@@ -128,29 +136,29 @@ export const buildMunicipioContext = ({
 		}
 	];
 
-	const averagePrecip = mean(municipios.map((m) => m.precip_annual_mm));
-	const averageForest = mean(municipios.map((m) => m.forest_pct ?? 0));
-	const averageWater = mean(municipios.map((m) => m.water_pct ?? 0));
+	const medianPrecip = median(municipios.map((m) => m.precip_annual_mm));
+	const medianForest = median(municipios.map((m) => m.forest_pct ?? 0));
+	const medianWater = median(municipios.map((m) => m.water_pct ?? 0));
 
 	const blockDetails: Record<BlockKey, string> = {
 		clima:
-			selectedMunicipio.precip_annual_mm >= averagePrecip
-				? `PPT anual ${selectedMunicipio.precip_annual_mm.toFixed(0)} mm (media ${averagePrecip.toFixed(0)} mm).`
-				: `PPT anual ${selectedMunicipio.precip_annual_mm.toFixed(0)} mm por debajo de media (${averagePrecip.toFixed(0)} mm).`,
+			selectedMunicipio.precip_annual_mm >= medianPrecip
+				? `PPT anual ${selectedMunicipio.precip_annual_mm.toFixed(0)} mm (mediana ${medianPrecip.toFixed(0)} mm).`
+				: `PPT anual ${selectedMunicipio.precip_annual_mm.toFixed(0)} mm por debajo de la mediana (${medianPrecip.toFixed(0)} mm).`,
 		accesibilidad:
 			selectedMunicipio.travel_bucket === '>4h00'
 				? `Distancia alta: ${selectedMunicipio.travel_bucket}, lo que penaliza accesibilidad.`
 				: selectedMunicipio.travel_bucket === '<=1h30' || selectedMunicipio.travel_bucket === '<=2h00'
 					? `Distancia corta: ${selectedMunicipio.travel_bucket}, lo que beneficia accesibilidad.`
 					: `Accesibilidad ${bucketLabel(selectedMunicipio.travel_bucket)} (${selectedMunicipio.travel_bucket}).`,
-		naturaleza: `Forestal ${Number(selectedMunicipio.forest_pct ?? 0).toFixed(1)}% (media ${averageForest.toFixed(1)}%) · Agua ${Number(selectedMunicipio.water_pct ?? 0).toFixed(1)}% (media ${averageWater.toFixed(1)}%).`
+		naturaleza: `Forestal ${Number(selectedMunicipio.forest_pct ?? 0).toFixed(1)}% (mediana ${medianForest.toFixed(1)}%) · Agua ${Number(selectedMunicipio.water_pct ?? 0).toFixed(1)}% (mediana ${medianWater.toFixed(1)}%).`
 	};
 
 	const driverCandidates: DriverEvidence[] = breakdown.map((item) => ({
 		key: item.key,
 		effect: item.delta >= 0 ? 'beneficia' : 'penaliza',
 		impact: item.delta,
-		summary: `${blockDetails[item.key]} Bloque ${item.raw.toFixed(3)} vs media ${item.avgRaw.toFixed(3)} (impacto ${item.delta >= 0 ? '+' : ''}${item.delta.toFixed(3)}).`
+		summary: `${blockDetails[item.key]} Bloque ${item.raw.toFixed(3)} vs mediana ${item.avgRaw.toFixed(3)} (impacto ${item.delta >= 0 ? '+' : ''}${item.delta.toFixed(3)}).`
 	}));
 
 	const positiveDrivers = driverCandidates

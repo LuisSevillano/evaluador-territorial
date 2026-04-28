@@ -267,6 +267,7 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 		if (mapColorMetric === 'travel_bucket') return 'Tiempo de desplazamiento';
 		if (mapColorMetric === 'transporte_norm') return 'Transporte OSM';
 		if (mapColorMetric === 'servicio_renfe_norm') return 'Servicio Renfe';
+		if (mapColorMetric === 'river_access_score') return 'Acceso a baño';
 		return 'Puntuación global';
 	});
 
@@ -883,6 +884,7 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 								<ChipButton label="Tiempo de desplazamiento" active={mapColorMetric === 'travel_bucket'} onclick={() => setMapColorMetric('travel_bucket')} />
 								<ChipButton label="Transporte OSM" active={mapColorMetric === 'transporte_norm'} onclick={() => setMapColorMetric('transporte_norm')} />
 								<ChipButton label="Servicio Renfe" active={mapColorMetric === 'servicio_renfe_norm'} onclick={() => setMapColorMetric('servicio_renfe_norm')} />
+								<ChipButton label="Acceso a baño" active={mapColorMetric === 'river_access_score'} onclick={() => setMapColorMetric('river_access_score')} />
 							</div>
 								<LayerOrderList items={layerItems} onToggle={toggleLayerVisibility} onReorder={handleLayerOrderChange} />
 								<label><input type="checkbox" checked={showIgnWmsBase} onchange={(e) => (layersStore.state.showIgnWmsBase = (e.currentTarget as HTMLInputElement).checked)} /> Base IGN</label>
