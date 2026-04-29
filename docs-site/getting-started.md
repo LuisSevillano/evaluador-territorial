@@ -1,6 +1,8 @@
-# Getting Started
+# Getting Started técnico
 
-Está página queda en el anexo técnico. Está pensada para quien necesita ejecutar, depurar o desplegar el proyecto.
+Esta página contiene los comandos mínimos para ejecutar, depurar y compilar el proyecto.
+
+Si solo se necesita entender el Atlas, conviene empezar por la sección conceptual y volver aquí cuando haga falta ejecutar algo.
 
 ## Requisitos
 
@@ -31,13 +33,13 @@ npm install
 npm run docs:dev
 ```
 
-## Publicacion docs en `/docs/`
+## Publicación de docs en `/docs/`
 
-La documentación se compila con VitePress y se copia a `frontend/build/docs` antes del deploy productivo.
+La documentación se compila con VitePress y se copia a `frontend/build/docs` antes del despliegue productivo.
 
 ## Recorrido recomendado de lectura
 
-1. [Arquitectura del atlas](/arquitectura)
-2. [Pipeline](/pipeline/)
+1. [Arquitectura del Atlas](/arquitectura)
+2. [Visión general del pipeline](/pipeline/)
 3. [Indicadores](/indicadores/)
-4. [Por qué confiar en el análisis](/analisis-objetividad)
+4. [Cómo leer los resultados con criterio](/analisis-objetividad)

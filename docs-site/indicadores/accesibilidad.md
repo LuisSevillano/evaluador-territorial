@@ -1,28 +1,37 @@
 # Indicadores de accesibilidad
 
-Este bloque responde a una pregunta práctica: cuán lejos queda cada municipio de los núcleos de referencia temporal definidos por isocronas.
+Esta página explica cómo se resume la accesibilidad temporal de cada municipio.
 
-En la versión actual del atlas, las isocronas usadas por el pipeline proceden de TravelTime API (`/v4/time-map/fast`) y se almacenan cómo capas precomputadas para garantizar reproducibilidad entre corridas.
+Sirve para comparar facilidad de acceso, no para describir todos los problemas reales de movilidad.
 
-## Métricas
+## Qué se mide
 
-En este bloque se usan tres piezas: la pertenencia a isocronas de 1h30 a 4h, el `travel_bucket` cómo categoria resumen y un score normalizado (`accesibilidad_norm`) para poder combinarlo con el resto del modelo.
+Se usan tres piezas:
 
-## Metodo
+- Pertenencia a isocronas de 1h30 a 4h.
+- `travel_bucket` como categoría resumen.
+- `accesibilidad_norm` para combinar este bloque con el resto del modelo.
 
-Cada municipio se evalua con un punto representativo y se comprueba en qué anillo temporal cae. Si entra en varíos, se príoriza el más favorable. Asi evitamos dobles lecturas y mantenemos una regla unica para todo el territorío.
+En la versión actual, las isocronas del pipeline vienen de TravelTime API (`/v4/time-map/fast`) y se guardan como capas precomputadas para mantener reproducibilidad.
+
+## Cómo se calcula
+
+Cada municipio se evalúa con un punto representativo y se comprueba en qué anillo temporal cae. Si cae en varios, se prioriza el más favorable para aplicar una regla única.
 
 ![Anillos de isocronas diferenciales sobre CCAA y provincias peninsulares](/assets/map_isochrones_diff.light.png){.theme-image-light}
 ![Anillos de isocronas diferenciales sobre CCAA y provincias peninsulares](/assets/map_isochrones_diff.dark.png){.theme-image-dark}
 
-La leyenda usa los mismos tramos temporales qué la app (`<=1h30` a `<=4h00`), para qué la lectura visual sea consistente entre documentación y visor interactivo.
+La leyenda usa los mismos tramos temporales que la app (`<=1h30` a `<=4h00`) para mantener consistencia visual.
 
-![Distribución bloque accesibilidad](/assets/access_block_distribution.png)
+![Distribución bloque accesibilidad](/assets/access_block_distribution.png){.theme-image-light}
+![Distribución bloque accesibilidad](/assets/access_block_distribution.dark.png){.theme-image-dark}
 
-## Interpretacion
+## Cómo interpretarlo
 
-Un bucket bajo sugiere mejor conectividad funcional, pero no significa qué todos los servicios estén ya resueltos dentro del municipio. El suelo metodologico evita qué las zonas más lejanas queden aplastadas en cero y permite seguir comparando con matiz.
+Un bucket bajo sugiere mejor acceso relativo. Aún así, no implica que todos los servicios estén cubiertos dentro del municipio.
 
-## Riesgo de mala interpretacion
+Ejemplo: un lugar puede quedar bien en isocrona por carretera, pero depender del coche para casi todo o tener pocas frecuencias de transporte público.
 
-Este indicador resume tiempos de acceso; no mide por si mismo la calidad de carreteras, frecuencia real de servicios o condiciones puntuales del trayecto.
+## Límites
+
+Este bloque resume tiempos de acceso. No mide por sí solo calidad de carreteras, frecuencia real diaria de servicios ni incidencias puntuales de trayecto.

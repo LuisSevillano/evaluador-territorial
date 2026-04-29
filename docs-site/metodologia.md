@@ -1,29 +1,44 @@
-# Metodología y objetividad
+# Cómo se comparan los lugares
 
-## Qué significa "análisis real" en este atlas
+Esta página explica la forma de análisis del Atlas: qué datos usa, cómo los convierte en indicadores y qué límites tiene.
 
-El atlas es "real" en el sentido de qué usa fuentes observadas y reglas reproducibles:
+Sirve como punto de partida para interpretar resultados sin sobrecargar de detalle técnico.
 
-- Clima observado (TerraClimate) agregado espacialmente.
-- Coberturas territoriales derivadas desde OSM en la corrida actual (con soporte para CORINE cuando la fuente está disponible y validada).
-- Isocronas y nodos de transporte trazables.
-- Red fluvial real con filtros explicitados.
+## Base metodológica
 
-## Qué significa "objetivo"
+El Atlas combina fuentes observadas y reglas reproducibles:
 
-Aqui "objetivo" no significa neutralidad absoluta, sino transparencia metodológica. El modelo es objetivo en la medida en que cualquiera puede comprobar cómo se calcula:
+- Clima observado (TerraClimate) agregado por municipio.
+- Coberturas territoriales derivadas desde OSM en la ejecución actual (con soporte para CORINE cuando está disponible y validada).
+- Isochronas y nodos de transporte trazables.
+- Red fluvial filtrada con criterios explícitos.
 
-- Reglas deterministas (sin heuristicas ocultas).
-- Formula de score explicita.
-- Versiónado metodologico.
-- QA automatizable y verificable.
+## Qué se entiende por objetividad
 
-## Lo qué no afirma el modelo
+Objetividad aquí no es "decisión automática". Es transparencia: cualquier persona puede revisar cómo se calcula cada resultado.
 
-- No garantiza causalidad socioeconomica.
+- Reglas deterministas (sin heurísticas ocultas).
+- Fórmula del score publicada.
+- Versionado metodológico.
+- QA verificable.
+
+## Ejemplo simple de lectura
+
+Si dos municipios tienen clima parecido, el desempate puede venir por accesibilidad o entorno natural.
+
+En la práctica, esto ayuda a priorizar: por ejemplo, un lugar con buen clima pero muy aislado puede bajar frente a otro algo menos húmedo pero con acceso más fácil a servicios durante todo el año.
+
+## Limitaciones
+
+Hay límites que conviene tener presentes:
+
+- Los datos pueden estar incompletos o desactualizados.
+- Una puntuación alta no sustituye una visita.
+- Aspectos clave como vida social o encaje personal son difíciles de medir.
+- El resultado final necesita interpretación, no lectura automática.
+
+## Qué no afirma este modelo
+
+- No garantiza causalidad socioeconómica.
 - No sustituye estudios locales de campo.
-- No convierte automaticamente "alto score" en mejor decisión final sin contexto humano.
-
-## Riesgos de interpretacion y mitigaciones
-
-El riesgo principal es leer el atlas cómo si fuera una respuestá final cerrada. Para evitarlo, mantenemos tres salvaguardas: avisos metodologicos visibles en documentación e interfaz, registro de alcance y fecha de cada corrida (`analysis_scope`) y publicacion explicita de pesos/umbrales para qué puedan discutirse y revisarse.
+- No convierte automáticamente un score alto en mejor decisión final.

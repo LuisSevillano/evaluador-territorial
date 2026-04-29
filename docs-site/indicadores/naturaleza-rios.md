@@ -1,46 +1,50 @@
 # Naturaleza y acceso fluvial recreativo
 
-Esta parte del atlas intenta responder algo muy concreto: si un municipio tiene, en la práctica, buena accesibilidad a ríos que probablemente sean aptos para uso recreativo cotidiano.
+Esta página explica cómo se evalúa el entorno natural y el acceso potencial a ríos para uso recreativo.
 
-No se trata de adivinar calidad sanitaria del agua ni de etiquetar zonas oficiales de baño. Es una aproximación territorial, útil para comparar municipios con un criterio homogéneo.
+Sirve para comparar municipios con una regla común. No sirve para certificar calidad sanitaria del agua.
 
 ## Entorno natural
 
-El bloque natural combina cobertura forestal, cobertura de agua, superficie artificial y diversidad de usos del suelo. Con esas piezas se forma una lectura territorial que evita depender de una sola variable.
+El bloque combina cobertura forestal, cobertura de agua, superficie artificial y diversidad de usos del suelo. La idea es evitar depender de una sola variable.
 
-En esta ejecución concreta, estas métricas se han calculado sobre capas OSM (Geofabrik) como fallback operativo del script `04_entorno_corine.R`. Cuando CORINE está disponible y validado, el mismo script puede usar CORINE como fuente principal.
+En esta ejecución, las métricas se calcularon sobre capas OSM (Geofabrik) como fallback operativo de `04_entorno_corine.R`. Cuando CORINE está disponible y validado, ese mismo script puede usar CORINE como fuente principal.
 
 ## Acceso fluvial recreativo
 
-Para ríos, el atlas expone un score de acceso (`river_access_score`), su clase cualitativa, el tramo de referencia más cercano y metadatos de control como distancia, confianza y densidad de candidatos en 10 km.
+Para ríos, el Atlas publica:
+
+- `river_access_score`
+- `river_access_class`
+- Tramo de referencia más cercano
+- Metadatos de control (distancia, confianza y candidatos en 10 km)
 
 ![Acceso fluvial recreativo (score)](/assets/map_river_access.light.png){.theme-image-light}
 ![Acceso fluvial recreativo (score)](/assets/map_river_access.dark.png){.theme-image-dark}
 
-![Clases de acceso fluvial](/assets/river_class_counts.png)
+![Clases de acceso fluvial](/assets/river_class_counts.png){.theme-image-light}
+![Clases de acceso fluvial](/assets/river_class_counts.dark.png){.theme-image-dark}
 
 ## Regla de cálculo
 
 `river_access_score = distance_score * river_nearest_confidence / 100`
 
-La distancia se traduce a un `distance_score` por tramos (de muy cerca a muy lejos) para evitar cambios bruscos poco intuitivos y mantener una lectura estable entre municipios.
+La distancia se traduce por tramos para evitar saltos bruscos poco intuitivos.
 
-## Aclaraciones críticas
+## Cómo se decide qué tramo cuenta como "río útil"
 
-Este indicador no mide calidad sanitaria del agua ni sustituye el inventario oficial de zonas de baño. Lo que aporta es una medida comparable de acceso potencial recreativo a red fluvial.
+No se usa una sola columna. El script combina señales y aplica exclusiones:
 
-## Por qué este enfoque es conservador
+1. Señales positivas (nombre, whitelist, anchura, códigos hidro, flags de demarcación).
+2. Exclusiones (canales, tramos efímeros o mareales).
+3. Control geométrico (descarta tramos demasiado cortos).
 
-El criterio es conservador porque primero exige señales de río plausible y después descarta explicitamente lo que introduce ruido (canales, tramos efímeros o mareales). A partir de ahí pondera cercanía y confianza, en vez de dar por válido cualquier línea azul del mapa.
+Con eso, cada tramo recibe una confianza de 0 a 100. Luego se busca el candidato más cercano a cada municipio y se combina cercanía + confianza.
 
-## Cómo se determina que un tramo cuenta como "río útil"
+## Límites importantes
 
-El script no usa una sola columna para decidir. Combina varias señales y después aplica exclusiones duras:
+- No mide calidad sanitaria del agua.
+- No sustituye el inventario oficial de zonas de baño.
+- No garantiza uso recreativo real durante todo el año.
 
-1. **Señales positivas**: nombre de río, inclusión en una whitelist de ríos relevantes, anchura suficiente, códigos hidro consistentes y flags de demarcación.
-2. **Exclusiones**: segmentos artificiales (canales/acequias/drenajes), tramos efímeros o intermitentes y tramos mareales.
-3. **Control geométrico**: descarta tramos demasiado cortos para evitar ruido cartográfico.
-
-Con eso, cada tramo recibe una **confianza** de 0 a 100. Luego, para cada municipio, se busca el tramo candidato más cercano y se combina cercanía + confianza para obtener `river_access_score`.
-
-El resultado no dice "aquí se puede bañar"; dice "aquí hay mejor o peor acceso potencial a red fluvial recreativa" comparado con el resto del ámbito.
+En resumen, este indicador dice "mejor o peor acceso potencial relativo" dentro del alcance analizado.

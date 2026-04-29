@@ -1,30 +1,44 @@
-# Análisis de objetividad y robustez
+# Cómo leer los resultados con criterio
 
-## Enfoque
+Esta página resume cómo revisar el ranking sin confundir un indicador útil con una verdad absoluta.
 
-Este atlas príoriza objetividad operaciónal: reglas explicitas, cálculo reproducible y trazabilidad completa.
+Sirve para compartir resultados con terceros de forma honesta: mostrando fortalezas y límites.
 
-La idea no es "convencer" a nadie por diseño visual; es que cualquier compañerx pueda auditar por qué un municipio sube o baja.
+## Qué significa "objetividad" aquí
 
-## Evidencia cuantitativa del dataset actual
+En este Atlas, objetividad significa algo concreto: reglas visibles, cálculo reproducible y trazabilidad.
 
-La documentación incluye tres evidencias sencillas de revisar: percentiles de `mixed_score`, medias por bloque y un top 15 municipal. No son "la verdad" del territorío, pero si un control rapido para comprobar qué el sistema produce patrones coherentes y no resultados arbitraríos.
+No significa neutralidad perfecta ni ausencia de decisiones metodológicas. Los pesos y umbrales existen, y están documentados para poder revisarlos.
 
-![Bloqué naturaleza por municipio](/assets/map_nature_score.light.png){.theme-image-light}
-![Bloqué naturaleza por municipio](/assets/map_nature_score.dark.png){.theme-image-dark}
+## Evidencias rápidas para comprobar coherencia
 
-## Criteríos de robustez del ranking
+Antes de interpretar resultados en profundidad, conviene mirar tres piezas:
 
-La robustez se evalua con tres preguntas: si el ranking resiste variaciones razonables de pesos, si los resultados encajan con la geografia observada y si los indicadores se interpretan dentro de su alcance real.
+- Distribución de `mixed_score`.
+- Medias por bloque (`climate_block_score`, `access_block_score`, `nature_block_score`).
+- Municipios en los extremos del ranking.
 
-## Checklist de confianza para compartir con terceros
+Estas comprobaciones no demuestran "la verdad del territorio", pero ayudan a detectar salidas raras o patrones poco creíbles.
 
-- ¿Puedo trazar cada columna hasta su script de origen?
-- ¿Puedo reproducir la corrida con un comando documentado?
-- ¿Los límites metodológicos están declarados por escrito?
-- ¿Los cambios de pesos/umbrales están versiónados?
-- ¿El output geoespacial coincide con el output tabular?
+![Bloque naturaleza por municipio](/assets/map_nature_score.light.png){.theme-image-light}
+![Bloque naturaleza por municipio](/assets/map_nature_score.dark.png){.theme-image-dark}
 
-## Guia de lectura responsable
+## Preguntas de robustez útiles
 
-El score funciona cómo una herramienta de príorizacion multicriterio. Ayuda a acotar opciones y a ordenar una discusion, pero la decisión de emplazamiento sigue necesitando contraste local y lectura contextual. En otras palabras: reduce incertidumbre, no la elimina.
+Para evaluar si el ranking aguanta, conviene revisar:
+
+1. Si cambios razonables de pesos alteran mucho el orden.
+2. Si el patrón espacial tiene sentido con la geografía observada.
+3. Si cada indicador se interpreta dentro de su alcance real.
+
+## Checklist de confianza
+
+- Se puede trazar cada métrica a su script y fuente.
+- La ejecución se puede reproducir con comandos documentados.
+- Los límites metodológicos están explícitos.
+- Cambios de pesos o umbrales quedan registrados.
+- El resultado tabular y el geoespacial son consistentes.
+
+## Qué no conviene hacer
+
+No conviene usar el score para cerrar una decisión de emplazamiento sin contraste local. El Atlas orienta el análisis y reduce parte de la incertidumbre, pero no reemplaza el criterio humano ni la validación en campo.

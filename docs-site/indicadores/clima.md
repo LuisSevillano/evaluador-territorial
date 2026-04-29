@@ -1,29 +1,34 @@
 # Indicadores de clima
 
-El bloque clima mide habitabilidad ambiental a escala municipal a partir de observaciones históricas agregadas por polígono.
+Esta página describe qué se mide del clima y cómo interpretarlo en comparaciones municipales.
 
-## Métricas
+Sirve para detectar gradientes climáticos útiles, no para decidir una parcela exacta.
 
-- `precip_annual_mm`: precipitacion anual agregada por municipio.
-- `temp_winter_mean_c`: media dic-ene-feb.
-- `temp_summer_mean_c`: media jun-jul-ago.
-- `temp_jan_mean_c`, `temp_jul_mean_c`: medias mensuales de referencia.
+## Qué mide este bloque
 
-## Metodo
+- `precip_annual_mm`: precipitación anual agregada por municipio.
+- `temp_winter_mean_c`: media de invierno (dic-ene-feb).
+- `temp_summer_mean_c`: media de verano (jun-jul-ago).
+- `temp_jan_mean_c`, `temp_jul_mean_c`: referencias mensuales.
 
-- Agregacion por poligono municipal (no centroide) con `exactextractr`.
+## Cómo se calcula
+
+- Agregación por polígono municipal (no por centroide) con `exactextractr`.
 - Período base: 2014-2023.
 
-![Precipitacion anual municipal](/assets/map_precip.light.png){.theme-image-light}
-![Precipitacion anual municipal](/assets/map_precip.dark.png){.theme-image-dark}
+![Precipitación anual municipal](/assets/map_precip.light.png){.theme-image-light}
+![Precipitación anual municipal](/assets/map_precip.dark.png){.theme-image-dark}
 
-![Distribución bloque clima](/assets/climate_block_distribution.png)
+![Distribución bloque clima](/assets/climate_block_distribution.png){.theme-image-light}
+![Distribución bloque clima](/assets/climate_block_distribution.dark.png){.theme-image-dark}
+
+## Cómo leerlo bien
+
+Este bloque ayuda a comparar clima entre municipios del mismo alcance.
+
+Ejemplo práctico: dos municipios pueden tener precipitación parecida, pero verano más suave en uno de ellos; esa diferencia puede ser relevante para uso cotidiano, consumo de agua o confort estacional.
 
 ## Limitaciones
 
 - No captura microclima de parcela ni variabilidad horaria.
-
-## Lectura recomendada
-
-- Usa este bloque para comparar gradientes macroclimáticos entre territoríos.
-- No lo uses para decidir una parcela exacta sin validación local.
+- No reemplaza medición local cuando la decisión depende de una ubicación concreta.

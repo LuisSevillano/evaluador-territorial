@@ -1,36 +1,45 @@
 # Atlas territorial de El Buen Vivir
 
-Esta documentación explica cómo se calcula el ranking municipal del proyecto y qué grado de confianza podemos atribuir a cada resultado.
+Esta documentación explica qué analiza el Atlas, cómo lo calcula y cómo conviene leer los resultados sin sobreinterpretarlos.
 
-La idea es sencilla: que cualquier persona del equipo pueda seguir el rastro de un valor desde el mapa final hasta la fuente original y el script que lo produjo.
+Sirve para una tarea concreta: comparar municipios con un criterio común y dejar claro de dónde sale cada dato.
 
-## Qué problema resuelve este atlas
+## Qué es este Atlas
 
-Cuando buscamos el mejor lugar para emplazar El Buen Vivir, aparecen tres preguntas:
+El Atlas es una herramienta de apoyo para analizar el encaje de distintos municipios cuando hay que tomar decisiones territoriales. Reúne datos de clima, accesibilidad y naturaleza en un marco común para comparar lugares con más criterio y menos intuición suelta.
 
-1. Donde el **clima** es más favorable.
-2. Donde la **accesibilidad** no penaliza la vida diaria.
-3. Donde el **entorno natural** aporta calidad territorial real.
+## Qué vas a encontrar aquí
 
-El atlas convierte estas preguntas en indicadores comparables, con reglas explicitas y trazabilidad completa.
+El Atlas organiza la comparación en tres bloques:
+
+1. **Clima**: condiciones ambientales agregadas a escala municipal.
+2. **Accesibilidad**: tiempos de acceso según isocronas.
+3. **Naturaleza**: coberturas del suelo y acceso fluvial recreativo potencial.
 
 ![Mapa del score mixto municipal](/assets/map_mixed_score.light.png){.theme-image-light}
 ![Mapa del score mixto municipal](/assets/map_mixed_score.dark.png){.theme-image-dark}
 
-## Qué ofrece (y qué no ofrece)
+> Nota rápida: un color alto en el mapa indica mejor encaje relativo dentro del alcance analizado, no una recomendación automática.
 
-El atlas ofrece una comparación objetiva entre municipios mediante un sistema reproducible, con trazabilidad completa de métrica a script y fuente. También permite explicar el resultado por bloques (clima, accesibilidad y naturaleza), lo que facilita discutir decisiones con criterios técnicos y no solo por intuición.
+## Para qué sirve (y para qué no)
 
-Al mismo tiempo, hay límites claros: no sustituye trabajo de campo, no pretende dar una verdad absoluta descontextualizada y no infiere variables que no estén respaldadas por datos (por ejemplo, calidad sanitaria del agua).
+Sirve para ordenar opciones cuando hay que decidir dónde mirar primero. Por ejemplo, ayuda a detectar municipios con clima más estable, acceso menos exigente en tiempo y entorno natural más favorable en términos comparables.
 
-## Cómo leer esta documentación
+No sirve para cerrar una decisión por sí solo. No sustituye una visita, ni una conversación local, ni aspectos difíciles de medir con datos (vida social, ruido estacional, encaje personal, estado real de un servicio).
 
-La documentación está dividida en dos capas. La primera, "Entender el atlas", cuenta el enfoque con lenguaje general y ejemplos visuales. La segunda, "Anexo técnico", concentra nomenclatura de scripts, runbooks y detalles de ejecución para quien necesita reproducir o depurar.
+## Cómo usar esta documentación
 
-Si quieres una lectura corta y clara, empieza por [Arquitectura del atlas](/arquitectura) y sigue con [Por qué confiar en el análisis](/analisis-objetividad). Si después quieres auditar cada variable, salta a [Diccionario completo](/indicadores/data-dictionary).
+Cada página empieza con lo esencial: qué contiene, para qué sirve y cómo leerla.
 
-## Estado actual del alcance
+Recorrido recomendado:
 
-- Scope por defecto: Castilla y León, La Rioja, País Vasco, Cantabria, Asturias, Lugo, Ourense y Guadalajara.
+1. [Arquitectura del Atlas](/arquitectura)
+2. [Cómo se comparan los lugares](/metodologia)
+3. [Cómo leer los resultados con criterio](/analisis-objetividad)
+4. [Diccionario completo](/indicadores/data-dictionary)
+
+## Alcance actual
+
+- Ámbito por defecto: Castilla y León, La Rioja, País Vasco, Cantabria, Asturias, Lugo, Ourense y Guadalajara.
 - Unidad de análisis: municipio.
-- Salida principal: `mixed_score` + descomposición por bloques.
+- Resultado principal: `mixed_score` con desglose por bloques.

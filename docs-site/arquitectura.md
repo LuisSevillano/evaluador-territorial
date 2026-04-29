@@ -1,22 +1,32 @@
-# Arquitectura del atlas
+# Arquitectura del Atlas
 
-La arquitectura está pensada para responder una pregunta concreta: **podemos justificar técnica y metodológicamente por qué un municipio puntua mejor qué otro**.
+Esta página explica cómo se conecta el trabajo técnico de datos con el resultado que se ve en el mapa.
 
-## Tres capas qué trabajan juntas
+Sirve para entender el recorrido completo antes de entrar al detalle de scripts.
 
-El sistema se apoya en tres capas qué se retroalimentan. Primero, una capa de cálculo convierte fuentes muy distintas en indicadores comparables. Después, una capa geoespacial empaqueta esa información para qué se pueda servir en web sin arrastrar archivos gigantes. Por ultimo, la capa de producto presenta los resultados de forma navegable, con mapa, filtros y desglose municipal.
+## Cómo funciona en la práctica
+
+La arquitectura tiene tres capas:
+
+1. **Cálculo**: convierte fuentes distintas en indicadores comparables por municipio.
+2. **Geoespacial**: prepara archivos ligeros para web (sin perder trazabilidad).
+3. **Producto**: muestra resultados en mapa, filtros y fichas municipales.
 
 ## Flujo de extremo a extremo
 
-En terminos sencillos, el recorrido es siempre el mismo: se define el territorío de trabajo, se prepara la base municipal, se calculan los bloques de clima, accesibilidad y naturaleza, se revisa la calidad del resultado y se publica una versión utilizable en la app. En la parte técnica veras cada script y cada archivo implicado; en está parte nos quedamos con la lógica funcional.
+El flujo siempre sigue esta secuencia: definir alcance, preparar base municipal, calcular bloques (clima, accesibilidad y naturaleza), validar calidad y publicar.
 
-## Resultado visual de está arquitectura
+Si un municipio sube o baja en ranking, el cambio se puede rastrear hasta una regla concreta o una actualización de datos.
+
+## Qué aporta esta separación por capas
+
+Permite trabajar con orden y evitar cajas negras. El cálculo no depende de la interfaz, y la interfaz no inventa resultados: solo muestra lo que el pipeline genera.
 
 ![Anillos de isocronas diferenciales](/assets/map_isochrones_diff.light.png){.theme-image-light}
 ![Anillos de isocronas diferenciales](/assets/map_isochrones_diff.dark.png){.theme-image-dark}
 
-La imagen superíor ilustra un principio central del atlas: representar accesibilidad en anillos diferenciales evita solape engañoso y facilita comparar gradientes territoriales.
+> Lectura recomendada: los anillos diferenciales ayudan a comparar mejor que las capas solapadas, porque evitan contar varias veces la misma zona visual.
 
-## Por qué está arquitectura es defendible
+## Límites a tener en cuenta
 
-Se puede defender porque no depende de una caja negra. Cada bloque del score se calcula de forma separada, con reglas visibles y versiónables. Cuando ajustamos pesos o umbrales, ese cambio deja rastro. Y cuando alguien pregunta por qué un municipio sube o baja, la respuestá sale de datos y reglas concretas, no de una intuición.
+Esta arquitectura mejora la consistencia del análisis, pero no elimina incertidumbre. Un resultado sólido en datos sigue necesitando contraste local: visitas, contexto social y comprobación en terreno.

@@ -1,5 +1,9 @@
 # Runbook operativo
 
+Esta página resume la secuencia recomendada para generar datos, validar y compilar.
+
+Sirve como guía de operación rápida para ejecuciones repetibles.
+
 ## Corrida completa recomendada
 
 ```bash
@@ -27,3 +31,7 @@ npm run build
 cd docs-site
 npm run docs:build
 ```
+
+## Nota operativa
+
+Si la ejecución termina bien pero aparecen resultados atípicos, revisar primero QA metodológico antes de desplegar.

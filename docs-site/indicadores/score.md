@@ -1,29 +1,26 @@
 # Score compuesto
 
-Este es el corazón del atlas: un score multicriterio para comparar municipios de forma consistente.
+Esta página explica cómo se combina toda la información del Atlas en una sola puntuación comparativa.
 
-Los mapas de está documentación usan una escala por fases alíneada con la app (no una rampa continua), para qué la lectura visual sea coherente entre documentación y producto.
+Sirve para priorizar opciones. No sustituye el análisis local.
 
-## Formula global
+## Fórmula global
 
 `mixed_score = 0.4 * climate_block_score + 0.3 * access_block_score + 0.3 * nature_block_score`
 
 ![Mapa del score mixto municipal](/assets/map_mixed_score.light.png){.theme-image-light}
 ![Mapa del score mixto municipal](/assets/map_mixed_score.dark.png){.theme-image-dark}
 
-![Distribución de score mixto](/assets/mixed_score_distribution.png)
+![Distribución de score mixto](/assets/mixed_score_distribution.png){.theme-image-light}
+![Distribución de score mixto](/assets/mixed_score_distribution.dark.png){.theme-image-dark}
 
-## Bloques
+## Qué resume cada bloque
 
-El score final no sale de una sola variable. Se compone de tres bloques:
+- `climate_block_score`: precipitación y temperaturas estacionales.
+- `access_block_score`: posición relativa en isocronas de acceso.
+- `nature_block_score`: entorno natural y acceso fluvial con pesos publicados.
 
-- `climate_block_score`: resume precipitacion y temperaturas estacionales.
-- `access_block_score`: resume posicion relativa en isocronas de acceso.
-- `nature_block_score`: combina entorno natural y acceso fluvial con ponderaciones publicas.
-
-## Ponderacion interna de naturaleza
-
-Dentro del bloque naturaleza, no todos los componentes pesan igual. Se príoriza cobertura forestal y naturalidad, mientras qué el acceso fluvial aporta contexto sin dominar el resultado:
+## Ponderación interna de naturaleza
 
 - `forest_norm`: 0.30
 - `water_norm`: 0.20
@@ -31,10 +28,14 @@ Dentro del bloque naturaleza, no todos los componentes pesan igual. Se príoriza
 - `diversity_norm`: 0.15
 - `river_access_norm`: 0.10
 
-## Lectura
+## Cómo leer la puntuación
 
-El bloque fluvial suma valor contextual, pero no domina la puntuacion global.
+Un `mixed_score` alto suele indicar mejor equilibrio entre bloques dentro del alcance actual. Aún así, hay que leer el desglose: un municipio puede compensar un bloque flojo con otro muy fuerte.
 
-## Interpretacion de ranking
+Ejemplo: un municipio con muy buen clima pero accesibilidad baja puede quedar por debajo de otro más equilibrado.
 
-Un municipio con score alto suele mostrar equilibrío entre clima, accesibilidad y naturaleza. Aun asi, el ranking se usa para príorizar opciones, no para cerrar decisiones sin contraste local.
+## Límites de interpretación
+
+- El score es comparativo, no causal.
+- No convierte automáticamente un valor alto en "mejor decisión".
+- Debe complementarse con visita, contexto local y criterio propio.
