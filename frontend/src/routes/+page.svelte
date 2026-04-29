@@ -272,6 +272,7 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 	});
 
 	const topbarLegendConfig = $derived(getLegendConfig(mapColorMetric));
+	const topbarLegendTitle = $derived(isMobileView ? 'Puntuación' : topbarLegendConfig.title);
 
 	const topCandidate = $derived(tableRows[0] ?? null);
 
@@ -565,19 +566,34 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 </svelte:head>
 
 <header class="topbar">
-	<a class="topbar-brand" href="/" aria-label="Ir al inicio de El Buen Vivir">
-		<strong>El Buen Vivir</strong>
-		<small>{modeCopy[viewMode].tagline} · {municipiosFiltrados.length}/{municipios.length}</small>
-	</a>
+	<div class="topbar-brand">
+		<a class="topbar-brand-title" href="/" aria-label="Ir al inicio de El Buen Vivir">
+			<strong>El Buen Vivir</strong>
+		</a>
+		<div class="topbar-brand-meta">
+			<small>{modeCopy[viewMode].tagline} · {municipiosFiltrados.length}/{municipios.length}</small>
+			<a
+				class="topbar-docs-link-mobile"
+				href="https://observatorio-territorial.netlify.app/docs/"
+				rel="noopener noreferrer"
+				aria-label="Abrir la documentación técnica del proyecto"
+			>
+				Documentación
+			</a>
+		</div>
+	</div>
 	<div class="topbar-controls">
+		<a class="topbar-docs-link" href="https://observatorio-territorial.netlify.app/docs/" rel="noopener noreferrer" aria-label="Abrir la documentación técnica del proyecto">
+			<span>Documentación</span>
+		</a>
 		<div class="topbar-legend">
 			<ColorLegend
-				title={topbarLegendConfig.title}
+				title={topbarLegendTitle}
 				thresholds={topbarLegendConfig.thresholds}
 				colors={topbarLegendConfig.colors as any[]}
 				labels={topbarLegendConfig.labels as any[]}
 				formatLabel={topbarLegendConfig.formatLabel}
-				width={220}
+				width={320}
 			/>
 		</div>
 		<div class="topbar-mode">
@@ -1026,11 +1042,18 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 	.topbar-brand {
 		display: grid;
 		line-height: 1.1;
+	}
+	.topbar-brand-title {
 		text-decoration: none;
 		color: inherit;
 	}
-	.topbar-brand:visited {
+	.topbar-brand-title:visited {
 		color: inherit;
+	}
+	.topbar-brand-meta {
+		display: flex;
+		align-items: baseline;
+		gap: 0.35rem;
 	}
 	.topbar-brand strong {
 		font-family: 'Fraunces', serif;
@@ -1045,6 +1068,35 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 		align-items: center;
 		gap: 2rem;
 		margin-left: auto;
+	}
+	.topbar-docs-link {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.35rem;
+		padding: 0.34rem 0.62rem;
+		border-radius: 999px;
+		border: 1px solid rgba(21, 32, 33, 0.24);
+		background: rgba(255, 255, 255, 0.82);
+		font-size: 0.74rem;
+		font-weight: 600;
+		letter-spacing: 0.02em;
+		text-decoration: none;
+		color: #264944;
+		transition: transform 120ms ease, background-color 120ms ease;
+	}
+	.topbar-docs-link:visited {
+		color: #264944;
+	}
+	.topbar-docs-link:hover {
+		background: rgba(255, 255, 255, 0.98);
+		transform: translateY(-1px);
+	}
+	.topbar-docs-link:focus-visible {
+		outline: 2px solid rgba(47, 125, 133, 0.65);
+		outline-offset: 2px;
+	}
+	.topbar-docs-link-mobile {
+		display: none;
 	}
 	.topbar-legend {
 		display: block;
@@ -1272,10 +1324,32 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 			gap: 0.4rem;
 			overflow: hidden;
 		}
+		.topbar-controls {
+			gap: 0.2rem;
+		}
+		.topbar-docs-link {
+			display: none;
+		}
+		.topbar-docs-link {
+			padding: 0.22rem 0.45rem;
+			font-size: 0.65rem;
+			gap: 0.22rem;
+		}
+		.topbar-docs-link-mobile {
+			display: block;
+			font-size: 0.58rem;
+			color: #2f676a;
+			text-decoration: underline;
+			text-underline-offset: 0.11rem;
+			white-space: nowrap;
+		}
+		.topbar-brand-meta {
+			display: grid;
+			gap: 0.08rem;
+		}
 		.topbar-legend {
 			display: block;
-			transform: scale(0.8);
-			transform-origin: right center;
+			transform: scale(0.9);
 		}
 		.mode-strip {
 			display: none;

@@ -1,0 +1,28 @@
+.VPNavBarTitle {
+  border-bottom: 0 !important;
+}
+
+.VPDoc h1 {
+  letter-spacing: -0.02em;
+}
+
+.VPDoc img {
+  border-radius: 12px;
+  border: 1px solid var(--vp-c-divider);
+}
+
+.theme-image-light {
+  display: block;
+}
+
+.theme-image-dark {
+  display: none;
+}
+
+.dark .theme-image-light {
+  display: none;
+}
+
+.dark .theme-image-dark {
+  display: block;
+}

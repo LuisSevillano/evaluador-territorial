@@ -6,9 +6,12 @@
 	"scripts": {
 		"dev": "vite dev",
 		"build": "vite build",
+		"build:with-docs": "rm -rf build && npm run build && npm run docs:build && npm run docs:sync",
 		"preview": "vite preview",
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
-		"deploy": "netlify deploy --prod"
+		"docs:build": "npm --prefix ../docs-site run docs:build",
+		"docs:sync": "rm -rf build/docs && mkdir -p build/docs && cp -R ../docs-site/.vitepress/dist/. build/docs/",
+		"deploy": "npm run build:with-docs && netlify deploy --prod"
 	},
 	"devDependencies": {
 		"@sveltejs/adapter-static": "^3.0.5",

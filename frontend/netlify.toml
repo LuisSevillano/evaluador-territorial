@@ -1,9 +1,19 @@
 [build]
-  command = "npm run build"
+  command = "npm run build:with-docs"
   publish = "build"
 
 [build.environment]
   NODE_VERSION = "20"
+
+[[redirects]]
+  from = "/docs"
+  to = "/docs/"
+  status = 301
+
+[[redirects]]
+  from = "/docs/*"
+  to = "/docs/:splat"
+  status = 200
 
 [[redirects]]
   from = "/*"

@@ -33,6 +33,43 @@ cd frontend
 npm run build
 ```
 
+## Documentation workflow (VitePress)
+
+The repository includes a full docs site in `docs-site/` and it is published under `/docs/` in Netlify.
+
+### Develop docs locally
+
+```bash
+cd docs-site
+npm install
+npm run docs:dev
+```
+
+### Rebuild charts and maps used by docs
+
+```bash
+Rscript scripts/90_build_docs_maps.R
+Rscript scripts/91_build_docs_charts.R
+```
+
+### Preview docs exactly as production serves them
+
+```bash
+cd frontend
+npm run build:with-docs
+cd build
+python3 -m http.server 4173
+```
+
+Open `http://localhost:4173/docs/`.
+
+### Deploy frontend + docs to Netlify
+
+```bash
+cd frontend
+npm run deploy
+```
+
 ## Run pipeline with explicit scope
 
 ```bash
