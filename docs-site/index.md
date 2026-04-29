@@ -1,6 +1,6 @@
 # Atlas territorial de El Buen Vivir
 
-Esta documentación explica qué analiza el Atlas, cómo lo calcula y cómo conviene leer los resultados sin sobreinterpretarlos.
+Esta documentación explica qué analiza el [Atlas](https://observatorio-territorial.netlify.app/), cómo lo calcula y cómo conviene leer los resultados sin sobreinterpretarlos.
 
 Sirve para una tarea concreta: comparar municipios con un criterio común y dejar claro de dónde sale cada dato.
 

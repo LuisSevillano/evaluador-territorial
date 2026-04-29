@@ -1,104 +1,96 @@
-# Guia editorial de `docs-site`
+# Guía editorial de `docs-site`
 
-Esta guía define cómo escribir y revisar la documentación del Atlas para que sea clara, humana y útil.
+Esta guía define cómo escribir la documentación del Atlas para que sea útil en decisiones reales: clara, honesta y técnicamente sólida.
 
-## 1) Principios de tono
+## Principios de tono
 
 - Escribir para ayudar a decidir, no para impresionar.
-- Priorizar claridad y contexto antes que lenguaje técnico.
-- Ser honestos con límites e incertidumbre.
-- Mantener rigor: cuando hay términos tecnicos, explicarlos en lenguaje directo.
+- Explicar primero para qué sirve algo y luego su detalle técnico.
+- Mantener incertidumbre honesta: el Atlas orienta, no decide por sí solo.
+- Evitar tono comercial, institucional o de consultora.
 
-## 2) Voz recomendada
+## Voz y estilo
 
-- Tono cercano, sobrio y práctico.
-- Sin tono comercial ni institucional.
-- Evitar primera persona plural (`nosotros`) salvo excepciones muy justificadas.
-- Frases cortas y medianas, con ritmo natural.
+- Priorizar voz neutra y directa.
+- Evitar `nosotros` salvo casos excepcionales.
+- Usar frases cortas y medias; variar ritmo.
+- Reducir abstracción innecesaria.
 
-## 3) Terminos preferidos (consistencia)
+## Terminología base (consistencia)
 
-- `Atlas` como término principal.
-- `municipios` para la unidad de comparación.
-- `criterios`, `indicadores`, `resultados` para la estructura analitica.
-- `encaje del lugar` cuando se explique interpretación cualitativa.
+- `Atlas` o `herramienta` para el producto.
+- `municipio` como unidad principal de análisis.
+- `criterios`, `indicadores`, `resultados` como estructura estable.
+- `encaje del lugar` como lectura cualitativa de apoyo.
 
-## 4) Palabras y giros a evitar
+## Palabras a evitar
 
-- Evitar: "solucion integral", "potente", "innovador", "maximiza", "optimiza".
-- Evitar: "determina", "garantiza", "identifica los mejores" (afirmaciones cerradas).
-- Evitar: abstracciones vacías como "territorialidad" o "dinámicas" sin ejemplo.
+- "potente", "innovador", "solución integral", "maximiza", "optimiza".
+- "determina", "garantiza", "identifica los mejores".
+- Términos abstractos sin ejemplo: "territorialidad", "dinámicas".
 
-Alternativas recomendadas:
+Alternativas útiles:
 
 - "ayuda a comparar"
 - "orienta el análisis"
 - "sirve como punto de partida"
 - "requiere interpretación"
 
-## 5) Como abrir cada página
+## Cómo abrir cada página
 
-Las primeras lineas deben responder siempre:
+Las primeras líneas deben dejar claro:
 
-1. qué contiene esta página.
+1. Qué contiene la página.
 2. Para qué sirve.
-3. Como usarla sin sobreinterpretar.
+3. Cómo usarla sin sobreinterpretar resultados.
 
-## 6) Limites obligatorios
+## Límites obligatorios
 
-Siempre que se presenten resultados o score, incluir recordatorios de limite:
+Cuando haya resultados, ranking o score, incluir siempre:
 
-- Datos potencialmente incompletos o desactualizados.
-- La puntuación no sustituye visitas ni validación local.
-- Hay factores relevantes dificiles de medir (vida social, encaje personal, contexto).
+- Posibles desfases o huecos en datos.
+- La puntuación no sustituye visita ni contraste local.
+- Factores difíciles de medir (vida social, percepción, encaje personal).
 
-## 7) Ejemplos concretos
+## Ejemplos concretos
 
-Cuando una explicacion sea abstracta, agregar un ejemplo cotidiano.
+Si una explicación queda abstracta, añadir ejemplo cotidiano.
 
-Ejemplos útiles:
+- Si los servicios abren todo el año o solo en temporada.
+- Si el acceso diario depende del coche.
+- Si hay actividad estable en el municipio o picos estacionales.
+- Si el entorno sirve para uso habitual o más ocasional.
 
-- Si los servicios estan abiertos todo el año.
-- Si el acceso depende del coche.
-- Si hay actividad fuera de temporada.
-- Si el entorno permite uso diario o solo ocasional.
+## Microcopy recomendado
 
-## 8) Microcopy para interpretación
+En mapas, tablas y gráficos incluir notas breves como:
 
-En mapas, tablas y graficos, anadir notas cortas para evitar lecturas automaticas:
+- "Comparación relativa dentro del alcance actual."
+- "No mide calidad sanitaria del agua."
+- "Conviene revisar el desglose por bloques."
 
-- "Comparacion relativa dentro del alcance actual."
-- "No interpreta calidad sanitaria del agua."
-- "Revisar desglose por bloques antes de concluir."
-
-## 9) Criterios anti-IA
-
-Antes de publicar, revisar:
+## Checklist anti-IA (revisión final)
 
 - El texto suena natural al leerlo en voz alta.
-- No hay frases demasiado perfectas o simetricas repetidas.
+- No hay frases demasiado simétricas repetidas.
 - No hay promesas exageradas.
-- Hay ejemplos concretos cuando hace falta.
-- Se mantiene coherencia terminologica en todo el sitio.
+- Hay ejemplos donde hacen falta.
+- Se mantiene la terminología común en todo el sitio.
 
-## 10) Ejemplos antes/despues
-
-### Ejemplo 1
+## Antes y después
 
 Antes:
 
-"Esta herramienta permite evaluar sistematicamente la idoneidad territorial mediante indicadores multidimensionales."
+"Esta herramienta permite evaluar sistemáticamente la idoneidad territorial mediante indicadores multidimensionales."
 
-Despues:
+Después:
 
-"Esta herramienta ayuda a comparar municipios con cierto orden: clima, accesibilidad y entorno natural. Sirve para orientar decisiones, no para cerrarlas por si sola."
-
-### Ejemplo 2
+"Esta herramienta ayuda a comparar municipios con un criterio común. Sirve para ordenar opciones, no para cerrar una decisión por sí sola."
 
 Antes:
 
 "El modelo determina los mejores municipios para el emplazamiento."
 
-Despues:
+Después:
 
-"El modelo ordena municipios según criterios definidos. El resultado es un punto de partida que conviene contrastar en terreno."
+"El modelo ordena municipios según criterios definidos. Conviene contrastar ese resultado con contexto local y visita en terreno."

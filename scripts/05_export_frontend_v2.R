@@ -20,6 +20,60 @@ mun <- st_read(paths$output_final_geojson, quiet = TRUE)
 mun_base <- st_read(paths$output_base_geojson, quiet = TRUE) |>
   st_transform(4326)
 
+if (file.exists(paths$output_provincias_geojson)) {
+  provincias_bounds <- st_read(paths$output_provincias_geojson, quiet = TRUE) |>
+    st_transform(4326)
+
+  if ("nombre_prov" %in% names(provincias_bounds) && any(mun$provincia == "53", na.rm = TRUE)) {
+    mun_53 <- mun |>
+      mutate(.row_id = row_number()) |>
+      filter(provincia == "53")
+
+    if (nrow(mun_53) > 0) {
+      mun_53_join <- st_join(
+        mun_53,
+        provincias_bounds |>
+          transmute(provincia_boundary = as.character(nombre_prov)),
+        left = TRUE,
+        largest = TRUE,
+        suffix = c("", "_boundary")
+      )
+
+      province_fix <- mun_53_join |>
+        st_drop_geometry() |>
+        transmute(.row_id, provincia_fix = provincia_boundary) |>
+        filter(!is.na(provincia_fix) & provincia_fix != "")
+
+      if (nrow(province_fix) > 0) {
+        mun <- mun |>
+          mutate(.row_id = row_number()) |>
+          left_join(province_fix, by = ".row_id") |>
+          mutate(provincia = if_else(provincia == "53" & !is.na(provincia_fix), provincia_fix, provincia)) |>
+          select(-.row_id, -provincia_fix)
+      }
+
+      mun_53_remaining <- mun |>
+        mutate(.row_id = row_number()) |>
+        filter(provincia == "53")
+
+      if (nrow(mun_53_remaining) > 0) {
+        pts <- mun_53_remaining |>
+          st_point_on_surface()
+        nearest_idx <- st_nearest_feature(pts, provincias_bounds)
+        nearest_prov <- as.character(provincias_bounds$nombre_prov[nearest_idx])
+
+        nearest_fix <- tibble(.row_id = mun_53_remaining$.row_id, provincia_fix = nearest_prov)
+
+        mun <- mun |>
+          mutate(.row_id = row_number()) |>
+          left_join(nearest_fix, by = ".row_id") |>
+          mutate(provincia = if_else(provincia == "53" & !is.na(provincia_fix), provincia_fix, provincia)) |>
+          select(-.row_id, -provincia_fix)
+      }
+    }
+  }
+}
+
 river_access_csv_candidates <- c(
   path(paths$output_dir, "municipios_river_access.csv"),
   path(paths$output_dir, "burgos_river_access.csv")

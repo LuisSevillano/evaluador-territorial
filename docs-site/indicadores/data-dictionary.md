@@ -1,8 +1,7 @@
 # Diccionario completo de datos (`municipios_v2`)
 
 Esta tabla documenta las columnas exportadas en `output/municipios_v2.csv` y `frontend/static/data/municipios_v2.json`.
-
-Sirve para auditar definiciones y origenes antes de interpretar resultados.
+Sirve para auditar definiciones y orígenes antes de interpretar resultados.
 
 | Campo | Tipo | Unidad/rango | Descripción | Origen |
 |---|---|---|---|---|
@@ -65,3 +64,4 @@ Sirve para auditar definiciones y origenes antes de interpretar resultados.
 - `mixed_score` es comparativo multicriterio; no es causal ni prescriptivo.
 - `river_access_score` mide acceso potencial recreativo, no calidad de agua.
 - El valor final depende del alcance territorial activo (`ANALYSIS_SCOPE`).
+- Si un resultado parece raro, conviene revisar primero el desglose por bloques y la fuente de cada indicador.

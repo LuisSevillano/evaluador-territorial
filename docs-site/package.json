@@ -7,11 +7,15 @@
     "docs:build": "vitepress build .",
     "docs:preview": "vitepress preview ."
   },
-  "keywords": ["vitepress", "docs"],
+  "keywords": [
+    "vitepress",
+    "docs"
+  ],
   "author": "El Buen Vivir",
   "license": "UNLICENSED",
   "type": "module",
   "devDependencies": {
+    "playwright": "^1.59.1",
     "vitepress": "^1.6.4"
   }
 }
