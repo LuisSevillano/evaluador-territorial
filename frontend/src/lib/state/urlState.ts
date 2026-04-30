@@ -12,9 +12,9 @@ export type UrlState = {
 	ts?: number;
 	ta?: number;
 	score?: number;
-	cw?: number;
-	aw?: number;
-	nw?: number;
+	clima?: number;
+	accesibilidad?: number;
+	naturaleza?: number;
 	tab?: SheetTab;
 	sel?: string;
 	open?: boolean;
@@ -50,9 +50,10 @@ export const parseUrlState = (search: string): UrlState => {
 		ts: toFiniteNumber(params.get('ts')),
 		ta: toFiniteNumber(params.get('ta')),
 		score: toFiniteNumber(params.get('score')),
-		cw: toFiniteNumber(params.get('cw')),
-		aw: toFiniteNumber(params.get('aw')),
-		nw: toFiniteNumber(params.get('nw')),
+		clima: toFiniteNumber(params.get('clima')) ?? toFiniteNumber(params.get('cw')),
+		accesibilidad:
+			toFiniteNumber(params.get('accesibilidad')) ?? toFiniteNumber(params.get('aw')),
+		naturaleza: toFiniteNumber(params.get('naturaleza')) ?? toFiniteNumber(params.get('nw')),
 		tab:
 			tab === 'sel' || tab === 'filtr' || tab === 'capas' || tab === 'rank' || tab === 'meta'
 				? tab
@@ -73,9 +74,9 @@ export const buildUrlState = (state: UrlState): URLSearchParams => {
 	if (state.ts !== undefined) params.set('ts', String(state.ts));
 	if (state.ta !== undefined) params.set('ta', String(state.ta));
 	if (state.score !== undefined) params.set('score', state.score.toFixed(2));
-	if (state.cw !== undefined) params.set('cw', String(state.cw));
-	if (state.aw !== undefined) params.set('aw', String(state.aw));
-	if (state.nw !== undefined) params.set('nw', String(state.nw));
+	if (state.clima !== undefined) params.set('clima', String(state.clima));
+	if (state.accesibilidad !== undefined) params.set('accesibilidad', String(state.accesibilidad));
+	if (state.naturaleza !== undefined) params.set('naturaleza', String(state.naturaleza));
 	if (state.tab) params.set('tab', state.tab);
 	if (state.sel) params.set('sel', state.sel);
 	if (state.open) params.set('open', '1');

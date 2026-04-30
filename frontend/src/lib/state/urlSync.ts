@@ -37,9 +37,10 @@ export const applyUrlToState = (search: string, current: SyncState) => {
 	if (parsed.ta !== undefined) next.maxThermalAmplitude = clampNumber(parsed.ta, 12, 40);
 	if (parsed.score !== undefined) next.minCompositeScore = clampNumber(parsed.score, 0, 1);
 
-	if (parsed.cw !== undefined) next.climateWeight = clampNumber(parsed.cw, 0, 100);
-	if (parsed.aw !== undefined) next.accessWeight = clampNumber(parsed.aw, 0, 100);
-	if (parsed.nw !== undefined) next.natureWeight = clampNumber(parsed.nw, 0, 100);
+	if (parsed.clima !== undefined) next.climateWeight = clampNumber(parsed.clima, 0, 100);
+	if (parsed.accesibilidad !== undefined)
+		next.accessWeight = clampNumber(parsed.accesibilidad, 0, 100);
+	if (parsed.naturaleza !== undefined) next.natureWeight = clampNumber(parsed.naturaleza, 0, 100);
 
 	if (parsed.tab) {
 		next.activeSheetTab = tabForMode(
@@ -72,9 +73,9 @@ export const buildUrlFromState = (state: SyncState) =>
 				? Number(state.maxThermalAmplitude.toFixed(1))
 				: undefined,
 		score: state.minCompositeScore > 0 ? state.minCompositeScore : undefined,
-		cw: state.viewMode === 'evaluacion' ? state.climateWeight : undefined,
-		aw: state.viewMode === 'evaluacion' ? state.accessWeight : undefined,
-		nw: state.viewMode === 'evaluacion' ? state.natureWeight : undefined,
+		clima: state.viewMode === 'evaluacion' ? state.climateWeight : undefined,
+		accesibilidad: state.viewMode === 'evaluacion' ? state.accessWeight : undefined,
+		naturaleza: state.viewMode === 'evaluacion' ? state.natureWeight : undefined,
 		tab: state.isMobileView && state.activeSheetTab !== 'filtr' ? state.activeSheetTab : undefined,
 		sel: state.selectedMunicipioId,
 		open: state.isMobileView ? state.isBottomSheetOpen : undefined
