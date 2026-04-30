@@ -4,6 +4,8 @@
 	import ClimatePrecipBarsChart from '$lib/components/charts/ClimatePrecipBarsChart.svelte';
 	import MunicipioContextCard from '$lib/components/inspector/MunicipioContextCard.svelte';
 	import { buildMunicipioContext } from '$lib/components/inspector/context';
+	import { getLegendConfig } from '$lib/components/map/coloring';
+	import { classifyMixedScore, labelForScoreBand } from '$lib/components/map/scoreClassification';
 	import ChipButton from '$lib/components/ui/ChipButton.svelte';
 	import { DEFAULT_WEIGHTS_NORMALIZED, DEFAULT_WEIGHTS_RAW } from '$lib/state/scoring';
 
@@ -86,6 +88,14 @@
 			weights
 		});
 	});
+
+	const mixedLegendThresholds = $derived(getLegendConfig('mixed_score', municipios).thresholds as number[]);
+	const scoreLabelWithValue = $derived.by(() => {
+		if (!selectedMunicipio || !Number.isFinite(selectedMunicipio.mixed_score)) return '-';
+		const score = selectedMunicipio.mixed_score as number;
+		const band = classifyMixedScore(score, mixedLegendThresholds);
+		return `${labelForScoreBand(band)} (${score.toFixed(3)})`;
+	});
 </script>
 
 <aside class="inspector">
@@ -100,10 +110,10 @@
 					? ` · ${selectedMunicipio.population.toLocaleString('es-ES')} hab.`
 					: ''}
 			</p>
-			<MunicipioContextCard {context} />
+			<MunicipioContextCard {context} scoreThresholds={mixedLegendThresholds} />
 			<div class="metric-grid">
 				<div class="metric score">
-					<span>Score mixto</span><strong>{selectedMunicipio.mixed_score ?? '-'}</strong>
+					<span>Score mixto</span><strong>{scoreLabelWithValue}</strong>
 				</div>
 				<div class={`metric ${accessTone(selectedMunicipio.travel_bucket)}`}>
 					<span>Accesibilidad</span><strong>{selectedMunicipio.travel_bucket}</strong>

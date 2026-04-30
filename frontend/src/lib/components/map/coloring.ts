@@ -35,6 +35,35 @@ export const travelBucketColors = ['#0f4c5c', '#1f8a70', '#4d7c0f', '#d97706', '
 
 export const missingDataColor = '#9ca3af';
 
+const quantile = (sortedValues: number[], q: number) => {
+	if (sortedValues.length === 0) return NaN;
+	if (sortedValues.length === 1) return sortedValues[0];
+	const pos = (sortedValues.length - 1) * q;
+	const base = Math.floor(pos);
+	const rest = pos - base;
+	const next = sortedValues[Math.min(base + 1, sortedValues.length - 1)];
+	return sortedValues[base] + rest * (next - sortedValues[base]);
+};
+
+const deriveScoreThresholds = (municipios: Municipio[]) => {
+	const values = municipios
+		.map((m) => m.mixed_score)
+		.filter((value): value is number => Number.isFinite(value))
+		.sort((a, b) => a - b);
+
+	if (values.length < 20) return [...scoreThresholds];
+	const first = values[0];
+	const last = values[values.length - 1];
+	if (first === last) return [...scoreThresholds];
+
+	const dynamic = [0.2, 0.4, 0.6, 0.8]
+		.map((q) => quantile(values, q))
+		.filter((v) => Number.isFinite(v));
+
+	if (dynamic.length !== 4) return [...scoreThresholds];
+	return dynamic;
+};
+
 const resolveBucketColor = (value: number, thresholds: readonly number[], colors: readonly string[]) => {
 	if (value <= thresholds[0]) return colors[0];
 	if (value <= thresholds[1]) return colors[1];
@@ -46,6 +75,8 @@ const resolveBucketColor = (value: number, thresholds: readonly number[], colors
 export const buildMunicipioColorExpression = (municipios: Municipio[], mapColorMetric: MapColorMetric) => {
 	const keyAccessor: any = ['to-string', ['coalesce', ['get', 'id'], ['get', 'codigo']]];
 	const expression: any[] = ['match', keyAccessor];
+	const activeScoreThresholds =
+		mapColorMetric === 'mixed_score' ? deriveScoreThresholds(municipios) : [...scoreThresholds];
 
 	for (const municipio of municipios) {
 		const hasOfficialName = typeof municipio.nombre === 'string' && municipio.nombre.trim().length > 0;
@@ -94,7 +125,7 @@ export const buildMunicipioColorExpression = (municipios: Municipio[], mapColorM
 		const color = isMissingData
 			? missingDataColor
 			: mapColorMetric === 'mixed_score'
-				? resolveBucketColor(value as number, scoreThresholds, scoreColors)
+				? resolveBucketColor(value as number, activeScoreThresholds, scoreColors)
 				: mapColorMetric === 'precip_annual_mm'
 					? resolveBucketColor(value as number, precipThresholds, precipColors)
 				: mapColorMetric === 'travel_bucket'
@@ -114,11 +145,14 @@ export const buildMunicipioColorExpression = (municipios: Municipio[], mapColorM
 	return expression;
 };
 
-	export const getLegendConfig = (mapColorMetric: MapColorMetric): LegendConfig =>
+export const getLegendConfig = (
+	mapColorMetric: MapColorMetric,
+	municipios: Municipio[] = []
+): LegendConfig =>
 	mapColorMetric === 'mixed_score'
 		? {
 				title: 'Puntuación territorial',
-				thresholds: [...scoreThresholds],
+				thresholds: deriveScoreThresholds(municipios),
 				colors: [...scoreColors],
 				formatLabel: (value: number) => value.toFixed(2),
 				labels: ['Muy baja', 'Baja', 'Media', 'Alta', 'Muy alta']

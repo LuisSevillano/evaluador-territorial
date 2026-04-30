@@ -1,27 +1,21 @@
 <script lang="ts">
 	import type { MunicipioContext } from '$lib/components/inspector/context';
+	import {
+		classifyMixedScore,
+		labelForScoreBand,
+		normalizeScoreThresholds
+	} from '$lib/components/map/scoreClassification';
 
 	type Props = {
 		context?: MunicipioContext | null;
+		scoreThresholds?: number[];
 	};
 
-	let { context = null }: Props = $props();
+	let { context = null, scoreThresholds = [0.319, 0.354, 0.3885, 0.4283] }: Props = $props();
 
-	const scoreTone = (score: number) => {
-		if (score <= 0.24) return 'very-low';
-		if (score <= 0.3) return 'low';
-		if (score <= 0.36) return 'mid';
-		if (score <= 0.42) return 'high';
-		return 'very-high';
-	};
+	const scoreTone = (score: number) => classifyMixedScore(score, normalizeScoreThresholds(scoreThresholds));
 
-	const scoreLabel = (score: number) => {
-		if (score <= 0.24) return 'Muy bajo';
-		if (score <= 0.3) return 'Bajo';
-		if (score <= 0.36) return 'Intermedio';
-		if (score <= 0.42) return 'Alto';
-		return 'Muy alto';
-	};
+	const scoreLabel = (score: number) => labelForScoreBand(scoreTone(score));
 
 	const blockLabel = (key: string) => {
 		if (key === 'clima') return 'Lluvia';

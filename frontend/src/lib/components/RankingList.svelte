@@ -1,14 +1,22 @@
 <script lang="ts">
 	import type { Municipio } from '$lib/types/municipio';
+	import { classifyMixedScore, labelForScoreBand, normalizeScoreThresholds } from '$lib/components/map/scoreClassification';
 
 	type Props = {
 		rows?: Municipio[];
 		limit?: number;
 		onSelect?: (municipio: Municipio) => void;
 		compact?: boolean;
+		scoreThresholds?: number[];
 	};
 
-	let { rows = [], limit = 25, onSelect = () => undefined, compact = false }: Props = $props();
+	let { rows = [], limit = 25, onSelect = () => undefined, compact = false, scoreThresholds = [] }: Props = $props();
+	const normalizedThresholds = $derived(normalizeScoreThresholds(scoreThresholds));
+	const scoreBadge = (score?: number) => {
+		if (!Number.isFinite(score)) return '-';
+		const band = classifyMixedScore(score as number, normalizedThresholds);
+		return `${labelForScoreBand(band)} (${(score as number).toFixed(3)})`;
+	};
 </script>
 
 <div class:compact class="rank-list">
@@ -17,7 +25,7 @@
 			<span class="idx">#{idx + 1}</span>
 			<span>{municipio.nombre}</span>
 			<small>{municipio.provincia}</small>
-			<strong>{municipio.mixed_score?.toFixed(3) ?? '-'}</strong>
+			<strong>{scoreBadge(municipio.mixed_score)}</strong>
 		</button>
 	{/each}
 </div>
