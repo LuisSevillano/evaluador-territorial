@@ -79,39 +79,79 @@ river_access_csv_candidates <- c(
   path(paths$output_dir, "burgos_river_access.csv")
 )
 river_access_csv <- river_access_csv_candidates[file.exists(river_access_csv_candidates)][1]
+
+existing_river_cols <- c(
+  "river_access_score", "river_access_class", "river_nearest_name",
+  "river_nearest_distance_km", "river_nearest_confidence",
+  "river_candidate_count_10km", "river_method_version"
+)
+has_river_already <- all(existing_river_cols %in% names(mun))
+
 if (!is.na(river_access_csv)) {
-  river_access <- read_csv(river_access_csv, show_col_types = FALSE) |>
-    select(
-      codigo,
-      river_access_score,
-      river_access_class,
-      river_nearest_name,
-      river_nearest_distance_km,
-      river_nearest_confidence,
-      river_candidate_count_10km,
-      river_method_version
-    )
-  mun <- mun |>
-    left_join(river_access, by = "codigo")
+  if (!has_river_already) {
+    river_access <- read_csv(river_access_csv, show_col_types = FALSE) |>
+      select(
+        codigo,
+        river_access_score,
+        river_access_class,
+        river_nearest_name,
+        river_nearest_distance_km,
+        river_nearest_confidence,
+        river_candidate_count_10km,
+        river_method_version
+      )
+    mun <- mun |>
+      left_join(river_access, by = "codigo")
+  }
 } else {
-  mun$river_access_score <- NA_real_
-  mun$river_access_class <- NA_character_
-  mun$river_nearest_name <- NA_character_
-  mun$river_nearest_distance_km <- NA_real_
-  mun$river_nearest_confidence <- NA_real_
-  mun$river_candidate_count_10km <- NA_integer_
-  mun$river_method_version <- NA_character_
+  if (!has_river_already) {
+    mun$river_access_score <- NA_real_
+    mun$river_access_class <- NA_character_
+    mun$river_nearest_name <- NA_character_
+    mun$river_nearest_distance_km <- NA_real_
+    mun$river_nearest_confidence <- NA_real_
+    mun$river_candidate_count_10km <- NA_integer_
+    mun$river_method_version <- NA_character_
+  }
 }
 
-coords <- mun |>
-  st_transform(3857) |>
-  st_geometry() |>
-  st_point_on_surface() |>
-  st_transform(4326) |>
-  st_coordinates()
+coords <- tryCatch(
+  {
+    mun |>
+      st_make_valid() |>
+      st_transform(3857) |>
+      st_geometry() |>
+      st_point_on_surface() |>
+      st_transform(4326) |>
+      st_coordinates()
+  },
+  error = function(e) matrix(numeric(0), ncol = 2)
+)
 
-mun$lon <- coords[, 1]
-mun$lat <- coords[, 2]
+if (nrow(coords) == nrow(mun)) {
+  mun$lon <- coords[, 1]
+  mun$lat <- coords[, 2]
+} else {
+  warning("No se pudieron obtener coordenadas para todas las geometrías. Se usa centroide como fallback.")
+  coords_fb <- tryCatch(
+    {
+      mun |>
+        st_make_valid() |>
+        st_transform(4326) |>
+        st_centroid(of_largest_polygon = TRUE) |>
+        st_coordinates()
+    },
+    error = function(e) matrix(numeric(0), ncol = 2)
+  )
+
+  if (nrow(coords_fb) == nrow(mun)) {
+    mun$lon <- coords_fb[, 1]
+    mun$lat <- coords_fb[, 2]
+  } else {
+    mun$lon <- rep(NA_real_, nrow(mun))
+    mun$lat <- rep(NA_real_, nrow(mun))
+  }
+}
 
 minmax_norm <- function(x, invert = FALSE) {
   rng <- range(x, na.rm = TRUE)
@@ -123,61 +163,91 @@ minmax_norm <- function(x, invert = FALSE) {
   out
 }
 
-mun$precip_norm <- round(minmax_norm(mun$precip_annual_mm, invert = FALSE), 4)
-mun$temp_verano_norm <- round(minmax_norm(mun$temp_summer_mean_c, invert = TRUE), 4)
-mun$temp_invierno_norm <- round(minmax_norm(mun$temp_winter_mean_c, invert = FALSE), 4)
-mun$forest_norm <- round(minmax_norm(mun$forest_pct, invert = FALSE), 4)
-mun$water_norm <- round(minmax_norm(mun$water_pct, invert = FALSE), 4)
-mun$artificial_norm <- round(minmax_norm(mun$artificial_pct, invert = TRUE), 4)
-mun$naturality_norm <- round(minmax_norm(mun$naturality_index, invert = FALSE), 4)
-mun$diversity_norm <- round(minmax_norm(mun$landcover_diversity, invert = FALSE), 4)
-mun$river_access_norm <- round(minmax_norm(mun$river_access_score, invert = FALSE), 4)
+ensure_num_col <- function(df, col_name, default = NA_real_) {
+  if (!col_name %in% names(df)) df[[col_name]] <- rep(default, nrow(df))
+  df
+}
+
+ensure_chr_col <- function(df, col_name, default = NA_character_) {
+  if (!col_name %in% names(df)) df[[col_name]] <- rep(default, nrow(df))
+  df
+}
+
+round_idx <- function(x) round(x, 3)
+
+for (col_name in c(
+  "precip_annual_mm", "temp_summer_mean_c", "temp_winter_mean_c", "temp_jan_mean_c", "temp_jul_mean_c",
+  "forest_pct", "forest_nature_quality", "water_pct", "artificial_pct",
+  "naturality_index", "landcover_diversity", "river_access_score",
+  "relieve_norm", "relieve_score_raw", "dist_estacion_tren_km",
+  "dist_parada_bus_km", "transporte_norm", "dist_renfe_km",
+  "renfe_salidas_dia", "servicio_renfe_norm"
+)) {
+  mun <- ensure_num_col(mun, col_name)
+}
+
+for (col_name in c("renfe_tipo_servicio", "travel_bucket")) {
+  mun <- ensure_chr_col(mun, col_name)
+}
+
+if (all(is.na(mun$forest_nature_quality)) && "forest_pct" %in% names(mun)) {
+  mun$forest_nature_quality <- pmin(1, pmax(0, mun$forest_pct / 100))
+}
+
+mun$precip_norm <- round_idx(minmax_norm(mun$precip_annual_mm, invert = FALSE))
+mun$temp_verano_norm <- round_idx(minmax_norm(mun$temp_summer_mean_c, invert = TRUE))
+mun$temp_invierno_norm <- round_idx(minmax_norm(mun$temp_winter_mean_c, invert = FALSE))
+mun$forest_norm <- round_idx(minmax_norm(mun$forest_pct, invert = FALSE))
+mun$forest_nature_quality_norm <- round_idx(minmax_norm(mun$forest_nature_quality, invert = FALSE))
+mun$water_norm <- round_idx(minmax_norm(mun$water_pct, invert = FALSE))
+mun$artificial_norm <- round_idx(minmax_norm(mun$artificial_pct, invert = TRUE))
+mun$naturality_norm <- round_idx(minmax_norm(mun$naturality_index, invert = FALSE))
+mun$diversity_norm <- round_idx(minmax_norm(mun$landcover_diversity, invert = FALSE))
+mun$river_access_norm <- round_idx(minmax_norm(mun$river_access_score, invert = FALSE))
+mun$relieve_norm <- round_idx(minmax_norm(mun$relieve_norm, invert = FALSE))
 
 travel_order <- c("<=1h30", "<=2h00", "<=2h30", "<=3h30", "<=4h00", ">4h00")
 travel_score <- setNames(rev(seq_along(travel_order)), travel_order)
 access_floor <- 0.2
 access_raw <- (travel_score[mun$travel_bucket] - 1) / (length(travel_order) - 1)
-mun$accesibilidad_norm <- round(access_floor + (1 - access_floor) * access_raw, 4)
+mun$accesibilidad_norm <- round_idx(access_floor + (1 - access_floor) * access_raw)
 
-mun$climate_block_score <- round(
-  rowMeans(cbind(mun$precip_norm, mun$temp_verano_norm, mun$temp_invierno_norm), na.rm = TRUE),
-  4
+mun$climate_block_score <- round_idx(
+  rowMeans(cbind(mun$precip_norm, mun$temp_verano_norm, mun$temp_invierno_norm), na.rm = TRUE)
 )
-mun$access_block_score <- round(mun$accesibilidad_norm, 4)
+mun$access_block_score <- round_idx(mun$accesibilidad_norm)
 nature_weights <- c(
-  forest_norm = 0.30,
+  forest_nature_quality_norm = 0.52,
   water_norm = 0.20,
-  naturality_norm = 0.25,
-  diversity_norm = 0.15,
-  river_access_norm = 0.10
+  diversity_norm = 0.10,
+  river_access_norm = 0.06,
+  relieve_norm = 0.12
 )
 
 nature_matrix <- cbind(
-  forest_norm = mun$forest_norm,
+  forest_nature_quality_norm = mun$forest_nature_quality_norm,
   water_norm = mun$water_norm,
-  naturality_norm = mun$naturality_norm,
   diversity_norm = mun$diversity_norm,
-  river_access_norm = mun$river_access_norm
+  river_access_norm = mun$river_access_norm,
+  relieve_norm = mun$relieve_norm
 )
 
-mun$nature_block_score <- round(
+mun$nature_block_score <- round_idx(
   apply(nature_matrix, 1, function(row_vals) {
     valid <- is.finite(row_vals)
     if (!any(valid)) return(NA_real_)
     sum(row_vals[valid] * nature_weights[valid]) / sum(nature_weights[valid])
-  }),
-  4
+  })
 )
 
 w_climate <- 0.4
 w_access <- 0.3
 w_nature <- 0.3
 
-mun$mixed_score <- round(
+mun$mixed_score <- round_idx(
   w_climate * mun$climate_block_score +
     w_access * mun$access_block_score +
-    w_nature * mun$nature_block_score,
-  4
+    w_nature * mun$nature_block_score
 )
 
 population <- if ("population" %in% names(mun)) mun$population else rep(NA_real_, nrow(mun))
@@ -217,6 +287,7 @@ mun_v2 <- mun |>
     temp_verano_norm,
     temp_invierno_norm,
     forest_pct,
+    forest_nature_quality,
     water_pct,
     artificial_pct,
     naturality_index,
@@ -229,11 +300,14 @@ mun_v2 <- mun |>
     river_candidate_count_10km,
     river_method_version,
     forest_norm,
+    forest_nature_quality_norm,
     water_norm,
     artificial_norm,
     naturality_norm,
     diversity_norm,
     river_access_norm,
+    relieve_score_raw,
+    relieve_norm,
     accesibilidad_norm,
     climate_block_score,
     access_block_score,

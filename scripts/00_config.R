@@ -55,6 +55,23 @@ paths <- list(
   output_ccaa_geojson = path(project_root, "output", "ccaa_boundaries.geojson"),
   output_provincias_geojson = path(project_root, "output", "provincias_boundaries.geojson"),
   output_dataset_metadata_json = path(project_root, "output", "dataset_metadata_v3.json"),
+  output_features_dir = path(project_root, "output", "features"),
+  output_feature_mfe_parquet = path(project_root, "output", "features", "feature_mfe_nature.parquet"),
+  output_feature_relief_parquet = path(project_root, "output", "features", "feature_relief.parquet"),
+  output_feature_climate_parquet = path(project_root, "output", "features", "feature_climate.parquet"),
+  output_feature_isochrones_parquet = path(project_root, "output", "features", "feature_isochrones.parquet"),
+  output_feature_river_parquet = path(project_root, "output", "features", "feature_river_access.parquet"),
+  output_feature_transport_osm_parquet = path(project_root, "output", "features", "feature_transport_osm.parquet"),
+  output_feature_transport_renfe_parquet = path(project_root, "output", "features", "feature_transport_renfe.parquet"),
+  output_feature_mfe_rds = path(project_root, "output", "features", "feature_mfe_nature.rds"),
+  output_feature_relief_rds = path(project_root, "output", "features", "feature_relief.rds"),
+  output_feature_climate_rds = path(project_root, "output", "features", "feature_climate.rds"),
+  output_feature_isochrones_rds = path(project_root, "output", "features", "feature_isochrones.rds"),
+  output_feature_river_rds = path(project_root, "output", "features", "feature_river_access.rds"),
+  output_feature_transport_osm_rds = path(project_root, "output", "features", "feature_transport_osm.rds"),
+  output_feature_transport_renfe_rds = path(project_root, "output", "features", "feature_transport_renfe.rds"),
+  relieve_raw_dir = path(project_root, "data", "raw", "relieve", "copdem"),
+  relieve_processed_dir = path(project_root, "data", "processed", "relieve"),
   corine_geojson = path(project_root, "data", "raw", "corine", "corine_cyl.geojson"),
   output_rivers_geojson = path(project_root, "output", "rios_watercourse_scope.geojson"),
   output_river_basins_geojson = path(project_root, "output", "cuencas_scope.geojson"),
@@ -85,6 +102,8 @@ paths <- list(
 )
 
 invisible(dir_create(paths$output_dir, recurse = TRUE))
+invisible(dir_create(paths$output_features_dir, recurse = TRUE))
+invisible(dir_create(paths$relieve_processed_dir, recurse = TRUE))
 invisible(dir_create(path_dir(paths$frontend_json), recurse = TRUE))
 invisible(dir_create(paths$frontend_isochrones_dir, recurse = TRUE))
 
