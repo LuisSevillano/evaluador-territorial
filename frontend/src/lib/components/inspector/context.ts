@@ -143,22 +143,22 @@ export const buildMunicipioContext = ({
 	const blockDetails: Record<BlockKey, string> = {
 		clima:
 			selectedMunicipio.precip_annual_mm >= medianPrecip
-				? `PPT anual ${selectedMunicipio.precip_annual_mm.toFixed(0)} mm (mediana ${medianPrecip.toFixed(0)} mm).`
-				: `PPT anual ${selectedMunicipio.precip_annual_mm.toFixed(0)} mm por debajo de la mediana (${medianPrecip.toFixed(0)} mm).`,
+				? `Lluvia anual favorable frente a la media de los municipios analizados (${selectedMunicipio.precip_annual_mm.toFixed(0)} mm).`
+				: `Lluvia anual limitada frente a la media de los municipios analizados (${selectedMunicipio.precip_annual_mm.toFixed(0)} mm).`,
 		accesibilidad:
 			selectedMunicipio.travel_bucket === '>4h00'
-				? `Distancia alta: ${selectedMunicipio.travel_bucket}, lo que penaliza accesibilidad.`
+				? `Desplazamiento largo (${selectedMunicipio.travel_bucket}), con encaje bajo en accesibilidad.`
 				: selectedMunicipio.travel_bucket === '<=1h30' || selectedMunicipio.travel_bucket === '<=2h00'
-					? `Distancia corta: ${selectedMunicipio.travel_bucket}, lo que beneficia accesibilidad.`
-					: `Accesibilidad ${bucketLabel(selectedMunicipio.travel_bucket)} (${selectedMunicipio.travel_bucket}).`,
-		naturaleza: `Forestal ${Number(selectedMunicipio.forest_pct ?? 0).toFixed(1)}% (mediana ${medianForest.toFixed(1)}%) · Agua ${Number(selectedMunicipio.water_pct ?? 0).toFixed(1)}% (mediana ${medianWater.toFixed(1)}%).`
+					? `Desplazamiento corto (${selectedMunicipio.travel_bucket}), buen encaje de acceso.`
+					: `Accesibilidad intermedia (${selectedMunicipio.travel_bucket}).`,
+		naturaleza: `Entorno natural ${selectedMunicipio.nature_block_score && selectedMunicipio.nature_block_score >= avgBlocks.naturaleza ? 'por encima de la media' : 'similar a la media'} de los municipios analizados.`
 	};
 
 	const driverCandidates: DriverEvidence[] = breakdown.map((item) => ({
 		key: item.key,
 		effect: item.delta >= 0 ? 'beneficia' : 'penaliza',
 		impact: item.delta,
-		summary: `${blockDetails[item.key]} Bloque ${item.raw.toFixed(3)} vs mediana ${item.avgRaw.toFixed(3)} (impacto ${item.delta >= 0 ? '+' : ''}${item.delta.toFixed(3)}).`
+		summary: blockDetails[item.key]
 	}));
 
 	const positiveDrivers = driverCandidates

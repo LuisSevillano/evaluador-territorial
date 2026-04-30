@@ -6,6 +6,7 @@
 	import { buildMunicipioContext } from '$lib/components/inspector/context';
 	import { getLegendConfig } from '$lib/components/map/coloring';
 	import { classifyMixedScore, labelForScoreBand } from '$lib/components/map/scoreClassification';
+	import { accessToneFromBucket, climateToneFromPrecip } from '$lib/state/metricSemantics';
 	import ChipButton from '$lib/components/ui/ChipButton.svelte';
 	import { DEFAULT_WEIGHTS_NORMALIZED, DEFAULT_WEIGHTS_RAW } from '$lib/state/scoring';
 
@@ -68,17 +69,15 @@
 		return null;
 	});
 
-	const accessTone = (bucket: string) => {
-		if (bucket === '<=1h30' || bucket === '<=2h00') return 'good';
-		if (bucket === '<=2h30' || bucket === '<=3h30') return 'mid';
-		return 'bad';
-	};
-
-	const climateTone = (ppt: number) => {
-		if (ppt >= 900) return 'good';
-		if (ppt >= 600) return 'mid';
-		return 'bad';
-	};
+	const transportRows = $derived([
+		{ label: 'Dist. tren (OSM)', value: `${selectedMunicipio?.dist_estacion_tren_km ?? '-'} km` },
+		{ label: 'Dist. bus (OSM)', value: `${selectedMunicipio?.dist_parada_bus_km ?? '-'} km` },
+		{ label: 'Dist. Renfe', value: `${selectedMunicipio?.dist_renfe_km ?? '-'} km` },
+		{
+			label: 'Servicio Renfe',
+			value: `${selectedMunicipio?.renfe_tipo_servicio ?? '-'} (${selectedMunicipio?.renfe_salidas_dia ?? 0}/dia)`
+		}
+	]);
 
 	const context = $derived.by(() => {
 		return buildMunicipioContext({
@@ -115,22 +114,10 @@
 				<div class="metric score">
 					<span>Score mixto</span><strong>{scoreLabelWithValue}</strong>
 				</div>
-				<div class={`metric ${accessTone(selectedMunicipio.travel_bucket)}`}>
+				<div class={`metric ${accessToneFromBucket(selectedMunicipio.travel_bucket)}`}>
 					<span>Accesibilidad</span><strong>{selectedMunicipio.travel_bucket}</strong>
 				</div>
-				<div class="metric">
-					<span>Dist. estación tren (OSM)</span><strong>{selectedMunicipio.dist_estacion_tren_km ?? '-'} km</strong>
-				</div>
-				<div class="metric">
-					<span>Dist. parada bus (OSM)</span><strong>{selectedMunicipio.dist_parada_bus_km ?? '-'} km</strong>
-				</div>
-				<div class="metric">
-					<span>Estación Renfe</span><strong>{selectedMunicipio.dist_renfe_km ?? '-'} km</strong>
-				</div>
-				<div class="metric">
-					<span>Servicio Renfe</span><strong>{selectedMunicipio.renfe_tipo_servicio ?? '-'} ({selectedMunicipio.renfe_salidas_dia ?? 0} salidas)</strong>
-				</div>
-				<div class={`metric ${climateTone(selectedMunicipio.precip_annual_mm)}`}>
+				<div class={`metric ${climateToneFromPrecip(selectedMunicipio.precip_annual_mm)}`}>
 					<span>Precipitación</span><strong>{selectedMunicipio.precip_annual_mm} mm</strong>
 				</div>
 				<div class="metric">
@@ -154,6 +141,19 @@
 				<div class="metric">
 					<span>Río más cercano</span><strong>{selectedMunicipio.river_nearest_name ?? '-'} ({selectedMunicipio.river_nearest_distance_km ?? '-'} km)</strong>
 				</div>
+			</div>
+			<div class="transport-mini">
+				<strong>Transporte de referencia</strong>
+				<table>
+					<tbody>
+						{#each transportRows as row}
+							<tr>
+								<td>{row.label}</td>
+								<td>{row.value}</td>
+							</tr>
+						{/each}
+					</tbody>
+				</table>
 			</div>
 			<div class="charts">
 				<div class="chart-card">
@@ -438,6 +438,32 @@
 	}
 	.score-control input[type='range'] {
 		height: 10px;
+	}
+	.transport-mini {
+		margin-top: 0.45rem;
+		padding: 0.45rem 0.55rem;
+		border: 1px solid rgba(21, 32, 33, 0.12);
+		border-radius: 9px;
+		background: rgba(255, 255, 255, 0.66);
+	}
+	.transport-mini strong {
+		display: block;
+		font-size: 0.72rem;
+		margin-bottom: 0.3rem;
+		color: #3c5652;
+	}
+	.transport-mini table {
+		width: 100%;
+		border-collapse: collapse;
+		font-size: 0.72rem;
+	}
+	.transport-mini td {
+		padding: 0.14rem 0;
+		vertical-align: top;
+	}
+	.transport-mini td:last-child {
+		text-align: right;
+		color: #3d5552;
 	}
 	.muted {
 		color: #48615d;

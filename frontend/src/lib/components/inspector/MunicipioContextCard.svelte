@@ -22,6 +22,12 @@
 		if (key === 'accesibilidad') return 'Acceso';
 		return 'Naturaleza';
 	};
+
+	const fitLabel = (percentile: number) => {
+		if (percentile >= 75) return 'Encaje alto';
+		if (percentile >= 45) return 'Encaje medio';
+		return 'Encaje bajo';
+	};
 </script>
 
 {#if context}
@@ -38,26 +44,19 @@
 		</div>
 		<div class="explainer">
 			<p>
-				La puntuación en este municipio impulsa más <b>{context.topDriver.key}</b> ({context
-					.topDriver.delta >= 0
-					? '+'
-					: ''}{context.topDriver.delta.toFixed(3)} pts) y penaliza más
-				<b>{context.mainPenalty.key}</b>
-				({context.mainPenalty.delta >= 0 ? '+' : ''}{context.mainPenalty.delta.toFixed(3)} pts).
+				<b>{fitLabel(context.percentile)}.</b>
+				{context.selectedScore >= context.globalAvg
+					? ' Está por encima de la media general del atlas.'
+					: ' Está por debajo de la media general del atlas.'}
 			</p>
 			<p>
-				Posición {context.rank}/{context.total} ({context.percentile.toFixed(0)} percentil), score {context.selectedScore.toFixed(
-					3
-				)}.
+				Posición {context.rank}/{context.total} (percentil {context.percentile.toFixed(0)}).
 			</p>
 			<p>
-				Comparativa: {context.selectedScore >= context.provinceAvg ? 'mejor' : 'peor'} que su provincia
-				({context.provinceAvg.toFixed(3)}), {context.selectedScore >= context.bucketAvg
+				Comparativa: {context.selectedScore >= context.provinceAvg ? 'mejor' : 'peor'} que su provincia y {context.selectedScore >=
+				context.bucketAvg
 					? 'mejor'
-					: 'peor'} que su grupo de accesibilidad ({context.bucketAvg.toFixed(3)}) y {context.selectedScore >=
-				context.globalAvg
-					? 'mejor'
-					: 'peor'} que la media global ({context.globalAvg.toFixed(3)}).
+					: 'peor'} que su grupo de accesibilidad.
 			</p>
 		</div>
 		<div class="block-grid">
@@ -78,27 +77,27 @@
 		</div>
 		<div class="drivers-grid">
 			<div>
-				<strong>✅ Beneficia</strong>
+				<strong>Fortalezas</strong>
 				{#if context.positiveDrivers.length > 0}
 					<ul class="driver-list">
-						{#each context.positiveDrivers as driver}
-							<li><b>{driver.key}</b>: {driver.summary}</li>
+						{#each context.positiveDrivers.slice(0, 2) as driver}
+							<li><b>{blockLabel(driver.key)}</b>: {driver.summary}</li>
 						{/each}
 					</ul>
 				{:else}
-					<p class="empty">No hay impulso claro sobre la media.</p>
+					<p class="empty">No destaca claramente frente al conjunto.</p>
 				{/if}
 			</div>
 			<div>
-				<strong>❌ Penaliza</strong>
+				<strong>Riesgos</strong>
 				{#if context.negativeDrivers.length > 0}
 					<ul class="driver-list">
-						{#each context.negativeDrivers as driver}
-							<li><b>{driver.key}</b>: {driver.summary}</li>
+						{#each context.negativeDrivers.slice(0, 2) as driver}
+							<li><b>{blockLabel(driver.key)}</b>: {driver.summary}</li>
 						{/each}
 					</ul>
 				{:else}
-					<p class="empty">No hay penalizacion significativa frente a la media.</p>
+					<p class="empty">No presenta riesgos claros frente al conjunto.</p>
 				{/if}
 			</div>
 		</div>
