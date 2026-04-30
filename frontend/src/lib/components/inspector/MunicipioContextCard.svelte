@@ -5,13 +5,15 @@
 		labelForScoreBand,
 		normalizeScoreThresholds
 	} from '$lib/components/map/scoreClassification';
+	import ReliefIndicator from '$lib/components/inspector/ReliefIndicator.svelte';
 
 	type Props = {
 		context?: MunicipioContext | null;
 		scoreThresholds?: number[];
+		relieveNorm?: number;
 	};
 
-	let { context = null, scoreThresholds = [0.319, 0.354, 0.3885, 0.4283] }: Props = $props();
+	let { context = null, scoreThresholds = [0.319, 0.354, 0.3885, 0.4283], relieveNorm = undefined }: Props = $props();
 
 	const scoreTone = (score: number) => classifyMixedScore(score, normalizeScoreThresholds(scoreThresholds));
 
@@ -59,6 +61,9 @@
 					: 'peor'} que su grupo de accesibilidad.
 			</p>
 		</div>
+		<div class="relief-row">
+			<ReliefIndicator relieveNorm={relieveNorm} />
+		</div>
 		<div class="block-grid">
 			{#each context.blockBreakdown as block}
 				{@const pctAbove = block.avgRaw > 0 ? ((block.raw - block.avgRaw) / block.avgRaw) * 100 : 0}
@@ -105,6 +110,10 @@
 {/if}
 
 <style>
+	.relief-row {
+		margin-bottom: 0.2rem;
+	}
+
 	.explain-card {
 		margin-top: 0.5rem;
 		padding: 0.5rem;
@@ -205,7 +214,11 @@
 		margin-top: 0.18rem;
 	}
 	.explainer p {
-		margin-bottom: 0.5rem;
+		margin: 0;
+	}
+	.explainer {
+		display: grid;
+		gap: 0.5rem;
 	}
 	.block-grid {
 		display: grid;

@@ -8,6 +8,7 @@
 	import { classifyMixedScore, labelForScoreBand } from '$lib/components/map/scoreClassification';
 	import { accessToneFromBucket, climateToneFromPrecip } from '$lib/state/metricSemantics';
 	import ChipButton from '$lib/components/ui/ChipButton.svelte';
+	import ReliefIndicator from '$lib/components/inspector/ReliefIndicator.svelte';
 	import { DEFAULT_WEIGHTS_NORMALIZED, DEFAULT_WEIGHTS_RAW } from '$lib/state/scoring';
 
 	type Props = {
@@ -109,7 +110,7 @@
 					? ` · ${selectedMunicipio.population.toLocaleString('es-ES')} hab.`
 					: ''}
 			</p>
-			<MunicipioContextCard {context} scoreThresholds={mixedLegendThresholds} />
+			<MunicipioContextCard {context} scoreThresholds={mixedLegendThresholds} relieveNorm={selectedMunicipio.relieve_norm} />
 			<div class="metric-grid">
 				<div class="metric score">
 					<span>Score mixto</span><strong>{scoreLabelWithValue}</strong>
@@ -135,13 +136,13 @@
 						>{selectedMunicipio.forest_pct ?? '-'} / {selectedMunicipio.water_pct ?? '-'}</strong
 					>
 				</div>
-				<div class="metric">
-					<span>Acceso a baño</span><strong>{selectedMunicipio.river_access_class ?? '-'} ({selectedMunicipio.river_access_score ?? '-'} )</strong>
-				</div>
-				<div class="metric">
-					<span>Río más cercano</span><strong>{selectedMunicipio.river_nearest_name ?? '-'} ({selectedMunicipio.river_nearest_distance_km ?? '-'} km)</strong>
-				</div>
+			<div class="metric">
+				<span>Acceso a baño</span><strong>{selectedMunicipio.river_access_class ?? '-'} ({selectedMunicipio.river_access_score ?? '-'} )</strong>
 			</div>
+			<div class="metric">
+				<span>Río más cercano</span><strong>{selectedMunicipio.river_nearest_name ?? '-'} ({selectedMunicipio.river_nearest_distance_km ?? '-'} km)</strong>
+			</div>
+		</div>
 			<div class="transport-mini">
 				<strong>Transporte de referencia</strong>
 				<table>
