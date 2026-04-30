@@ -5,6 +5,7 @@ library(dplyr)
 library(terra)
 library(readr)
 library(tidyr)
+library(arrow)
 
 terra::terraOptions(memfrac = 0.7)
 
@@ -220,5 +221,18 @@ municipios_clima <- municipios |>
 write_csv(monthly_climatology, paths$output_climate_monthly_csv)
 st_write(municipios_clima, paths$output_clima_geojson, delete_dsn = TRUE, quiet = TRUE)
 
-message("OK: clima municipal real agregado por poligono guardado en ", paths$output_clima_geojson)
+feature_climate <- municipios_clima |>
+  st_drop_geometry() |>
+  transmute(
+    codigo,
+    precip_annual_mm,
+    temp_winter_mean_c,
+    temp_summer_mean_c,
+    temp_jan_mean_c,
+    temp_jul_mean_c
+  )
+saveRDS(feature_climate, paths$output_feature_climate_rds)
+try(write_parquet(feature_climate, paths$output_feature_climate_parquet), silent = TRUE)
+
 message("OK: climatologia mensual guardada en ", paths$output_climate_monthly_csv)
+message("OK: clima municipal real agregado por poligono guardado en ", paths$output_clima_geojson)

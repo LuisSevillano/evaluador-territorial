@@ -5,6 +5,7 @@ library(dplyr)
 library(readr)
 library(fs)
 library(stringr)
+library(arrow)
 
 sf_use_s2(FALSE)
 
@@ -17,7 +18,19 @@ if (!file.exists(paths$output_base_geojson)) {
 
 codprov_target <- trimws(Sys.getenv("BANIO_CODPROV", unset = ""))
 demarc_codes_env <- trimws(Sys.getenv("BANIO_DEMARC_CODES", unset = ""))
-downloads_dir <- path_expand("~/Downloads")
+hydro_dir_env <- trimws(Sys.getenv("BANIO_HYDRO_DIR", unset = ""))
+hydro_candidates <- c(
+  if (nzchar(hydro_dir_env)) path_abs(hydro_dir_env) else character(0),
+  path(project_root, "data", "raw", "hydrography"),
+  paths$rivers_raw_dir,
+  path_expand("~/Downloads")
+)
+hydro_candidates <- unique(hydro_candidates)
+hydro_data_dir <- hydro_candidates[file.exists(hydro_candidates)][1]
+if (is.na(hydro_data_dir) || !nzchar(hydro_data_dir)) {
+  stop("No se encontro directorio de hidrografia. Define BANIO_HYDRO_DIR o coloca datos en data/raw/hydrography")
+}
+log_step(paste0("Directorio hidrografia: ", hydro_data_dir))
 method_version <- "v3_candidate_confidence"
 cache_dir <- path(paths$rivers_cache_dir, "banio_access")
 dir_create(cache_dir, recurse = TRUE)
@@ -100,14 +113,14 @@ if (file.exists(paths$river_whitelist_txt)) {
 }
 
 tramocurso_shps <- dir_ls(
-  downloads_dir,
+  hydro_data_dir,
   recurse = TRUE,
   regexp = "DH_V0_ES[0-9]{3}.*/hi_tramocurso_l_ES[0-9]{3}\\.shp$",
   type = "file"
 )
 
 if (length(tramocurso_shps) == 0) {
-  stop("No se han encontrado SHP hi_tramocurso_l_ESxxx en ~/Downloads")
+  stop("No se han encontrado SHP hi_tramocurso_l_ESxxx en ", hydro_data_dir)
 }
 
 demarc_codes <- character(0)
@@ -117,7 +130,7 @@ if (nzchar(demarc_codes_env)) {
   demarc_codes <- demarc_codes[nzchar(demarc_codes)]
 } else {
   demarc_shps <- dir_ls(
-    downloads_dir,
+    hydro_data_dir,
     recurse = TRUE,
     regexp = "DH_V0_ES[0-9]{3}.*/re_demarcacion_s_ES[0-9]{3}\\.shp$",
     type = "file"
@@ -497,6 +510,20 @@ if (nzchar(codprov_target)) {
 
 st_write(municipal_geo, out_geo, delete_dsn = TRUE, quiet = TRUE)
 write_csv(st_drop_geometry(municipal_geo), out_csv)
+feature_river <- municipal_geo |>
+  st_drop_geometry() |>
+  transmute(
+    codigo,
+    river_access_score = round(as.numeric(river_access_score), 3),
+    river_access_class,
+    river_nearest_name,
+    river_nearest_distance_km = round(as.numeric(river_nearest_distance_km), 3),
+    river_nearest_confidence = round(as.numeric(river_nearest_confidence), 3),
+    river_candidate_count_10km,
+    river_method_version
+  )
+saveRDS(feature_river, paths$output_feature_river_rds)
+try(write_parquet(feature_river, paths$output_feature_river_parquet), silent = TRUE)
 log_step("Escritura municipal completada")
 if (write_diag_full) {
   write_csv(

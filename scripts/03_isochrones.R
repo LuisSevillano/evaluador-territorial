@@ -2,11 +2,13 @@ source("scripts/00_config.R")
 
 library(sf)
 library(dplyr)
+library(arrow)
 
 sf_use_s2(FALSE)
 
-if (!file.exists(paths$output_clima_geojson)) {
-  stop("No existe municipios_clima.geojson. Ejecuta primero scripts/02_clima_real.R")
+input_geojson <- if (file.exists(paths$output_entorno_geojson)) paths$output_entorno_geojson else paths$output_clima_geojson
+if (!file.exists(input_geojson)) {
+  stop("No existe dataset de entrada para isocronas (municipios_entorno o municipios_clima)")
 }
 
 iso_files <- c(
@@ -22,7 +24,7 @@ if (length(missing_iso) > 0) {
   stop("Faltan isocronas: ", paste(missing_iso, collapse = ", "))
 }
 
-municipios <- st_read(paths$output_clima_geojson, quiet = TRUE)
+municipios <- st_read(input_geojson, quiet = TRUE)
 centroides <- municipios |>
   st_transform(3857) |>
   st_centroid() |>
@@ -66,6 +68,20 @@ municipios <- municipios |>
 
 st_write(municipios, paths$output_final_geojson, delete_dsn = TRUE, quiet = TRUE)
 message("OK: isocronas integradas y travel_bucket generado en ", paths$output_final_geojson)
+
+feature_iso <- municipios |>
+  st_drop_geometry() |>
+  transmute(
+    codigo,
+    iso_01h30m,
+    iso_02h00m,
+    iso_02h30m,
+    iso_03h30m,
+    iso_04h00m,
+    travel_bucket
+  )
+saveRDS(feature_iso, paths$output_feature_isochrones_rds)
+try(write_parquet(feature_iso, paths$output_feature_isochrones_parquet), silent = TRUE)
 
 for (iso_name in names(iso_files)) {
   target_path <- file.path(paths$frontend_isochrones_dir, basename(iso_files[[iso_name]]))

@@ -1,11 +1,13 @@
 #!/usr/bin/env Rscript
+source("scripts/00_config.R")
+
 library(fs)
 library(jsonlite)
 library(sf)
 library(dplyr)
+library(arrow)
 
-project_root <- path_abs(".")
-output_final_geojson <- path(project_root, "output", "municipios_final.geojson")
+output_final_geojson <- paths$output_final_geojson
 intermediate_dir <- path(project_root, "data", "intermediate")
 dir_create(intermediate_dir)
 
@@ -192,7 +194,7 @@ calc_renfe_service <- function(mun_sf, renfe_data) {
   
   raw_score <- 0.4 * norm_dist + 0.4 * norm_salidas + 0.2 * tipo_score
   
-  result$servicio_renfe_norm <- round(floor_val + (1 - floor_val) * raw_score, 4)
+  result$servicio_renfe_norm <- round(floor_val + (1 - floor_val) * raw_score, 3)
   result$servicio_renfe_norm <- pmin(pmax(result$servicio_renfe_norm, floor_val), 1)
   
   result
@@ -222,6 +224,18 @@ if (is.null(renfe_processed)) {
 
 message("[renfe] Distancia media: ", round(mean(mun$dist_renfe_km, na.rm = TRUE), 1), " km")
 message("[renfe] Score medio: ", round(mean(mun$servicio_renfe_norm, na.rm = TRUE), 3))
+
+feature_renfe <- mun |>
+  st_drop_geometry() |>
+  transmute(
+    codigo,
+    dist_renfe_km,
+    renfe_salidas_dia,
+    renfe_tipo_servicio,
+    servicio_renfe_norm
+  )
+saveRDS(feature_renfe, paths$output_feature_transport_renfe_rds)
+try(write_parquet(feature_renfe, paths$output_feature_transport_renfe_parquet), silent = TRUE)
 
 sf::st_write(mun, output_final_geojson, delete_dsn = TRUE, quiet = TRUE)
 message("[renfe] OK: servicio Renfe integrado")
