@@ -13,6 +13,7 @@
 	import ClimateFilters from '$lib/components/filters/ClimateFilters.svelte';
 	import ColorLegend from '$lib/components/ColorLegend.svelte';
 	import { getLegendConfig } from '$lib/components/map/coloring';
+	import { classifyMixedScore, labelForScoreBand } from '$lib/components/map/scoreClassification';
 	import { applyUrlToState, buildUrlFromState } from '$lib/state/urlSync';
 	import { normalizeProvinceName } from '$lib/state/provinces';
 	import { FILTER_HELP } from '$lib/state/filterHelp';
@@ -122,6 +123,13 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 	let urlStateReady = $state(false);
 	let showDesktopEvalTable = $state(false);
 	let didHydrateThermalAmplitudeDefault = $state(false);
+	let desktopTableReady = $state(false);
+	let desktopTableLoading = $state(true);
+	let tableScrollTop = $state(0);
+	let tableViewportHeight = $state(520);
+	let desktopTableEl = $state<HTMLDivElement | null>(null);
+	const tableRowHeight = 38;
+	const tableOverscan = 24;
 
 	const provinciasDisponibles = $derived([
 		'Todas',
@@ -190,8 +198,20 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 	);
 
 	const tableRows = $derived(
-		sortRows(municipiosFiltrados, sortBy, sortDirection, normalizedWeights, bucketOrder)
+		sortRows(municipiosFiltrados, sortBy, sortDirection, bucketOrder)
 	);
+
+	const virtualWindow = $derived.by(() => {
+		const total = tableRows.length;
+		const visibleCount = Math.max(20, Math.ceil(tableViewportHeight / tableRowHeight) + tableOverscan * 2);
+		const start = Math.max(0, Math.floor(tableScrollTop / tableRowHeight) - tableOverscan);
+		const end = Math.min(total, start + visibleCount);
+		const paddingTop = start * tableRowHeight;
+		const paddingBottom = Math.max(0, (total - end) * tableRowHeight);
+		return { start, end, paddingTop, paddingBottom };
+	});
+
+	const virtualTableRows = $derived(tableRows.slice(virtualWindow.start, virtualWindow.end));
 
 	const sensitivityOverlap = $derived(sensitivityTop10Overlap(tableRows, baselineTopIds));
 
@@ -271,7 +291,13 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 		return 'Puntuación global';
 	});
 
-	const topbarLegendConfig = $derived(getLegendConfig(mapColorMetric));
+	const topbarLegendConfig = $derived(getLegendConfig(mapColorMetric, municipiosScoredForView));
+	const mixedScoreThresholds = $derived(getLegendConfig('mixed_score', municipiosScoredForView).thresholds as number[]);
+	const formatMixedScore = (score?: number) => {
+		if (!Number.isFinite(score)) return '-';
+		const band = classifyMixedScore(score as number, mixedScoreThresholds);
+		return `${labelForScoreBand(band)} (${(score as number).toFixed(3)})`;
+	};
 	const topbarLegendTitle = $derived(isMobileView ? 'Puntuación' : topbarLegendConfig.title);
 
 	const topCandidate = $derived(tableRows[0] ?? null);
@@ -525,6 +551,42 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 	$effect(() => {
 		if (viewMode === 'exploracion') showDesktopEvalTable = false;
 	});
+
+	$effect(() => {
+		if (!desktopTableEl) return;
+		tableViewportHeight = desktopTableEl.clientHeight;
+	});
+
+	$effect(() => {
+		if (typeof window === 'undefined') return;
+		desktopTableReady = false;
+		desktopTableLoading = !isMobileView;
+		if (isMobileView) return;
+		const activate = () => {
+			desktopTableReady = true;
+			desktopTableLoading = false;
+		};
+		if ('requestIdleCallback' in window) {
+			const id = (window as any).requestIdleCallback(activate, { timeout: 700 });
+			return () => (window as any).cancelIdleCallback?.(id);
+		}
+		const t = globalThis.setTimeout(activate, 250);
+		return () => globalThis.clearTimeout(t);
+	});
+
+	$effect(() => {
+		if (typeof window === 'undefined' || isMobileView || !desktopTableReady) return;
+		tableRows.length;
+		sortBy;
+		sortDirection;
+		provinceFilter;
+		minCompositeScore;
+		desktopTableLoading = true;
+		const t = globalThis.setTimeout(() => {
+			desktopTableLoading = false;
+		}, 140);
+		return () => globalThis.clearTimeout(t);
+	});
 </script>
 
 <svelte:head>
@@ -724,7 +786,12 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 			{/if}
 			{#if viewMode !== 'evaluacion' || showDesktopEvalTable}
 			<section class="desktop-table" aria-label="Tabla analítica de municipios">
-				<div class="desktop-table-inner">
+				<div
+					class="desktop-table-inner"
+					bind:this={desktopTableEl}
+					onscroll={(event) => (tableScrollTop = (event.currentTarget as HTMLDivElement).scrollTop)}
+				>
+					{#if (desktopTableReady && !desktopTableLoading) || isMobileView}
 					<table>
 						<thead>
 							<tr>
@@ -738,7 +805,8 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 							</tr>
 						</thead>
 						<tbody>
-							{#each tableRows as municipio (municipio.id)}
+							<tr class="spacer-row" aria-hidden="true" style={`height:${virtualWindow.paddingTop}px`}><td colspan="7"></td></tr>
+							{#each virtualTableRows as municipio (municipio.id)}
 								<tr onclick={() => handleSelectMunicipio(municipio)}>
 									<td>{municipio.nombre}</td>
 									<td>{municipio.provincia}</td>
@@ -746,11 +814,30 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 									<td>{municipio.precip_annual_mm}</td>
 									<td>{municipio.temp_winter_mean_c}</td>
 									<td>{municipio.temp_summer_mean_c}</td>
-									<td>{municipio.mixed_score?.toFixed(3) ?? '-'}</td>
+								<td>{formatMixedScore(municipio.mixed_score)}</td>
 								</tr>
 							{/each}
+							<tr class="spacer-row" aria-hidden="true" style={`height:${virtualWindow.paddingBottom}px`}><td colspan="7"></td></tr>
 						</tbody>
 					</table>
+					{:else}
+						<div class="table-loading-wrap">
+							<div class="table-loading">Cargando tabla...</div>
+							<div class="table-skeleton" aria-hidden="true">
+								{#each Array(9) as _, idx}
+									<div class="skeleton-row" style={`animation-delay:${idx * 40}ms`}>
+										<span class="sk sk-sm"></span>
+										<span class="sk sk-lg"></span>
+										<span class="sk sk-md"></span>
+										<span class="sk sk-md"></span>
+										<span class="sk sk-md"></span>
+										<span class="sk sk-md"></span>
+										<span class="sk sk-lg"></span>
+									</div>
+								{/each}
+							</div>
+						</div>
+					{/if}
 				</div>
 			</section>
 			{/if}
@@ -910,7 +997,7 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 							<div class="sheet-rank">
 								{#if viewMode === 'evaluacion'}
 									<p class="sheet-meta">Top 25 en base a score mixto actual.</p>
-									<RankingList rows={tableRows} limit={25} compact={true} onSelect={handleSelectMunicipio} />
+									<RankingList rows={tableRows} limit={25} compact={true} onSelect={handleSelectMunicipio} scoreThresholds={mixedScoreThresholds} />
 								{:else}
 									<p class="sheet-meta">El ranking se utiliza en modo evaluación.</p>
 									<button class="sheet-clear" onclick={() => { uiStore.state.viewMode = 'evaluacion'; handleSelectSheetTab('rank'); }}>Cambiar a evaluación</button>
@@ -964,11 +1051,11 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 					</div>
 					{#if desktopEvalPanel === 'top'}
 						<p class="muted">Top 25 por score mixto · robustez {sensitivityOverlap}/10</p>
-						<RankingList rows={tableRows} limit={25} onSelect={handleSelectMunicipio} />
+						<RankingList rows={tableRows} limit={25} onSelect={handleSelectMunicipio} scoreThresholds={mixedScoreThresholds} />
 					{:else}
 						{#if shortlistMunicipios.length > 0}
 							<p class="muted">Municipios guardados en shortlist.</p>
-							<RankingList rows={shortlistMunicipios} limit={200} onSelect={handleSelectMunicipio} />
+							<RankingList rows={shortlistMunicipios} limit={200} onSelect={handleSelectMunicipio} scoreThresholds={mixedScoreThresholds} />
 						{:else}
 							<p class="muted">Tu shortlist está vacía. Abre un municipio y pulsa "Guardar shortlist".</p>
 						{/if}
@@ -1208,6 +1295,11 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 		border-bottom: 1px solid rgba(21, 32, 33, 0.12);
 		padding: 0.32rem 0.45rem;
 		white-space: nowrap;
+		text-align: right;
+	}
+	.desktop-table th:first-child,
+	.desktop-table td:first-child {
+		text-align: left;
 	}
 	.desktop-table th button {
 		width: auto;
@@ -1225,6 +1317,50 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 	}
 	.desktop-table tbody tr:hover {
 		background: rgba(33, 102, 109, 0.08);
+	}
+	.desktop-table tbody tr.spacer-row {
+		cursor: default;
+	}
+	.desktop-table tbody tr.spacer-row:hover {
+		background: transparent;
+	}
+	.table-loading {
+		display: grid;
+		place-items: center;
+		height: auto;
+		font-size: 0.82rem;
+		color: #3f5652;
+	}
+	.table-loading-wrap {
+		display: grid;
+		gap: 0.5rem;
+		padding: 0.6rem;
+	}
+	.table-skeleton {
+		display: grid;
+		gap: 0.28rem;
+	}
+	.skeleton-row {
+		display: grid;
+		grid-template-columns: 0.5fr 1.6fr 0.8fr 0.7fr 0.7fr 0.7fr 1fr;
+		gap: 0.4rem;
+		height: 28px;
+		align-items: center;
+	}
+	.sk {
+		display: inline-block;
+		height: 12px;
+		border-radius: 999px;
+		background: linear-gradient(90deg, rgba(203, 193, 174, 0.34), rgba(236, 228, 212, 0.86), rgba(203, 193, 174, 0.34));
+		background-size: 220% 100%;
+		animation: skeleton-shimmer 1.35s ease-in-out infinite;
+	}
+	.sk-sm { width: 60%; }
+	.sk-md { width: 78%; }
+	.sk-lg { width: 94%; }
+	@keyframes skeleton-shimmer {
+		0% { background-position: 100% 0; }
+		100% { background-position: -100% 0; }
 	}
 	.panel-wrapper {
 		display: contents;

@@ -1,7 +1,5 @@
 import type { Municipio } from '$lib/types/municipio';
 import type { TravelBucket } from '$lib/state/filters';
-import type { WeightsNormalized } from '$lib/state/scoring';
-import { scoreForMunicipio } from '$lib/state/scoring';
 
 export type SortField =
 	| 'nombre'
@@ -43,7 +41,6 @@ export const sortRows = (
 	rows: Municipio[],
 	sortBy: SortField,
 	sortDirection: SortDirection,
-	weights: WeightsNormalized,
 	bucketOrder: Record<TravelBucket, number>
 ): Municipio[] => {
 	return [...rows].sort((a, b) => {
@@ -53,7 +50,7 @@ export const sortRows = (
 		} else if (sortBy === 'nombre' || sortBy === 'provincia') {
 			cmp = a[sortBy].localeCompare(b[sortBy], 'es');
 		} else if (sortBy === 'mixed_score') {
-			cmp = scoreForMunicipio(a, weights) - scoreForMunicipio(b, weights);
+			cmp = (a.mixed_score ?? 0) - (b.mixed_score ?? 0);
 		} else {
 			cmp = (a[sortBy] ?? 0) - (b[sortBy] ?? 0);
 		}
