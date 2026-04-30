@@ -709,6 +709,7 @@
 	onMount(() => {
 		const unregisterPmtiles = registerPmtiles();
 		initialBoundsApplied = false;
+		let resizeObserver: ResizeObserver | null = null;
 
 		map = new maplibregl.Map({
 			container: mapContainer,
@@ -819,9 +820,22 @@
 			isMapLoading = false;
 		});
 
+		if (typeof ResizeObserver !== 'undefined') {
+			resizeObserver = new ResizeObserver(() => {
+				if (!map) return;
+				requestAnimationFrame(() => {
+					if (!map || !mapContainer) return;
+					if (mapContainer.clientWidth === 0 || mapContainer.clientHeight === 0) return;
+					map.resize();
+				});
+			});
+			resizeObserver.observe(mapContainer);
+		}
+
 		return () => {
 			mapReady = false;
 			initialBoundsApplied = false;
+			resizeObserver?.disconnect();
 			unregisterPmtiles();
 			map?.remove();
 		};
