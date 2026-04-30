@@ -52,6 +52,8 @@ export type Municipio = {
 	renfe_salidas_dia?: number;
 	renfe_tipo_servicio?: string;
 	servicio_renfe_norm?: number;
+	relieve_norm?: number;
+	relieve_score_raw?: number;
 };
 
 export type MunicipioClimateMonthly = {
