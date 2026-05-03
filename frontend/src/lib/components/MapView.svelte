@@ -753,12 +753,18 @@
 					'fill-color': [
 						'case',
 						['has', 'river_access_score'],
-						['interpolate', ['linear'], ['get', 'river_access_score'],
-							0, '#ef4444',
-							0.5, '#eab308',
-							1, '#22c55e'
+						[
+							'interpolate',
+							['linear'],
+							['to-number', ['get', 'river_access_score']],
+							10,
+							'#ef4444',
+							55,
+							'#eab308',
+							100,
+							'#22c55e'
 						],
-						'#4ade80'
+						'#9ca3af'
 					],
 					'fill-opacity': ['interpolate', ['linear'], ['zoom'], 9, 0.04, 14, 0.26]
 				}
