@@ -418,6 +418,7 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 		if (typeof window === 'undefined' || urlStateReady) return;
 		const { next, pendingSelectedMunicipioId } = applyUrlToState(window.location.search, {
 			viewMode,
+			mapViewMode: uiStore.state.mapViewMode,
 			query,
 			provinceFilter,
 			maxTravelBucket,
@@ -437,6 +438,7 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 		});
 		Object.assign(uiStore.state, {
 			viewMode: next.viewMode ?? uiStore.state.viewMode,
+			mapViewMode: next.mapViewMode ?? uiStore.state.mapViewMode,
 			activeSheetTab: next.activeSheetTab ?? uiStore.state.activeSheetTab,
 			isBottomSheetOpen: next.isBottomSheetOpen ?? uiStore.state.isBottomSheetOpen
 		});
@@ -478,6 +480,7 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 		if (typeof window === 'undefined' || !urlStateReady) return;
 		const params = buildUrlFromState({
 			viewMode,
+			mapViewMode: uiStore.state.mapViewMode,
 			query,
 			provinceFilter,
 			maxTravelBucket,

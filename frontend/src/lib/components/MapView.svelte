@@ -63,12 +63,16 @@
 		onToggleIgnSatellite = () => undefined,
 		onToggleIgnWmsBase = () => undefined,
 		isMobileView = false,
-		isBottomSheetOpen = false
+		isBottomSheetOpen = false,
+		viewMode: viewModeProp = 'auto',
+		onViewModeChange = () => undefined
 	}: Props = $props();
 
 	let mapContainer: HTMLDivElement;
 	let map: maplibregl.Map;
 	let mapReady = $state(false);
+
+	const viewMode = $derived(viewModeProp ?? 'auto');
 
 	const municipiosSourceId = 'municipios-centroides-source';
 	const municipiosLayerId = 'municipios-centroides-layer';
@@ -153,14 +157,6 @@
 
 	const GRID_MIN_ZOOM = 10.8;
 	let currentZoom = $state(0);
-	let viewMode = $state<MapViewMode>('auto');
-
-	// Use prop if provided, otherwise use local state
-	$effect(() => {
-		if (viewMode !== undefined) {
-			viewMode = viewMode;
-		}
-	});
 
 	const visibility = $derived.by(() => {
 		const gridVisible =
@@ -188,12 +184,7 @@
 		setLayerVisibility(gridLineLayerId, v.gridVisible || v.municipalityLineVisible);
 	};
 
-	// Handle view mode changes from UI
-	$effect(() => {
-		if (viewMode !== undefined) {
-			viewMode = viewMode;
-		}
-	});
+
 
 	const paintColorExpression = $derived.by(() =>
 		buildMunicipioColorExpression(municipios, mapColorMetric)
@@ -1052,6 +1043,12 @@
 					Satelite
 				</button>
 			</div>
+			<ViewControl
+				viewMode={viewMode}
+				onChange={(mode) => {
+					onViewModeChange(mode);
+				}}
+			/>
 			{#if isMapLoading}
 				<MapLoadingBadge />
 			{/if}

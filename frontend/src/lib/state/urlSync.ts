@@ -4,6 +4,7 @@ import { tabForMode } from '$lib/state/viewMode';
 
 type SyncState = {
 	viewMode: 'exploracion' | 'evaluacion';
+	mapViewMode: 'auto' | 'municipality' | 'grid';
 	query: string;
 	provinceFilter: string;
 	maxTravelBucket: '<=1h30' | '<=2h00' | '<=2h30' | '<=3h30' | '<=4h00' | '>4h00';
@@ -27,6 +28,7 @@ export const applyUrlToState = (search: string, current: SyncState) => {
 	const next: Partial<SyncState> = {};
 
 	if (parsed.mode) next.viewMode = parsed.mode;
+	if (parsed.mapView) next.mapViewMode = parsed.mapView;
 	if (parsed.q) next.query = parsed.q;
 	if (parsed.province) next.provinceFilter = parsed.province;
 	if (parsed.travel) next.maxTravelBucket = parsed.travel;
@@ -76,6 +78,7 @@ export const buildUrlFromState = (state: SyncState) =>
 		clima: state.viewMode === 'evaluacion' ? state.climateWeight : undefined,
 		accesibilidad: state.viewMode === 'evaluacion' ? state.accessWeight : undefined,
 		naturaleza: state.viewMode === 'evaluacion' ? state.natureWeight : undefined,
+		mapView: state.mapViewMode !== 'auto' ? state.mapViewMode : undefined,
 		tab: state.isMobileView && state.activeSheetTab !== 'filtr' ? state.activeSheetTab : undefined,
 		sel: state.selectedMunicipioId,
 		open: state.isMobileView ? state.isBottomSheetOpen : undefined

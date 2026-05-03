@@ -9,7 +9,7 @@ export const createUiStore = () => {
 		isBottomSheetOpen: false,
 		mapColorMetric: 'mixed_score' as MapColorMetric,
 		viewMode: 'exploracion' as ViewMode,
-		activeSheetTab: 'filtro' as SheetTab,
+		activeSheetTab: 'filtr' as SheetTab,
 		isMobileView: false,
 		desktopEvalPanel: 'top' as 'top' | 'shortlist',
 		mapViewMode: 'auto' as MapViewMode
