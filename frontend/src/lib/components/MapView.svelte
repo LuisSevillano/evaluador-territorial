@@ -116,6 +116,9 @@
 	const provinciasLineLayerId = 'provincias-line-layer';
 	const ccaaPmtilesSourceId = 'ccaa-pmtiles-source';
 	const ccaaLineLayerId = 'ccaa-line-layer';
+	const gridPmtilesSourceId = 'grid-pmtiles-source';
+	const gridFillLayerId = 'grid-fill-layer';
+	const gridLineLayerId = 'grid-line-layer';
 	const ignWmsSourceId = 'ign-wms-source';
 	const ignWmsLayerId = 'ign-wms-layer';
 	const ignSatelliteSourceId = 'ign-satellite-wms-source';
@@ -171,9 +174,8 @@
 		const v = visibility;
 		setLayerVisibility(municipiosPolygonsFillLayerId, v.municipalityFillVisible);
 		setLayerVisibility(municipiosPolygonsLineLayerId, v.municipalityLineVisible);
-		// TODO: Add grid layer visibility when implemented
-		// setLayerVisibility(gridFillLayerId, v.gridVisible);
-		// setLayerVisibility(gridLineLayerId, v.gridVisible);
+		setLayerVisibility(gridFillLayerId, v.gridVisible);
+		setLayerVisibility(gridLineLayerId, v.gridVisible || v.municipalityLineVisible);
 	};
 
 	const paintColorExpression = $derived.by(() =>
@@ -709,6 +711,44 @@
 		}
 	};
 
+	const addGridPmtiles = () => {
+		if (!map) return;
+		if (map.getSource(gridPmtilesSourceId)) return;
+		try {
+			map.addSource(gridPmtilesSourceId, {
+				type: 'vector',
+				tiles: ['/tiles/grid/{z}/{x}/{y}.pbf'],
+				minzoom: GRID_MIN_ZOOM,
+				maxzoom: 14
+			});
+
+			map.addLayer({
+				id: gridLineLayerId,
+				type: 'line',
+				source: gridPmtilesSourceId,
+				'source-layer': 'grid',
+				paint: {
+					'line-color': '#a1a1aa',
+					'line-width': ['interpolate', ['linear'], ['zoom'], 10, 0.3, 14, 1.2],
+					'line-opacity': ['interpolate', ['linear'], ['zoom'], 10, 0.1, 12, 0.4]
+				}
+			});
+
+			map.addLayer({
+				id: gridFillLayerId,
+				type: 'fill',
+				source: gridPmtilesSourceId,
+				'source-layer': 'grid',
+				paint: {
+					'fill-color': '#4ade80',
+					'fill-opacity': ['interpolate', ['linear'], ['zoom'], 10, 0.05, 14, 0.25]
+				}
+			});
+		} catch (error) {
+			console.error('No se pudo cargar grid PMTiles.', error);
+		}
+	};
+
 	const addCcaaBoundaries = () => {
 		if (!map) return;
 		try {
@@ -787,6 +827,7 @@
 			});
 
 			addMunicipiosPmtiles();
+			addGridPmtiles();
 			addIgnHydroWmsLayers();
 			addProvinciasBoundaries();
 			addCcaaBoundaries();
@@ -811,6 +852,21 @@
 			applyMaxBoundsToMunicipios();
 
 			map.on('click', (event) => {
+				// Try grid layers first
+				const gridHits = map.queryRenderedFeatures(event.point, {
+					layers: [gridFillLayerId, gridLineLayerId]
+				});
+				if (gridHits.length > 0) {
+					const feature = gridHits[0];
+					const cellId = feature.id ?? feature.properties?.cell_id;
+					if (cellId) {
+						console.log('Grid cell selected:', cellId);
+						// TODO: Show cell detail
+					}
+					return;
+				}
+
+				// Fallback to municipality
 				const hits = map.queryRenderedFeatures(event.point, {
 					layers: [municipiosPolygonsFillLayerId]
 				});
