@@ -155,8 +155,9 @@
 	let initialBoundsApplied = $state(false);
 	let lastAutoFitSignature = $state('');
 
-	const GRID_MIN_ZOOM = 10.8;
+	const GRID_MIN_ZOOM = 9.6;
 	let currentZoom = $state(0);
+	let activeGridPmtilesPath = $state('/tiles/grid/grid_norte.pmtiles');
 
 	const visibility = $derived.by(() => {
 		const gridVisible =
@@ -725,8 +726,9 @@
 		try {
 			map.addSource(gridPmtilesSourceId, {
 				type: 'vector',
-				tiles: ['/tiles/grid/grid_norte/{z}/{x}/{y}.pbf'],
-				minzoom: GRID_MIN_ZOOM,
+				url: `pmtiles://${activeGridPmtilesPath}`,
+				promoteId: 'cell_id',
+				minzoom: 9,
 				maxzoom: 14
 			});
 
@@ -737,8 +739,8 @@
 				'source-layer': 'grid',
 				paint: {
 					'line-color': '#a1a1aa',
-					'line-width': ['interpolate', ['linear'], ['zoom'], 10, 0.3, 14, 1.2],
-					'line-opacity': ['interpolate', ['linear'], ['zoom'], 10, 0.1, 12, 0.4]
+					'line-width': ['interpolate', ['linear'], ['zoom'], 9, 0.22, 14, 1.2],
+					'line-opacity': ['interpolate', ['linear'], ['zoom'], 9, 0.08, 12, 0.42]
 				}
 			});
 
@@ -758,12 +760,90 @@
 						],
 						'#4ade80'
 					],
-					'fill-opacity': ['interpolate', ['linear'], ['zoom'], 10, 0.05, 14, 0.25]
+					'fill-opacity': ['interpolate', ['linear'], ['zoom'], 9, 0.04, 14, 0.26]
 				}
 			});
 		} catch (error) {
 			console.error('No se pudo cargar grid PMTiles.', error);
 		}
+	};
+
+	const slugifyProvinceName = (value: string) =>
+		value
+			.normalize('NFD')
+			.replace(/[\u0300-\u036f]/g, '')
+			.replace(/\//g, '-')
+			.toLowerCase()
+			.replace(/[^a-z0-9]+/g, '_')
+			.replace(/^_+|_+$/g, '');
+
+	const resolveGridPmtilesPath = () => {
+		const fromSelected = selectedMunicipio?.provincia?.trim();
+		const fromFilter = provinceFilter && provinceFilter !== 'Todas' ? provinceFilter.trim() : null;
+		const province = fromSelected || fromFilter;
+		if (!province) return '/tiles/grid/grid_norte.pmtiles';
+		return `/tiles/grid/provincias/grid_${slugifyProvinceName(province)}.pmtiles`;
+	};
+
+	const refreshGridSource = () => {
+		if (!map) return;
+		const nextPath = resolveGridPmtilesPath();
+		if (nextPath === activeGridPmtilesPath) return;
+		activeGridPmtilesPath = nextPath;
+
+		const hadFill = Boolean(map.getLayer(gridFillLayerId));
+		if (map.getLayer(gridFillLayerId)) map.removeLayer(gridFillLayerId);
+		if (map.getLayer(gridLineLayerId)) map.removeLayer(gridLineLayerId);
+		if (map.getSource(gridPmtilesSourceId)) map.removeSource(gridPmtilesSourceId);
+		addGridPmtiles();
+		if (hadFill) {
+			applyGridFilter();
+			applyVisibilityBasedOnMode();
+			applyLayerOrdering();
+		}
+	};
+
+	const parseHashView = (): { zoom: number; center: [number, number] } | null => {
+		if (typeof window === 'undefined') return null;
+		const hash = window.location.hash;
+		if (!hash.startsWith('#map=')) return null;
+		const parts = hash.slice(5).split('/');
+		if (parts.length !== 3) return null;
+		const zoom = Number(parts[0]);
+		const lat = Number(parts[1]);
+		const lon = Number(parts[2]);
+		if (!Number.isFinite(zoom) || !Number.isFinite(lat) || !Number.isFinite(lon)) return null;
+		return { zoom, center: [lon, lat] };
+	};
+
+	const writeHashView = () => {
+		if (!map || typeof window === 'undefined') return;
+		const center = map.getCenter();
+		const zoom = map.getZoom();
+		const nextHash = `#map=${zoom.toFixed(2)}/${center.lat.toFixed(5)}/${center.lng.toFixed(5)}`;
+		if (window.location.hash !== nextHash) {
+			history.replaceState(history.state, '', `${window.location.pathname}${window.location.search}${nextHash}`);
+		}
+	};
+
+	const applyGridFilter = () => {
+		if (!map) return;
+		const selectedId = selectedMunicipio?.id ?? selectedMunicipio?.codigo ?? null;
+		if (!selectedId) {
+			if (map.getLayer(gridFillLayerId)) map.setFilter(gridFillLayerId, null);
+			if (map.getLayer(gridLineLayerId)) map.setFilter(gridLineLayerId, null);
+			return;
+		}
+
+		const numeric = Number.parseInt(selectedId, 10);
+		const expr: any = [
+			'any',
+			['==', ['to-string', ['coalesce', ['get', 'municipio_id'], ['get', 'codigo']]], selectedId],
+			['==', ['to-number', ['coalesce', ['get', 'municipio_id'], ['get', 'codigo']]], numeric]
+		];
+
+		if (map.getLayer(gridFillLayerId)) map.setFilter(gridFillLayerId, expr);
+		if (map.getLayer(gridLineLayerId)) map.setFilter(gridLineLayerId, expr);
 	};
 
 	const addCcaaBoundaries = () => {
@@ -807,6 +887,11 @@
 			zoom: 6,
 			attributionControl: false
 		});
+
+		const hashView = parseHashView();
+		if (hashView) {
+			map.jumpTo({ center: hashView.center, zoom: hashView.zoom });
+		}
 
 		map.addControl(new maplibregl.NavigationControl(), 'top-right');
 
@@ -924,6 +1009,11 @@
 
 		map.on('zoomend', () => {
 			currentZoom = map.getZoom();
+			writeHashView();
+		});
+
+		map.on('moveend', () => {
+			writeHashView();
 		});
 
 		map.on('dataloading', () => {
@@ -1001,7 +1091,13 @@
 	$effect(() => {
 		if (!map) return;
 		applyVisibilityBasedOnMode();
+		applyGridFilter();
 		applyLayerOrdering();
+	});
+
+	$effect(() => {
+		if (!map || !mapReady) return;
+		refreshGridSource();
 	});
 
 	$effect(() => {
