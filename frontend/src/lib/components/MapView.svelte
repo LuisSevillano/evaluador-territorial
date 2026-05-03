@@ -188,6 +188,13 @@
 		setLayerVisibility(gridLineLayerId, v.gridVisible || v.municipalityLineVisible);
 	};
 
+	// Handle view mode changes from UI
+	$effect(() => {
+		if (viewMode !== undefined) {
+			viewMode = viewMode;
+		}
+	});
+
 	const paintColorExpression = $derived.by(() =>
 		buildMunicipioColorExpression(municipios, mapColorMetric)
 	);
@@ -727,7 +734,7 @@
 		try {
 			map.addSource(gridPmtilesSourceId, {
 				type: 'vector',
-				tiles: ['/tiles/grid/{z}/{x}/{y}.pbf'],
+				tiles: ['/tiles/grid/grid_norte/{z}/{x}/{y}.pbf'],
 				minzoom: GRID_MIN_ZOOM,
 				maxzoom: 14
 			});
