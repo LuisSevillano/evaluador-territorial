@@ -775,6 +775,8 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 					{isBottomSheetOpen}
 					pmtilesUrl={municipiosPmtilesUrl}
 					onMapSelection={handleSelectMunicipio}
+					viewMode={uiStore.state.mapViewMode}
+					onViewModeChange={(mode) => (uiStore.state.mapViewMode = mode)}
 				/>
 			</div>
 			{#if viewMode === 'evaluacion'}
