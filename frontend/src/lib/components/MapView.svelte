@@ -7,6 +7,7 @@
 	import { normalizeProvinceName } from '$lib/state/provinces';
 	import LandUseLegend from '$lib/components/map/LandUseLegend.svelte';
 	import MapLoadingBadge from '$lib/components/map/MapLoadingBadge.svelte';
+	import ViewControl from '$lib/components/map/ViewControl.svelte';
 	import { type MapColorMetric, buildMunicipioColorExpression } from '$lib/components/map/coloring';
 	import 'maplibre-gl/dist/maplibre-gl.css';
 	import { type MapViewMode } from '$lib/state/mapViewMode';
@@ -35,6 +36,8 @@
 		onToggleIgnWmsBase?: (visible: boolean) => void;
 		isMobileView?: boolean;
 		isBottomSheetOpen?: boolean;
+		viewMode?: MapViewMode;
+		onViewModeChange?: (mode: MapViewMode) => void;
 	};
 
 	let {
@@ -151,6 +154,13 @@
 	const GRID_MIN_ZOOM = 10.8;
 	let currentZoom = $state(0);
 	let viewMode = $state<MapViewMode>('auto');
+
+	// Use prop if provided, otherwise use local state
+	$effect(() => {
+		if (viewMode !== undefined) {
+			viewMode = viewMode;
+		}
+	});
 
 	const visibility = $derived.by(() => {
 		const gridVisible =
