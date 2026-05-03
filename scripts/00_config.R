@@ -98,7 +98,9 @@ paths <- list(
   frontend_vegetation_geojson = path(project_root, "frontend", "static", "data", "cobertura_vegetal.geojson"),
   frontend_ccaa_geojson = path(project_root, "frontend", "static", "data", "ccaa_boundaries.geojson"),
   frontend_provincias_geojson = path(project_root, "frontend", "static", "data", "provincias_boundaries.geojson"),
-  frontend_isochrones_dir = path(project_root, "frontend", "static", "data", "isochrones")
+  frontend_isochrones_dir = path(project_root, "frontend", "static", "data", "isochrones"),
+  frontend_grid_geojson = path(project_root, "frontend", "static", "data", "municipios_grid_2km.geojson"),
+  frontend_grid_pmtiles = path(project_root, "frontend", "static", "tiles", "grid")
 )
 
 invisible(dir_create(paths$output_dir, recurse = TRUE))

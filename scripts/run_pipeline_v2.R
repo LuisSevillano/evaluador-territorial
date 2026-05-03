@@ -37,6 +37,12 @@ steps <- list(
     inputs = c(paths$output_entorno_geojson, paths$relieve_raw_dir)
   ),
   list(
+    path = "scripts/04j_grid_2km.R",
+    label = "Grid 2km",
+    outputs = c(paths$frontend_grid_geojson),
+    inputs = c(paths$output_final_geojson)
+  ),
+  list(
     path = "scripts/03_isochrones.R",
     label = "Isochronas",
     outputs = c(paths$output_final_geojson, paths$output_feature_isochrones_rds),

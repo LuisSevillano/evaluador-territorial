@@ -54,6 +54,20 @@ export type Municipio = {
 	servicio_renfe_norm?: number;
 	relieve_norm?: number;
 	relieve_score_raw?: number;
+	// Grid aggregation (from 2km cells)
+	precip_annual_mean?: number;
+	temp_winter_mean?: number;
+	temp_summer_mean?: number;
+	river_access_mean?: number;
+	river_access_max?: number;
+	river_access_p75?: number;
+	pct_cells_river_access_high?: number;
+	nearest_good_river_distance?: number;
+	natural_cover_mean?: number;
+	pct_cells_natural_high?: number;
+	isochrone_best?: string;
+	isochrone_majority?: string;
+	pct_area_inside_2h30?: number;
 };
 
 export type MunicipioClimateMonthly = {
