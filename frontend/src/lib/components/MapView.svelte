@@ -757,7 +757,16 @@
 				source: gridPmtilesSourceId,
 				'source-layer': 'grid',
 				paint: {
-					'fill-color': '#4ade80',
+					'fill-color': [
+						'case',
+						['has', 'river_access_score'],
+						['interpolate', ['linear'], ['get', 'river_access_score'],
+							0, '#ef4444',
+							0.5, '#eab308',
+							1, '#22c55e'
+						],
+						'#4ade80'
+					],
 					'fill-opacity': ['interpolate', ['linear'], ['zoom'], 10, 0.05, 14, 0.25]
 				}
 			});
