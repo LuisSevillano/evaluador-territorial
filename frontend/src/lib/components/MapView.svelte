@@ -877,8 +877,13 @@
 					const feature = gridHits[0];
 					const cellId = feature.id ?? feature.properties?.cell_id;
 					if (cellId) {
-						console.log('Grid cell selected:', cellId);
-						// TODO: Show cell detail
+						console.log('Grid cell selected:', {
+							cellId,
+							municipioId: feature.properties?.municipio_id,
+							municipioNombre: feature.properties?.municipio_nombre,
+							areaKm2: feature.properties?.area_km2
+						});
+						// TODO: Show cell detail popup/panel
 					}
 					return;
 				}
