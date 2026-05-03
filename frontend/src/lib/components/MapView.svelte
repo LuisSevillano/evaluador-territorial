@@ -9,6 +9,7 @@
 	import MapLoadingBadge from '$lib/components/map/MapLoadingBadge.svelte';
 	import { type MapColorMetric, buildMunicipioColorExpression } from '$lib/components/map/coloring';
 	import 'maplibre-gl/dist/maplibre-gl.css';
+	import { type MapViewMode } from '$lib/state/mapViewMode';
 
 	type Props = {
 		municipios?: Municipio[];
@@ -143,6 +144,37 @@
 	let activeMunicipiosSourceLayer: string | undefined = sourceLayerName;
 	let initialBoundsApplied = $state(false);
 	let lastAutoFitSignature = $state('');
+
+	const GRID_MIN_ZOOM = 10.8;
+	let currentZoom = $state(0);
+	let viewMode = $state<MapViewMode>('auto');
+
+	const visibility = $derived.by(() => {
+		const gridVisible =
+			viewMode === 'grid' ||
+			(viewMode === 'auto' && (selectedMunicipio !== null && selectedMunicipio !== undefined || currentZoom >= GRID_MIN_ZOOM));
+
+		const municipalityFillVisible =
+			viewMode === 'municipality' ||
+			(viewMode === 'auto' && !gridVisible);
+
+		return {
+			gridVisible,
+			municipalityFillVisible: municipalityFillVisible,
+			municipalityLineVisible: true,
+			showBoundaries: true
+		};
+	});
+
+	const applyVisibilityBasedOnMode = () => {
+		if (!map) return;
+		const v = visibility;
+		setLayerVisibility(municipiosPolygonsFillLayerId, v.municipalityFillVisible);
+		setLayerVisibility(municipiosPolygonsLineLayerId, v.municipalityLineVisible);
+		// TODO: Add grid layer visibility when implemented
+		// setLayerVisibility(gridFillLayerId, v.gridVisible);
+		// setLayerVisibility(gridLineLayerId, v.gridVisible);
+	};
 
 	const paintColorExpression = $derived.by(() =>
 		buildMunicipioColorExpression(municipios, mapColorMetric)
@@ -812,6 +844,10 @@
 			isMapLoading = false;
 		});
 
+		map.on('zoomend', () => {
+			currentZoom = map.getZoom();
+		});
+
 		map.on('dataloading', () => {
 			isMapLoading = true;
 		});
@@ -885,6 +921,8 @@
 	});
 
 	$effect(() => {
+		if (!map) return;
+		applyVisibilityBasedOnMode();
 		applyLayerOrdering();
 	});
 
