@@ -156,6 +156,7 @@
 	let lastAutoFitSignature = $state('');
 
 	const GRID_MIN_ZOOM = 9.6;
+	const GRID_FORCE_MIN_ZOOM = 7;
 	let currentZoom = $state(0);
 	let activeGridPmtilesPath = $state('/tiles/grid/grid_norte.pmtiles');
 
@@ -190,6 +191,23 @@
 	const paintColorExpression = $derived.by(() =>
 		buildMunicipioColorExpression(municipios, mapColorMetric)
 	);
+
+	const gridMixedScoreLookupExpression = $derived.by(() => {
+		const expr: any[] = [
+			'match',
+			['to-string', ['coalesce', ['get', 'municipio_id'], ['get', 'codigo']]]
+		];
+
+		for (const m of municipios) {
+			const mid = (m.id ?? m.codigo ?? '').toString();
+			const score = Number(m.mixed_score);
+			if (!mid || !Number.isFinite(score)) continue;
+			expr.push(mid, score);
+		}
+
+		expr.push(-1);
+		return expr;
+	});
 
 	const landUsePalette: Array<{ key: string; color: string; label: string }> = [
 		{ key: 'forest', color: '#1b5e20', label: 'Bosque' },
@@ -728,7 +746,7 @@
 				type: 'vector',
 				url: `pmtiles://${activeGridPmtilesPath}`,
 				promoteId: 'cell_id',
-				minzoom: 9,
+				minzoom: GRID_FORCE_MIN_ZOOM,
 				maxzoom: 14
 			});
 
@@ -739,8 +757,8 @@
 				'source-layer': 'grid',
 				paint: {
 					'line-color': '#a1a1aa',
-					'line-width': ['interpolate', ['linear'], ['zoom'], 9, 0.22, 14, 1.2],
-					'line-opacity': ['interpolate', ['linear'], ['zoom'], 9, 0.08, 12, 0.42]
+					'line-width': ['interpolate', ['linear'], ['zoom'], 7, 0.18, 14, 1.2],
+					'line-opacity': ['interpolate', ['linear'], ['zoom'], 7, 0.06, 12, 0.42]
 				}
 			});
 
@@ -750,23 +768,8 @@
 				source: gridPmtilesSourceId,
 				'source-layer': 'grid',
 				paint: {
-					'fill-color': [
-						'case',
-						['has', 'river_access_score'],
-						[
-							'interpolate',
-							['linear'],
-							['to-number', ['get', 'river_access_score']],
-							10,
-							'#ef4444',
-							55,
-							'#eab308',
-							100,
-							'#22c55e'
-						],
-						'#9ca3af'
-					],
-					'fill-opacity': ['interpolate', ['linear'], ['zoom'], 9, 0.04, 14, 0.26]
+					'fill-color': '#9ca3af',
+					'fill-opacity': ['interpolate', ['linear'], ['zoom'], 7, 0.03, 14, 0.26]
 				}
 			});
 		} catch (error) {
@@ -1088,6 +1091,22 @@
 		const colorExpr = paintColorExpression;
 		if (!mapReady || !map || !map.getLayer(municipiosPolygonsFillLayerId)) return;
 		map.setPaintProperty(municipiosPolygonsFillLayerId, 'fill-color', colorExpr as any);
+	});
+
+	$effect(() => {
+		const scoreLookup = gridMixedScoreLookupExpression;
+		if (!mapReady || !map || !map.getLayer(gridFillLayerId)) return;
+		map.setPaintProperty(gridFillLayerId, 'fill-color', [
+			'interpolate',
+			['linear'],
+			scoreLookup as any,
+			0,
+			'#ef4444',
+			0.5,
+			'#eab308',
+			1,
+			'#22c55e'
+		] as any);
 	});
 
 	$effect(() => {
