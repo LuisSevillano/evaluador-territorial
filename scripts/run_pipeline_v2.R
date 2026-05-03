@@ -37,12 +37,6 @@ steps <- list(
     inputs = c(paths$output_entorno_geojson, paths$relieve_raw_dir)
   ),
   list(
-    path = "scripts/04j_grid_2km.R",
-    label = "Grid 2km",
-    outputs = c(paths$frontend_grid_geojson),
-    inputs = c(paths$output_final_geojson)
-  ),
-  list(
     path = "scripts/03_isochrones.R",
     label = "Isochronas",
     outputs = c(paths$output_final_geojson, paths$output_feature_isochrones_rds),
@@ -78,6 +72,12 @@ steps <- list(
     inputs = c(paths$output_base_geojson, path(project_root, "data", "raw", "hydrography"), paths$rivers_raw_dir)
   ),
   list(
+    path = "scripts/04j_grid_2km.R",
+    label = "Grid 2km y agregados",
+    outputs = c(paths$output_grid_geojson, paths$frontend_grid_geojson, paths$output_feature_grid_agg_rds, paths$output_feature_grid_agg_parquet),
+    inputs = c(paths$output_final_geojson)
+  ),
+  list(
     path = "scripts/05b_assemble_features_fast.R",
     label = "Ensamblado rapido de features",
     outputs = c(paths$output_final_geojson),
@@ -87,6 +87,7 @@ steps <- list(
       paths$output_feature_mfe_rds,
       paths$output_feature_relief_rds,
       paths$output_feature_river_rds,
+      paths$output_feature_grid_agg_rds,
       paths$output_feature_transport_osm_rds,
       paths$output_feature_transport_renfe_rds
     )
@@ -153,6 +154,7 @@ if (pipeline_mode == "assemble-only") {
         paths$output_feature_mfe_rds,
         paths$output_feature_relief_rds,
         paths$output_feature_river_rds,
+        paths$output_feature_grid_agg_rds,
         paths$output_feature_transport_osm_rds,
         paths$output_feature_transport_renfe_rds
       )

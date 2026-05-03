@@ -45,6 +45,29 @@ mun <- mun |>
   join_feature(paths$output_feature_mfe_rds, paths$output_feature_mfe_parquet, c("forest_nature_quality", "water_pct")) |>
   join_feature(paths$output_feature_relief_rds, paths$output_feature_relief_parquet, c("elev_range_m", "slope_p90", "tri_mean", "relieve_score_raw", "relieve_norm")) |>
   join_feature(paths$output_feature_river_rds, paths$output_feature_river_parquet, c("river_access_score", "river_access_class", "river_nearest_name", "river_nearest_distance_km", "river_nearest_confidence", "river_candidate_count_10km", "river_method_version")) |>
+  join_feature(
+    paths$output_feature_grid_agg_rds,
+    paths$output_feature_grid_agg_parquet,
+    c(
+      "grid_cell_count",
+      "grid_precip_annual_mean",
+      "grid_precip_annual_median",
+      "grid_temp_winter_mean",
+      "grid_temp_winter_median",
+      "grid_temp_summer_mean",
+      "grid_temp_summer_median",
+      "grid_river_access_mean",
+      "grid_river_access_p75",
+      "grid_river_access_max",
+      "grid_pct_cells_river_access_high",
+      "grid_nearest_good_river_distance",
+      "grid_natural_cover_mean",
+      "grid_natural_cover_high_pct",
+      "grid_iso_best_bucket",
+      "grid_iso_majority_bucket",
+      "grid_pct_area_inside_2h30"
+    )
+  ) |>
   join_feature(paths$output_feature_transport_osm_rds, paths$output_feature_transport_osm_parquet, c("dist_estacion_tren_km", "dist_parada_bus_km", "transporte_norm")) |>
   join_feature(paths$output_feature_transport_renfe_rds, paths$output_feature_transport_renfe_parquet, c("dist_renfe_km", "renfe_salidas_dia", "renfe_tipo_servicio", "servicio_renfe_norm"))
 

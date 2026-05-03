@@ -63,6 +63,7 @@ paths <- list(
   output_feature_river_parquet = path(project_root, "output", "features", "feature_river_access.parquet"),
   output_feature_transport_osm_parquet = path(project_root, "output", "features", "feature_transport_osm.parquet"),
   output_feature_transport_renfe_parquet = path(project_root, "output", "features", "feature_transport_renfe.parquet"),
+  output_feature_grid_agg_parquet = path(project_root, "output", "features", "feature_grid_agg.parquet"),
   output_feature_mfe_rds = path(project_root, "output", "features", "feature_mfe_nature.rds"),
   output_feature_relief_rds = path(project_root, "output", "features", "feature_relief.rds"),
   output_feature_climate_rds = path(project_root, "output", "features", "feature_climate.rds"),
@@ -70,6 +71,7 @@ paths <- list(
   output_feature_river_rds = path(project_root, "output", "features", "feature_river_access.rds"),
   output_feature_transport_osm_rds = path(project_root, "output", "features", "feature_transport_osm.rds"),
   output_feature_transport_renfe_rds = path(project_root, "output", "features", "feature_transport_renfe.rds"),
+  output_feature_grid_agg_rds = path(project_root, "output", "features", "feature_grid_agg.rds"),
   relieve_raw_dir = path(project_root, "data", "raw", "relieve", "copdem"),
   relieve_processed_dir = path(project_root, "data", "processed", "relieve"),
   corine_geojson = path(project_root, "data", "raw", "corine", "corine_cyl.geojson"),
@@ -99,6 +101,7 @@ paths <- list(
   frontend_ccaa_geojson = path(project_root, "frontend", "static", "data", "ccaa_boundaries.geojson"),
   frontend_provincias_geojson = path(project_root, "frontend", "static", "data", "provincias_boundaries.geojson"),
   frontend_isochrones_dir = path(project_root, "frontend", "static", "data", "isochrones"),
+  output_grid_geojson = path(project_root, "output", "municipios_grid_2km.geojson"),
   frontend_grid_geojson = path(project_root, "frontend", "static", "data", "municipios_grid_2km.geojson"),
   frontend_grid_pmtiles = path(project_root, "frontend", "static", "tiles", "grid")
 )

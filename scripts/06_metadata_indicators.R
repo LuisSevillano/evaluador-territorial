@@ -59,7 +59,7 @@ lines <- c(
 )
 
 writeLines(lines, paths$docs_indicators)
-write_file(toJSON(metadata, auto_unbox = TRUE, pretty = TRUE), paths$output_dataset_metadata_json)
+writeLines(toJSON(metadata, auto_unbox = TRUE, pretty = TRUE), con = paths$output_dataset_metadata_json, useBytes = TRUE)
 file_copy(paths$output_dataset_metadata_json, paths$frontend_dataset_metadata_json, overwrite = TRUE)
 message("OK: metadatos escritos en ", paths$docs_indicators)
 message("OK: metadata dataset JSON en ", paths$output_dataset_metadata_json)
