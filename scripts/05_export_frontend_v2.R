@@ -20,6 +20,22 @@ mun <- st_read(paths$output_final_geojson, quiet = TRUE)
 mun_base <- st_read(paths$output_base_geojson, quiet = TRUE) |>
   st_transform(4326)
 
+if (file.exists(paths$output_feature_grid_agg_rds)) {
+  grid_agg <- readRDS(paths$output_feature_grid_agg_rds) |>
+    select(
+      codigo,
+      grid_climate_block_median,
+      grid_access_block_median,
+      grid_nature_block_median,
+      grid_mixed_score_median,
+      grid_mixed_score_p75,
+      grid_pct_cells_mixed_top
+    )
+
+  mun <- mun |>
+    left_join(grid_agg, by = "codigo")
+}
+
 if (file.exists(paths$output_provincias_geojson)) {
   provincias_bounds <- st_read(paths$output_provincias_geojson, quiet = TRUE) |>
     st_transform(4326)
@@ -72,6 +88,32 @@ if (file.exists(paths$output_provincias_geojson)) {
       }
     }
   }
+
+  # Provincia geometrica estable para filtros (evita casos anómalos por prefijos de codigo)
+  province_geo_join <- st_join(
+    mun |>
+      mutate(.row_id = row_number()),
+    provincias_bounds |>
+      transmute(
+        provincia_id_geo = as.character(id_prov),
+        provincia_nombre_geo = as.character(nombre_prov)
+      ),
+    left = TRUE,
+    largest = TRUE
+  )
+
+  province_geo_tbl <- province_geo_join |>
+    st_drop_geometry() |>
+    select(.row_id, provincia_id_geo, provincia_nombre_geo)
+
+  mun <- mun |>
+    mutate(.row_id = row_number()) |>
+    left_join(province_geo_tbl, by = ".row_id") |>
+    mutate(
+      provincia_id_geo = dplyr::coalesce(provincia_id_geo, as.character(provincia)),
+      provincia_nombre_geo = dplyr::coalesce(provincia_nombre_geo, as.character(provincia))
+    ) |>
+    select(-.row_id)
 }
 
 river_access_csv_candidates <- c(
@@ -190,6 +232,10 @@ for (col_name in c("renfe_tipo_servicio", "travel_bucket")) {
   mun <- ensure_chr_col(mun, col_name)
 }
 
+for (col_name in c("provincia_id_geo", "provincia_nombre_geo")) {
+  mun <- ensure_chr_col(mun, col_name, default = as.character(mun$provincia))
+}
+
 if (all(is.na(mun$forest_nature_quality)) && "forest_pct" %in% names(mun)) {
   mun$forest_nature_quality <- pmin(1, pmax(0, mun$forest_pct / 100))
 }
@@ -250,6 +296,16 @@ mun$mixed_score <- round_idx(
     w_nature * mun$nature_block_score
 )
 
+if ("grid_mixed_score_median" %in% names(mun)) {
+  mun <- mun |>
+    mutate(
+      climate_block_score = ifelse(is.finite(grid_climate_block_median), grid_climate_block_median, climate_block_score),
+      access_block_score = ifelse(is.finite(grid_access_block_median), grid_access_block_median, access_block_score),
+      nature_block_score = ifelse(is.finite(grid_nature_block_median), grid_nature_block_median, nature_block_score),
+      mixed_score = ifelse(is.finite(grid_mixed_score_median), grid_mixed_score_median, mixed_score)
+    )
+}
+
 population <- if ("population" %in% names(mun)) mun$population else rep(NA_real_, nrow(mun))
 population_men <- if ("population_men" %in% names(mun)) mun$population_men else rep(NA_real_, nrow(mun))
 population_women <- if ("population_women" %in% names(mun)) mun$population_women else rep(NA_real_, nrow(mun))
@@ -260,6 +316,8 @@ mun_v2 <- mun |>
     codigo,
     nombre,
     provincia,
+    provincia_id_geo,
+    provincia_nombre_geo,
     lon,
     lat,
     population,

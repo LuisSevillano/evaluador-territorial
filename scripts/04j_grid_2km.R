@@ -49,6 +49,25 @@ mode_int <- function(x) {
   as.integer(names(tb)[which.max(tb)])
 }
 
+round_idx <- function(x) round(x, 3)
+
+minmax_norm <- function(x, invert = FALSE) {
+  x <- suppressWarnings(as.numeric(x))
+  valid <- is.finite(x)
+  out <- rep(NA_real_, length(x))
+  if (!any(valid)) return(out)
+  xv <- x[valid]
+  xmin <- min(xv, na.rm = TRUE)
+  xmax <- max(xv, na.rm = TRUE)
+  if (!is.finite(xmin) || !is.finite(xmax) || xmax <= xmin) {
+    out[valid] <- 0.5
+  } else {
+    out[valid] <- (xv - xmin) / (xmax - xmin)
+  }
+  if (invert) out <- 1 - out
+  pmax(0, pmin(1, out))
+}
+
 log_step("Cargando municipios")
 mun_sf <- st_read(paths$output_final_geojson, quiet = TRUE) |>
   st_transform(25830) |>
@@ -64,16 +83,15 @@ mun_sf <- st_read(paths$output_final_geojson, quiet = TRUE) |>
     travel_bucket
   )
 
-score_from_river_distance <- function(distance_km) {
-  case_when(
-    is.na(distance_km) ~ NA_real_,
-    distance_km <= 0.5 ~ 100,
-    distance_km <= 1.0 ~ 85,
-    distance_km <= 2.5 ~ 70,
-    distance_km <= 5.0 ~ 55,
-    distance_km <= 10.0 ~ 35,
-    TRUE ~ 10
-  )
+if (!"mixed_score" %in% names(mun_sf) && file.exists(paths$output_v2_geojson)) {
+  log_step("Uniendo mixed_score desde municipios_v2.geojson")
+  mixed_tbl <- st_read(paths$output_v2_geojson, quiet = TRUE) |>
+    st_drop_geometry() |>
+    transmute(codigo = as.character(codigo), mixed_score = suppressWarnings(as.numeric(mixed_score)))
+
+  mun_sf <- mun_sf |>
+    mutate(codigo = as.character(codigo)) |>
+    left_join(mixed_tbl, by = "codigo")
 }
 
 log_step("Creando rejilla de 2km x 2km")
@@ -89,13 +107,52 @@ grid_cells <- st_make_grid(
 log_step(paste0("Generadas ", length(grid_cells), " celdas iniciales"))
 
 log_step("Asignando celdas a municipio y variables base")
-grid_sf <- st_sf(geometry = grid_cells) |>
-  st_join(mun_sf, join = st_intersects, left = FALSE) |>
+grid_base <- st_sf(cell_idx = seq_along(grid_cells), geometry = grid_cells)
+
+suppressWarnings({
+  cell_mun_inter <- tryCatch(
+    st_intersection(
+      grid_base,
+      mun_sf |>
+        select(
+          codigo,
+          nombre,
+          provincia,
+          precip_annual_mm,
+          temp_winter_mean_c,
+          temp_summer_mean_c,
+          river_access_score,
+          forest_nature_quality,
+          travel_bucket,
+          geometry
+        ) |>
+        st_make_valid()
+    ),
+    error = function(e) NULL
+  )
+})
+
+if (is.null(cell_mun_inter) || nrow(cell_mun_inter) == 0) {
+  stop("No se pudo asignar la rejilla a municipios por solape.")
+}
+
+grid_assign <- cell_mun_inter |>
+  mutate(overlap_area = as.numeric(st_area(geometry))) |>
+  st_drop_geometry() |>
+  arrange(cell_idx, desc(overlap_area), codigo) |>
+  group_by(cell_idx) |>
+  slice(1) |>
+  ungroup() |>
+  select(-overlap_area)
+
+grid_sf <- grid_base |>
+  left_join(grid_assign, by = "cell_idx") |>
+  filter(!is.na(codigo)) |>
   mutate(
     area_km2 = as.numeric(st_area(geometry) / 1e6),
     grid_row = as.integer((ext$ymax - st_coordinates(st_centroid(geometry))[, 2]) / 2000),
     grid_col = as.integer((st_coordinates(st_centroid(geometry))[, 1] - ext$xmin) / 2000),
-    cell_id = paste0(codigo, "_", grid_row, "_", grid_col),
+    cell_id = paste0("cell_", cell_idx),
     municipio_id = codigo,
     municipio_nombre = nombre,
     precip_annual = precip_annual_mm,
@@ -106,27 +163,64 @@ grid_sf <- st_sf(geometry = grid_cells) |>
 
 grid_centroids_utm <- st_centroid(grid_sf)
 
-log_step("Calculando distancia a rios por celda")
+log_step("Calculando acceso hidrico por buffers (rios + embalses)")
+hydro_layers <- list()
+
 if (file.exists(paths$output_rivers_geojson)) {
-  rivers_utm <- st_read(paths$output_rivers_geojson, quiet = TRUE) |>
-    st_transform(st_crs(grid_sf))
-  if (nrow(rivers_utm) > 0) {
-    nearest_idx <- st_nearest_feature(grid_centroids_utm, rivers_utm)
-    nearest_dist <- st_distance(grid_centroids_utm, rivers_utm[nearest_idx, ], by_element = TRUE)
-    river_distance_km <- as.numeric(nearest_dist) / 1000
+  hydro_layers[[length(hydro_layers) + 1]] <- st_read(paths$output_rivers_geojson, quiet = TRUE)
+}
+
+embalses_candidates <- c(
+  path(paths$output_dir, "embalses_scope.geojson"),
+  path(paths$output_dir, "embalses.geojson"),
+  path(paths$rivers_cache_dir, "embalses_scope.geojson")
+)
+
+for (fp in embalses_candidates) {
+  if (!file.exists(fp)) next
+  hydro_layers[[length(hydro_layers) + 1]] <- st_read(fp, quiet = TRUE)
+}
+
+if (length(hydro_layers) > 0) {
+  hydro_utm <- do.call(rbind, lapply(hydro_layers, function(x) st_transform(x, st_crs(grid_sf)))) |>
+    st_make_valid()
+
+  if (nrow(hydro_utm) > 0) {
+    in10 <- lengths(st_is_within_distance(grid_centroids_utm, hydro_utm, dist = 10000)) > 0
+    in20 <- lengths(st_is_within_distance(grid_centroids_utm, hydro_utm, dist = 20000)) > 0
+    in30 <- lengths(st_is_within_distance(grid_centroids_utm, hydro_utm, dist = 30000)) > 0
+
     grid_sf <- grid_sf |>
       mutate(
-        river_distance_km = river_distance_km,
-        river_access_score = score_from_river_distance(river_distance_km)
+        river_buffer_class = case_when(
+          in10 ~ "<=10km",
+          in20 ~ "10-20km",
+          in30 ~ "20-30km",
+          TRUE ~ ">30km"
+        ),
+        river_distance_km = case_when(
+          river_buffer_class == "<=10km" ~ 5,
+          river_buffer_class == "10-20km" ~ 15,
+          river_buffer_class == "20-30km" ~ 25,
+          TRUE ~ 35
+        ),
+        river_access_score = case_when(
+          river_buffer_class == "<=10km" ~ 100,
+          river_buffer_class == "10-20km" ~ 70,
+          river_buffer_class == "20-30km" ~ 40,
+          TRUE ~ 10
+        )
       )
-  } else {
-    grid_sf <- grid_sf |>
-      mutate(river_distance_km = NA_real_)
   }
-} else {
-  log_step("Aviso: no existe capa de rios; se conserva river_access_score municipal")
+}
+
+if (!"river_access_score" %in% names(grid_sf)) {
   grid_sf <- grid_sf |>
-    mutate(river_distance_km = NA_real_)
+    mutate(
+      river_buffer_class = NA_character_,
+      river_distance_km = NA_real_,
+      river_access_score = NA_real_
+    )
 }
 
 log_step("Calculando cobertura natural por celda")
@@ -193,6 +287,38 @@ grid_sf <- grid_sf |>
     isochrone_bucket = rank_to_bucket(isochrone_rank)
   )
 
+log_step("Calculando bloques y mixed_score por celda")
+grid_sf <- grid_sf |>
+  mutate(
+    precip_norm = round_idx(minmax_norm(precip_annual, invert = FALSE)),
+    temp_verano_norm = round_idx(minmax_norm(temp_summer, invert = TRUE)),
+    temp_invierno_norm = round_idx(minmax_norm(temp_winter, invert = FALSE)),
+    natural_cover_norm = round_idx(minmax_norm(natural_cover_pct, invert = FALSE)),
+    river_access_norm = round_idx(minmax_norm(river_access_score, invert = FALSE))
+  )
+
+travel_order <- c("<=1h30", "<=2h00", "<=2h30", "<=3h30", "<=4h00", ">4h00")
+travel_score <- setNames(rev(seq_along(travel_order)), travel_order)
+access_floor <- 0.2
+access_raw <- (travel_score[grid_sf$isochrone_bucket] - 1) / (length(travel_order) - 1)
+
+grid_sf <- grid_sf |>
+  mutate(
+    accesibilidad_norm = round_idx(access_floor + (1 - access_floor) * access_raw),
+    climate_block_score = round_idx(
+      rowMeans(cbind(precip_norm, temp_verano_norm, temp_invierno_norm), na.rm = TRUE)
+    ),
+    access_block_score = round_idx(accesibilidad_norm),
+    nature_block_score = round_idx(
+      rowMeans(cbind(natural_cover_norm, river_access_norm), na.rm = TRUE)
+    ),
+    mixed_score = round_idx(
+      0.4 * climate_block_score +
+        0.3 * access_block_score +
+        0.3 * nature_block_score
+    )
+  )
+
 grid_sf <- grid_sf |>
   select(
     cell_id,
@@ -202,12 +328,23 @@ grid_sf <- grid_sf |>
     area_km2,
     grid_row,
     grid_col,
+    mixed_score,
     precip_annual,
     temp_winter,
     temp_summer,
     river_distance_km,
+    river_buffer_class,
     river_access_score,
     natural_cover_pct,
+    precip_norm,
+    temp_verano_norm,
+    temp_invierno_norm,
+    natural_cover_norm,
+    river_access_norm,
+    accesibilidad_norm,
+    climate_block_score,
+    access_block_score,
+    nature_block_score,
     isochrone_bucket,
     isochrone_rank,
     geometry
@@ -232,6 +369,12 @@ grid_agg <- grid_sf |>
     grid_nearest_good_river_distance = suppressWarnings(min(ifelse(river_access_score >= 70, river_distance_km, NA_real_), na.rm = TRUE)),
     grid_natural_cover_mean = mean(natural_cover_pct, na.rm = TRUE),
     grid_natural_cover_high_pct = mean(natural_cover_pct >= 60, na.rm = TRUE) * 100,
+    grid_climate_block_median = median(climate_block_score, na.rm = TRUE),
+    grid_access_block_median = median(access_block_score, na.rm = TRUE),
+    grid_nature_block_median = median(nature_block_score, na.rm = TRUE),
+    grid_mixed_score_median = median(mixed_score, na.rm = TRUE),
+    grid_mixed_score_p75 = as.numeric(quantile(mixed_score, probs = 0.75, na.rm = TRUE, type = 7)),
+    grid_pct_cells_mixed_top = mean(mixed_score >= 0.4283, na.rm = TRUE) * 100,
     grid_iso_best_rank = min(isochrone_rank, na.rm = TRUE),
     grid_iso_majority_rank = mode_int(isochrone_rank),
     grid_pct_area_inside_2h30 = mean(isochrone_rank <= 3, na.rm = TRUE) * 100,
