@@ -1,5 +1,5 @@
 import { buildUrlState, parseUrlState } from '$lib/state/urlState';
-import { clampNumber } from '$lib/state/filters';
+import { clampNumber, type TravelBucketFilter } from '$lib/state/filters';
 import { tabForMode } from '$lib/state/viewMode';
 
 type SyncState = {
@@ -7,7 +7,7 @@ type SyncState = {
 	mapViewMode: 'auto' | 'municipality' | 'grid';
 	query: string;
 	provinceFilter: string;
-	maxTravelBucket: '<=1h30' | '<=2h00' | '<=2h30' | '<=3h30' | '<=4h00' | '>4h00';
+	maxTravelBucket: TravelBucketFilter;
 	minPrecipAnnual: number;
 	minWinterTemp: number;
 	maxSummerTemp: number;
@@ -66,7 +66,7 @@ export const buildUrlFromState = (state: SyncState) =>
 		mode: state.viewMode,
 		q: state.query.trim().length > 0 ? state.query.trim() : undefined,
 		province: state.provinceFilter !== 'Todas' ? state.provinceFilter : undefined,
-		travel: state.maxTravelBucket !== '>4h00' ? state.maxTravelBucket : undefined,
+		travel: state.maxTravelBucket !== null && state.maxTravelBucket !== '>4h00' ? state.maxTravelBucket : undefined,
 		ppt: state.minPrecipAnnual !== 0 ? state.minPrecipAnnual : undefined,
 		tw: state.minWinterTemp !== -10 ? state.minWinterTemp : undefined,
 		ts: state.maxSummerTemp !== 40 ? state.maxSummerTemp : undefined,

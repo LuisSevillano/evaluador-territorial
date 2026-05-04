@@ -8,6 +8,7 @@
 	import { FILTER_HELP } from '$lib/state/filterHelp';
 	import { DEFAULT_WEIGHTS_NORMALIZED, DEFAULT_WEIGHTS_RAW } from '$lib/state/scoring';
 	import type { MapColorMetric } from '$lib/components/map/coloring';
+	import type { TravelBucketFilter } from '$lib/state/filters';
 
 		type Props = {
 		query?: string;
@@ -27,7 +28,7 @@
 		showVegetationLayer?: boolean;
 		provinceFilter?: string;
 		provinciasDisponibles?: string[];
-		maxTravelBucket?: '<=1h30' | '<=2h00' | '<=2h30' | '<=3h30' | '<=4h00' | '>4h00';
+		maxTravelBucket?: TravelBucketFilter;
 		minPrecipAnnual?: number;
 		minWinterTemp?: number;
 		maxSummerTemp?: number;
@@ -58,9 +59,7 @@
 		onToggleLandUseLayer?: (value: boolean) => void;
 		onToggleVegetationLayer?: (value: boolean) => void;
 		onProvinceFilterChange?: (value: string) => void;
-		onMaxTravelBucketChange?: (
-			value: '<=1h30' | '<=2h00' | '<=2h30' | '<=3h30' | '<=4h00' | '>4h00'
-		) => void;
+		onMaxTravelBucketChange?: (value: TravelBucketFilter) => void;
 		onMinPrecipAnnualChange?: (value: number) => void;
 		onMinWinterTempChange?: (value: number) => void;
 		onMaxSummerTempChange?: (value: number) => void;
@@ -93,7 +92,7 @@
 		showVegetationLayer = false,
 		provinceFilter = 'Todas',
 		provinciasDisponibles = ['Todas'],
-		maxTravelBucket = '>4h00',
+		maxTravelBucket = null,
 		minPrecipAnnual = 0,
 		minWinterTemp = -10,
 		maxSummerTemp = 40,
@@ -204,17 +203,7 @@
 		}))
 	);
 
-	const travelBuckets: Array<{
-		value: '<=1h30' | '<=2h00' | '<=2h30' | '<=3h30' | '<=4h00' | '>4h00';
-		label: string;
-	}> = [
-		{ value: '<=1h30', label: '1,5horas' },
-		{ value: '<=2h00', label: '2h' },
-		{ value: '<=2h30', label: '2,5h' },
-		{ value: '<=3h30', label: '3,5h' },
-		{ value: '<=4h00', label: '4h' },
-		{ value: '>4h00', label: '>4h' }
-	];
+	import { travelBuckets } from '$lib/state/filters';
 </script>
 
 <aside class="sidebar">

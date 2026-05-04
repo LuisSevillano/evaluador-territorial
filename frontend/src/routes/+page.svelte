@@ -173,6 +173,7 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 				provinceFilter === 'Todas' ||
 				provinceName === normalizeProvinceName(provinceFilter);
 			const bucketOk =
+				maxTravelBucket === null ||
 				(bucketOrder[m.travel_bucket as TravelBucket] ?? bucketOrder['>4h00']) <=
 				bucketOrder[maxTravelBucket];
 			const precipOk = isPlausiblePrecipAnnual(m.precip_annual_mm)
@@ -232,7 +233,7 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 	const activeFiltersSummary = $derived(
 		[
 			provinceFilter !== 'Todas' ? `provincia=${provinceFilter}` : null,
-			maxTravelBucket !== '>4h00' ? `acc<=${maxTravelBucket}` : null,
+			maxTravelBucket !== null ? `acc<=${maxTravelBucket}` : null,
 			minPrecipAnnual !== 0 ? `ppt>=${minPrecipAnnual}` : null,
 			minWinterTemp !== -10 ? `t_inv>=${minWinterTemp}` : null,
 			maxSummerTemp !== 40 ? `t_ver<=${maxSummerTemp}` : null,
@@ -823,6 +824,7 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 					{layerOrder}
 					{visibleMunicipioIds}
 					{provinceFilter}
+					{maxTravelBucket}
 					{isMobileView}
 					{isBottomSheetOpen}
 					pmtilesUrl={municipiosPmtilesUrl}
