@@ -39,7 +39,6 @@
 		activeFiltersSummary?: string[];
 		shortlistedIds?: string[];
 		shortlistMunicipios?: Municipio[];
-		isEvaluationMode?: boolean;
 		weights?: { climate: number; access: number; nature: number };
 		weightsRaw?: { climateWeight: number; accessWeight: number; natureWeight: number };
 		sensitivityOverlap?: number;
@@ -103,7 +102,6 @@
 		activeFiltersSummary = [],
 		shortlistedIds = [],
 		shortlistMunicipios = [],
-		isEvaluationMode = false,
 		weights = DEFAULT_WEIGHTS_NORMALIZED,
 		weightsRaw = DEFAULT_WEIGHTS_RAW,
 		sensitivityOverlap = 0,
@@ -221,19 +219,8 @@
 		</div>
 	</header>
 
-	<section class="panel mode-context">
-		<h2>{isEvaluationMode ? 'Modo evaluación' : 'Modo exploración'}</h2>
-		<p>
-			{#if isEvaluationMode}
-				Ajusta pesos y score para comparar municipios de forma cuantitativa.
-			{:else}
-				Ajusta filtros y capas para explorar el territorio sin sesgo por ranking.
-			{/if}
-		</p>
-	</section>
-
 	<section class="panel">
-		<h2>{isEvaluationMode ? 'Filtros de evaluación' : 'Filtros de exploración'}</h2>
+		<h2>Filtros</h2>
 		<div class="control search-control">
 			<div class="label-help-row">
 				<label for="search">Buscar municipio</label>
@@ -284,7 +271,6 @@
 				{maxSummerTemp}
 				{maxThermalAmplitude}
 				{maxThermalAmplitudeLimit}
-				{isEvaluationMode}
 				{minCompositeScore}
 				onMinPrecipAnnualChange={onMinPrecipAnnualChange}
 				onMinWinterTempChange={onMinWinterTempChange}
@@ -300,41 +286,39 @@
 		</div>
 	</section>
 
-	{#if isEvaluationMode}
-		<section class="panel mobile-score-panel">
-			<h2>Ajuste del score</h2>
-			<p class="muted">Estos pesos cambian el score y el ranking; el filtro de score mínimo decide qué municipios se muestran en mapa y tabla.</p>
-			<div class="chips-wrap compact preset-wrap">
-				<ChipButton label="Equilibrado" active={activePreset === 'equilibrado'} onclick={() => onPresetWeights('equilibrado')} />
-				<ChipButton label="Priorizar naturaleza" active={activePreset === 'naturaleza'} onclick={() => onPresetWeights('naturaleza')} />
-				<ChipButton label="Priorizar accesibilidad" active={activePreset === 'accesibilidad'} onclick={() => onPresetWeights('accesibilidad')} />
-				<ChipButton label="Priorizar clima" active={activePreset === 'clima'} onclick={() => onPresetWeights('clima')} />
-				<ChipButton label="Clima estricto" active={activePreset === 'clima_estricto'} onclick={() => onPresetWeights('clima_estricto')} />
-			</div>
-			<div class="control score-control">
-				<label for="m-rw-climate">Peso clima: {weightsRaw.climateWeight}</label>
+	<section class="panel score-panel">
+		<h2>Ajuste del score</h2>
+		<p class="muted">Estos pesos cambian el score y el ranking; el filtro de score mínimo decide qué municipios se muestran en mapa y tabla.</p>
+		<div class="chips-wrap compact preset-wrap">
+			<ChipButton label="Equilibrado" active={activePreset === 'equilibrado'} onclick={() => onPresetWeights('equilibrado')} />
+			<ChipButton label="Priorizar naturaleza" active={activePreset === 'naturaleza'} onclick={() => onPresetWeights('naturaleza')} />
+			<ChipButton label="Priorizar accesibilidad" active={activePreset === 'accesibilidad'} onclick={() => onPresetWeights('accesibilidad')} />
+			<ChipButton label="Priorizar clima" active={activePreset === 'clima'} onclick={() => onPresetWeights('clima')} />
+			<ChipButton label="Clima estricto" active={activePreset === 'clima_estricto'} onclick={() => onPresetWeights('clima_estricto')} />
+		</div>
+		<div class="desktop-grid">
+			<div class="item">
+				<div class="label-help-row">
+					<label for="m-rw-climate">Peso clima: {weightsRaw.climateWeight}</label>
+				</div>
 				<input id="m-rw-climate" name="m-rw-climate" type="range" min="0" max="100" step="1" value={weightsRaw.climateWeight} oninput={(e) => onClimateWeightChange(toNumber(e))} />
 			</div>
-			<div class="control score-control">
-				<label for="m-rw-access">Peso accesibilidad: {weightsRaw.accessWeight}</label>
+			<div class="item">
+				<div class="label-help-row">
+					<label for="m-rw-access">Peso accesibilidad: {weightsRaw.accessWeight}</label>
+				</div>
 				<input id="m-rw-access" name="m-rw-access" type="range" min="0" max="100" step="1" value={weightsRaw.accessWeight} oninput={(e) => onAccessWeightChange(toNumber(e))} />
 			</div>
-			<div class="control score-control">
-				<label for="m-rw-nature">Peso naturaleza: {weightsRaw.natureWeight}</label>
+			<div class="item">
+				<div class="label-help-row">
+					<label for="m-rw-nature">Peso naturaleza: {weightsRaw.natureWeight}</label>
+				</div>
 				<input id="m-rw-nature" name="m-rw-nature" type="range" min="0" max="100" step="1" value={weightsRaw.natureWeight} oninput={(e) => onNatureWeightChange(toNumber(e))} />
 			</div>
-			<p class="muted">Normalizados: clima {(weights.climate * 100).toFixed(0)}% · accesibilidad {(weights.access * 100).toFixed(0)}% · naturaleza {(weights.nature * 100).toFixed(0)}%</p>
-			<p class="muted">Robustez top-10 vs base equilibrada: {sensitivityOverlap}/10</p>
-		</section>
-	{/if}
-
-
-	{#if isEvaluationMode}
-		<section class="panel">
-			<h2>Ranking y decisión</h2>
-			<p class="muted">El ranking top 25 aparece en el panel derecho. Selecciona un municipio para revisar su ficha y ajustar pesos con contexto.</p>
-		</section>
-	{/if}
+		</div>
+		<p class="muted">Normalizados: clima {(weights.climate * 100).toFixed(0)}% · accesibilidad {(weights.access * 100).toFixed(0)}% · naturaleza {(weights.nature * 100).toFixed(0)}%</p>
+		<p class="muted">Robustez top-10 vs base equilibrada: {sensitivityOverlap}/10</p>
+	</section>
 
 
 	<section class="panel">
@@ -402,11 +386,18 @@
 	.chips-wrap { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-top: 0.25rem; }
 	.chips-wrap.compact { gap: 0.3rem; }
 	.preset-wrap { margin-top: 0.35rem; }
-	.mobile-score-panel { display: none; }
-	.mobile-score-panel :global(.chips-wrap .chip-btn) { width: auto; }
-	.mobile-score-panel .score-control { max-width: 280px; }
-	.mobile-score-panel .score-control label { font-size: 0.78rem; letter-spacing: 0.02em; color: #415954; }
-	.mobile-score-panel .score-control input[type='range'] { height: 10px; }
+	
+	.score-panel :global(.chips-wrap .chip-btn) { width: auto; }
+	.score-panel .desktop-grid {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		row-gap: 0.35rem;
+		column-gap: 0.5rem;
+	}
+	.score-panel .desktop-grid .item:last-child { grid-column: 1 / -1; }
+	.score-panel .desktop-grid .label-help-row { gap: 0.32rem; }
+	.score-panel .desktop-grid .label-help-row label { font-size: 0.74rem; color: #3f5753; }
+	.score-panel .desktop-grid input[type='range'] { width: 100%; }
 	.province-chips { flex-wrap: wrap;  }
 
 	:global(.chips-wrap.compact .chip-btn.compact) { width: 44px; padding-left: 0; padding-right: 0; }
@@ -427,11 +418,11 @@
 		.sidebar { max-width: 100%; height: auto; min-height: 0; border-right: 0; max-height: none; overflow: visible; scrollbar-gutter: auto; padding: 1rem 1rem 1.15rem; }
 		h2 { font-size: 1.02rem; }
 		.control > label,
-		.mobile-score-panel .score-control label,
+		.score-panel .desktop-grid .label-help-row label,
 		.layers label { font-size: 0.8rem; }
 		.methodology summary { font-size: 0.9rem; }
 		.method-body { font-size: 0.8rem; }
 		.muted { font-size: 0.8rem; }
-		.mobile-score-panel { display: block; }
+		.score-panel { display: block; }
 	}
 </style>
