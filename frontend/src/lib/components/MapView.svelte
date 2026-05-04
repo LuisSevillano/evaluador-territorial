@@ -18,6 +18,8 @@
 	import 'maplibre-gl/dist/maplibre-gl.css';
 	import { type MapViewMode } from '$lib/state/mapViewMode';
 
+	import { bucketOrder, type TravelBucketFilter } from '$lib/state/filters';
+
 	type Props = {
 		municipios?: Municipio[];
 		allMunicipios?: Municipio[];
@@ -36,6 +38,7 @@
 		layerOrder?: string[];
 		visibleMunicipioIds?: string[];
 		provinceFilter?: string;
+		maxTravelBucket?: TravelBucketFilter;
 		pmtilesUrl?: string;
 		onMapSelection?: (municipio: Municipio | null) => void;
 		onToggleIgnSatellite?: (visible: boolean) => void;
@@ -64,6 +67,7 @@
 		layerOrder = ['municipios', 'isochrones', 'landuse', 'reservoirs', 'rivers'],
 		visibleMunicipioIds = [],
 		provinceFilter = 'Todas',
+		maxTravelBucket = null,
 		pmtilesUrl = '/tiles/municipios.pmtiles',
 		onMapSelection = () => undefined,
 		onToggleIgnSatellite = () => undefined,
@@ -171,6 +175,12 @@
 	let currentZoom = $state(0);
 	let activeGridPmtilesPath = $state('/tiles/grid/grid_norte.pmtiles');
 
+	$effect(() => {
+		if (provinceFilter === 'Todas' && viewMode === 'grid' && currentZoom < GRID_MIN_ZOOM) {
+			onViewModeChange('auto');
+		}
+	});
+
 	const visibility = $derived.by(() => {
 		const gridVisible =
 			viewMode === 'grid' ||
@@ -196,11 +206,13 @@
 	const applyVisibilityBasedOnMode = () => {
 		if (!map) return;
 		const v = visibility;
-		setLayerVisibility(municipiosPolygonsFillLayerId, v.municipalityFillVisible);
-		setLayerVisibility(municipiosPolygonsLineLayerId, v.municipalityLineVisible);
-		setLayerVisibility(gridFillLayerId, v.gridVisible);
-		setLayerVisibility(gridLineLayerId, v.gridVisible || v.municipalityLineVisible);
-		setLayerVisibility(gridHoverLineLayerId, v.gridVisible);
+		const showGrid = v.gridVisible;
+		const showMunicipios = showMunicipioPolygons && v.municipalityFillVisible;
+		setLayerVisibility(municipiosPolygonsFillLayerId, showMunicipios);
+		setLayerVisibility(municipiosPolygonsLineLayerId, showMunicipios);
+		setLayerVisibility(gridFillLayerId, showGrid);
+		setLayerVisibility(gridLineLayerId, showGrid || v.municipalityLineVisible);
+		setLayerVisibility(gridHoverLineLayerId, showGrid);
 	};
 
 
@@ -422,13 +434,13 @@
 			if (layerKey === 'isochrones') {
 				for (const isochrone of isochroneLayers) {
 					if (map.getLayer(isochrone.layerId))
-						map.moveLayer(isochrone.layerId, provinciasLineLayerId);
+						map.moveLayer(isochrone.layerId, ccaaLineLayerId);
 				}
 				continue;
 			}
 			const layerId = mapLayerIds[layerKey];
 			if (!layerId || !map.getLayer(layerId)) continue;
-			map.moveLayer(layerId, provinciasLineLayerId);
+			map.moveLayer(layerId, ccaaLineLayerId);
 		}
 		if (map.getLayer(municipiosPolygonsLineLayerId)) map.moveLayer(municipiosPolygonsLineLayerId);
 		if (map.getLayer(provinciasLineLayerId)) map.moveLayer(provinciasLineLayerId);
@@ -892,46 +904,65 @@
 
 	const applyGridFilter = () => {
 		if (!map) return;
+
+		const setFilters = (expr: any) => {
+			if (map.getLayer(gridFillLayerId)) map.setFilter(gridFillLayerId, expr);
+			if (map.getLayer(gridLineLayerId)) map.setFilter(gridLineLayerId, expr);
+			if (map.getLayer(gridHoverLineLayerId)) map.setFilter(gridHoverLineLayerId, expr);
+		};
+
 		if (selectedMunicipio?.id?.startsWith('cell_')) {
-			if (map.getLayer(gridFillLayerId)) map.setFilter(gridFillLayerId, null);
-			if (map.getLayer(gridLineLayerId)) map.setFilter(gridLineLayerId, null);
-			if (map.getLayer(gridHoverLineLayerId)) map.setFilter(gridHoverLineLayerId, null);
+			setFilters(null);
 			return;
 		}
-		if (visibility.gridVisible) {
-			if (provinceFilter && provinceFilter !== 'Todas') {
-				const normalizedProvince = normalizeProvinceName(provinceFilter);
-				const provinceExpr: any = ['==', ['get', 'provincia'], normalizedProvince];
-				if (map.getLayer(gridFillLayerId)) map.setFilter(gridFillLayerId, provinceExpr);
-				if (map.getLayer(gridLineLayerId)) map.setFilter(gridLineLayerId, provinceExpr);
-				if (map.getLayer(gridHoverLineLayerId)) map.setFilter(gridHoverLineLayerId, provinceExpr);
-				return;
+
+		const hasTravelFilter = maxTravelBucket !== null;
+		const hasProvinceFilter = provinceFilter && provinceFilter !== 'Todas';
+		const hasSelectedMunicipio = selectedMunicipio?.id || selectedMunicipio?.codigo;
+
+		if (!visibility.gridVisible) {
+			if (hasSelectedMunicipio) {
+				const selectedId = selectedMunicipio.id ?? selectedMunicipio.codigo;
+				const numeric = Number.parseInt(selectedId!, 10);
+				const expr: any = Number.isFinite(numeric)
+					? [
+							'any',
+							['==', ['to-string', ['coalesce', ['get', 'municipio_id'], ['get', 'codigo']]], selectedId],
+							['==', ['to-number', ['coalesce', ['get', 'municipio_id'], ['get', 'codigo']]], numeric]
+						]
+					: ['==', ['to-string', ['coalesce', ['get', 'municipio_id'], ['get', 'codigo']]], selectedId];
+				setFilters(expr);
+			} else {
+				setFilters(null);
 			}
-			if (map.getLayer(gridFillLayerId)) map.setFilter(gridFillLayerId, null);
-			if (map.getLayer(gridLineLayerId)) map.setFilter(gridLineLayerId, null);
-			if (map.getLayer(gridHoverLineLayerId)) map.setFilter(gridHoverLineLayerId, null);
-			return;
-		}
-		const selectedId = selectedMunicipio?.id ?? selectedMunicipio?.codigo ?? null;
-		if (!selectedId) {
-			if (map.getLayer(gridFillLayerId)) map.setFilter(gridFillLayerId, null);
-			if (map.getLayer(gridLineLayerId)) map.setFilter(gridLineLayerId, null);
-			if (map.getLayer(gridHoverLineLayerId)) map.setFilter(gridHoverLineLayerId, null);
 			return;
 		}
 
-		const numeric = Number.parseInt(selectedId, 10);
-		const expr: any = Number.isFinite(numeric)
-			? [
-					'any',
-					['==', ['to-string', ['coalesce', ['get', 'municipio_id'], ['get', 'codigo']]], selectedId],
-					['==', ['to-number', ['coalesce', ['get', 'municipio_id'], ['get', 'codigo']]], numeric]
-				]
-			: ['==', ['to-string', ['coalesce', ['get', 'municipio_id'], ['get', 'codigo']]], selectedId];
+		const filterParts: any[] = [];
 
-		if (map.getLayer(gridFillLayerId)) map.setFilter(gridFillLayerId, expr);
-		if (map.getLayer(gridLineLayerId)) map.setFilter(gridLineLayerId, expr);
-		if (map.getLayer(gridHoverLineLayerId)) map.setFilter(gridHoverLineLayerId, expr);
+		if (hasTravelFilter) {
+			const selectedRank = bucketOrder[maxTravelBucket as keyof typeof bucketOrder] ?? 6;
+			const isochroneExpr: any = [
+				'in',
+				['get', 'isochrone_bucket'],
+				['literal', Object.entries(bucketOrder).filter(([, r]) => r <= selectedRank).map(([b]) => b)]
+			];
+			filterParts.push(isochroneExpr);
+		}
+
+		if (hasProvinceFilter) {
+			const normalizedProvince = normalizeProvinceName(provinceFilter);
+			const provinceExpr: any = ['==', ['get', 'provincia'], normalizedProvince];
+			filterParts.push(provinceExpr);
+		}
+
+		if (filterParts.length === 0) {
+			setFilters(null);
+			return;
+		}
+
+		const finalExpr = filterParts.length === 1 ? filterParts[0] : ['all', ...filterParts];
+		setFilters(finalExpr);
 	};
 
 	const addCcaaBoundaries = () => {
@@ -1244,11 +1275,13 @@
 		setLayerVisibility(ignSatelliteLayerId, showIgnSatellite);
 		setLayerVisibility(ignRiversLayerId, showIgnRivers);
 		setLayerVisibility(ignReservoirsLayerId, showIgnReservoirs);
-		setLayerVisibility(municipiosPolygonsFillLayerId, showMunicipioPolygons);
-		setLayerVisibility(municipiosPolygonsLineLayerId, showMunicipioPolygons);
+		const gridActive = visibility.gridVisible;
+		const showMunicipiosPolygons = showMunicipioPolygons && !gridActive;
+		setLayerVisibility(municipiosPolygonsFillLayerId, showMunicipiosPolygons);
+		setLayerVisibility(municipiosPolygonsLineLayerId, showMunicipiosPolygons);
 		setIsochroneVisibility(showIsochronesLayer);
-		setLayerVisibility(municipiosHoverLineLayerId, showMunicipioPolygons);
-		setLayerVisibility(municipiosSelectedLineLayerId, showMunicipioPolygons);
+		setLayerVisibility(municipiosHoverLineLayerId, showMunicipiosPolygons);
+		setLayerVisibility(municipiosSelectedLineLayerId, showMunicipiosPolygons);
 		setLayerVisibility(municipiosLayerId, showMunicipioPoints);
 		setLayerVisibility(forestLayerId, showForestLayer);
 		setLayerVisibility(landUseLayerId, showLandUseLayer);
