@@ -5,6 +5,7 @@ suppressPackageStartupMessages({
   library(dplyr)
   library(arrow)
   library(fs)
+  library(stringr)
 })
 
 ts_now <- function() format(Sys.time(), "%H:%M:%S")
@@ -163,11 +164,146 @@ grid_sf <- grid_base |>
 
 grid_centroids_utm <- st_centroid(grid_sf)
 
-log_step("Calculando acceso hidrico por buffers (rios + embalses)")
+log_step("Calculando acceso hidrico por candidatos de baño (rios IGN con persistencia + embalses)")
+
+clean_code <- function(x) {
+  y <- as.character(x)
+  y[y %in% c("-998", "-999", "-997", "-DE", "-NA", "-SD", "")] <- NA_character_
+  y
+}
+
+to_int <- function(x) {
+  y <- clean_code(x)
+  suppressWarnings(as.integer(y))
+}
+
+to_numeric_comma <- function(x) {
+  y <- clean_code(x)
+  y <- gsub(",", ".", y, fixed = TRUE)
+  suppressWarnings(as.numeric(y))
+}
+
+normalize_name <- function(x) {
+  y <- as.character(x)
+  y[is.na(y)] <- ""
+  y <- tolower(y)
+  y <- iconv(y, to = "ASCII//TRANSLIT")
+  y[is.na(y)] <- ""
+  y <- gsub("[^a-z0-9 ]+", " ", y)
+  y <- gsub("\\s+", " ", y)
+  trimws(y)
+}
+
+normalize_line_geometry <- function(sf_obj) {
+  if (nrow(sf_obj) == 0) return(sf_obj)
+  out <- sf_obj
+  gtype <- unique(as.character(st_geometry_type(out, by_geometry = TRUE)))
+  if (any(gtype %in% c("CURVE", "MULTICURVE", "COMPOUNDCURVE"))) {
+    out <- tryCatch(st_cast(out, "MULTILINESTRING"), error = function(e) out)
+  }
+  out
+}
+
 hydro_layers <- list()
 
-if (file.exists(paths$output_rivers_geojson)) {
-  hydro_layers[[length(hydro_layers) + 1]] <- st_read(paths$output_rivers_geojson, quiet = TRUE)
+tramocurso_shps <- dir_ls(
+  path(project_root, "data", "raw", "hydrography"),
+  recurse = TRUE,
+  regexp = "DH_V0_ES[0-9]{3}.*/hi_tramocurso_l_ES[0-9]{3}\\.shp$",
+  type = "file"
+)
+
+if (length(tramocurso_shps) > 0) {
+  read_hydro <- function(shp_path) {
+    out <- tryCatch(
+      st_read(shp_path, quiet = TRUE) |>
+        mutate(source_layer = "tramocurso"),
+      error = function(e) NULL
+    )
+    if (is.null(out)) return(NULL)
+    names(out) <- tolower(names(out))
+    out <- out |>
+      mutate(
+        source_layer = as.character(source_layer),
+        id_curso = clean_code(id_curso),
+        nombre = clean_code(nombre),
+        name_norm = normalize_name(nombre),
+        tipo_curso = clean_code(tipo_curso),
+        persist_num = to_int(persist),
+        orden_num = to_int(orden),
+        ancho_max_num = to_numeric_comma(ancho_max),
+        ancho_min_num = to_numeric_comma(ancho_min),
+        longitud_num = to_numeric_comma(longitud)
+      )
+    normalize_line_geometry(out)
+  }
+
+  for (shp_file in tramocurso_shps) {
+    riv <- read_hydro(shp_file)
+    if (is.null(riv) || nrow(riv) == 0) next
+
+    artificial_like <- str_detect(
+      riv$name_norm,
+      "(^|[[:space:][:punct:]])(canal|acequia|azequia|cacera|caz|cauce artificial|zanja|dren|drenaje|desague|colector|emisario|tuberia|cuneta|aliviadero|sifon)([[:space:][:punct:]]|$)"
+    )
+
+    riv <- riv |>
+      mutate(
+        is_artificial = artificial_like,
+        is_temporal = persist_num %in% c(18002L, 18003L),
+        is_permanent = persist_num == 18001L,
+        river_rank = case_when(
+          is_permanent & !is_artificial & orden_num <= 1 ~ "alto",
+          is_permanent & !is_artificial & orden_num <= 3 ~ "alto",
+          !is.na(ancho_max_num) & ancho_max_num >= 8 & !is_artificial ~ "medio",
+          !is.na(ancho_max_num) & ancho_max_num >= 4 & !is_artificial ~ "medio",
+          !is.na(longitud_num) & longitud_num >= 5000 & !is_temporal ~ "medio",
+          is_temporal ~ "bajo",
+          is_artificial ~ "ninguno",
+          TRUE ~ "bajo"
+        )
+      )
+
+    riv_filtered <- riv |>
+      filter(river_rank != "ninguno")
+    if (nrow(riv_filtered) > 0) {
+      hydro_layers[[length(hydro_layers) + 1]] <- riv_filtered
+      log_step(paste0("  ", basename(shp_file), ": ", nrow(riv_filtered), " km de cauces relevantes (rank: ", paste(unique(riv_filtered$river_rank), collapse=", "), ")"))
+    }
+  }
+}
+
+if (length(hydro_layers) == 0 && file.exists(paths$output_rivers_geojson)) {
+  log_step("  SHP IGN no encontrados, usando fallback RiosWatercourseScope")
+  rivers_raw <- st_read(paths$output_rivers_geojson, quiet = TRUE) |>
+    st_transform(st_crs(grid_sf)) |>
+    st_make_valid()
+
+  if (nrow(rivers_raw) > 0) {
+    if (!"orden_num" %in% names(rivers_raw)) {
+      rivers_raw$orden_num <- as.integer(NA)
+    }
+    if (!"ancho_max_num" %in% names(rivers_raw)) {
+      rivers_raw$ancho_max_num <- as.numeric(NA)
+    }
+    if (!"longitud_num" %in% names(rivers_raw)) {
+      rivers_raw$longitud_num <- as.numeric(NA)
+    }
+
+    rivers_raw <- rivers_raw |>
+      mutate(
+        river_rank = case_when(
+          !is.na(orden_num) & orden_num <= 1 ~ "alto",
+          !is.na(orden_num) & orden_num <= 3 ~ "medio",
+          !is.na(ancho_max_num) & ancho_max_num >= 8 ~ "alto",
+          !is.na(ancho_max_num) & ancho_max_num >= 4 ~ "medio",
+          !is.na(longitud_num) & longitud_num >= 5000 ~ "medio",
+          TRUE ~ "bajo"
+        )
+      )
+
+    hydro_layers[[length(hydro_layers) + 1]] <- rivers_raw
+  }
 }
 
 embalses_candidates <- c(
@@ -186,30 +322,39 @@ if (length(hydro_layers) > 0) {
     st_make_valid()
 
   if (nrow(hydro_utm) > 0) {
-    in10 <- lengths(st_is_within_distance(grid_centroids_utm, hydro_utm, dist = 10000)) > 0
-    in20 <- lengths(st_is_within_distance(grid_centroids_utm, hydro_utm, dist = 20000)) > 0
-    in30 <- lengths(st_is_within_distance(grid_centroids_utm, hydro_utm, dist = 30000)) > 0
+    log_step("Calculando distancia a candidatos de baño por relevancia...")
+
+    nearest_idx <- st_nearest_feature(grid_centroids_utm, hydro_utm)
+    nearest_dist <- as.numeric(st_distance(grid_centroids_utm, hydro_utm[nearest_idx, ], by_element = TRUE)) / 1000
+
+    rank_vals <- hydro_utm$river_rank[nearest_idx]
+    rank_vals[is.na(rank_vals)] <- "bajo"
+
+    river_buffer_class = case_when(
+      nearest_dist <= 10 ~ "<=10km",
+      nearest_dist <= 20 ~ "10-20km",
+      nearest_dist <= 30 ~ "20-30km",
+      TRUE ~ ">30km"
+    )
+
+    rank_bonus = case_when(
+      rank_vals == "alto" ~ 20,
+      rank_vals == "medio" ~ 10,
+      TRUE ~ 0
+    )
 
     grid_sf <- grid_sf |>
       mutate(
-        river_buffer_class = case_when(
-          in10 ~ "<=10km",
-          in20 ~ "10-20km",
-          in30 ~ "20-30km",
-          TRUE ~ ">30km"
+        river_buffer_class = river_buffer_class,
+        river_distance_km = round(nearest_dist, 2),
+        river_rank = rank_vals,
+        river_access_score_base = case_when(
+          river_buffer_class == "<=10km" ~ 80,
+          river_buffer_class == "10-20km" ~ 60,
+          river_buffer_class == "20-30km" ~ 30,
+          TRUE ~ 0
         ),
-        river_distance_km = case_when(
-          river_buffer_class == "<=10km" ~ 5,
-          river_buffer_class == "10-20km" ~ 15,
-          river_buffer_class == "20-30km" ~ 25,
-          TRUE ~ 35
-        ),
-        river_access_score = case_when(
-          river_buffer_class == "<=10km" ~ 100,
-          river_buffer_class == "10-20km" ~ 70,
-          river_buffer_class == "20-30km" ~ 40,
-          TRUE ~ 10
-        )
+        river_access_score = pmin(100, river_access_score_base + rank_bonus)
       )
   }
 }
@@ -334,6 +479,7 @@ grid_sf <- grid_sf |>
     temp_summer,
     river_distance_km,
     river_buffer_class,
+    river_rank,
     river_access_score,
     natural_cover_pct,
     precip_norm,
