@@ -3,6 +3,8 @@ export type Municipio = {
 	codigo: string;
 	nombre: string;
 	provincia: string;
+	provincia_id_geo?: string;
+	provincia_nombre_geo?: string;
 	lat: number;
 	lon: number;
 	population?: number;

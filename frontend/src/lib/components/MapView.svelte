@@ -8,7 +8,13 @@
 	import LandUseLegend from '$lib/components/map/LandUseLegend.svelte';
 	import MapLoadingBadge from '$lib/components/map/MapLoadingBadge.svelte';
 	import ViewControl from '$lib/components/map/ViewControl.svelte';
-	import { type MapColorMetric, buildMunicipioColorExpression } from '$lib/components/map/coloring';
+	import {
+		type MapColorMetric,
+		buildMunicipioColorExpression,
+		getScoreThresholdsForMunicipios,
+		scoreColors,
+		missingDataColor
+	} from '$lib/components/map/coloring';
 	import 'maplibre-gl/dist/maplibre-gl.css';
 	import { type MapViewMode } from '$lib/state/mapViewMode';
 
@@ -71,6 +77,8 @@
 	let mapContainer: HTMLDivElement;
 	let map: maplibregl.Map;
 	let mapReady = $state(false);
+	let hasInitialHashView = $state(false);
+	let lockAutoFitFromHash = $state(false);
 
 	const viewMode = $derived(viewModeProp ?? 'auto');
 
@@ -192,22 +200,36 @@
 		buildMunicipioColorExpression(municipios, mapColorMetric)
 	);
 
-	const gridMixedScoreLookupExpression = $derived.by(() => {
-		const expr: any[] = [
-			'match',
-			['to-string', ['coalesce', ['get', 'municipio_id'], ['get', 'codigo']]]
-		];
-
-		for (const m of municipios) {
-			const mid = (m.id ?? m.codigo ?? '').toString();
-			const score = Number(m.mixed_score);
-			if (!mid || !Number.isFinite(score)) continue;
-			expr.push(mid, score);
+	const gridFillColorExpression = $derived.by(() => {
+		if (mapColorMetric !== 'mixed_score') {
+			return missingDataColor;
 		}
 
-		expr.push(-1);
-		return expr;
+		const thresholds = getScoreThresholdsForMunicipios(municipios);
+		return [
+			'case',
+			['!', ['has', 'mixed_score']],
+			missingDataColor,
+			[
+				'step',
+				['to-number', ['get', 'mixed_score']],
+				scoreColors[0],
+				thresholds[0],
+				scoreColors[1],
+				thresholds[1],
+				scoreColors[2],
+				thresholds[2],
+				scoreColors[3],
+				thresholds[3],
+				scoreColors[4]
+			]
+		] as any;
 	});
+
+	const applyGridFillPaint = () => {
+		if (!map || !map.getLayer(gridFillLayerId)) return;
+		map.setPaintProperty(gridFillLayerId, 'fill-color', gridFillColorExpression);
+	};
 
 	const landUsePalette: Array<{ key: string; color: string; label: string }> = [
 		{ key: 'forest', color: '#1b5e20', label: 'Bosque' },
@@ -768,10 +790,12 @@
 				source: gridPmtilesSourceId,
 				'source-layer': 'grid',
 				paint: {
-					'fill-color': '#9ca3af',
-					'fill-opacity': ['interpolate', ['linear'], ['zoom'], 7, 0.03, 14, 0.26]
+					'fill-color': gridFillColorExpression,
+					'fill-opacity': 0.62
 				}
 			});
+
+			applyGridFillPaint();
 		} catch (error) {
 			console.error('No se pudo cargar grid PMTiles.', error);
 		}
@@ -806,6 +830,7 @@
 		if (map.getSource(gridPmtilesSourceId)) map.removeSource(gridPmtilesSourceId);
 		addGridPmtiles();
 		if (hadFill) {
+			applyGridFillPaint();
 			applyGridFilter();
 			applyVisibilityBasedOnMode();
 			applyLayerOrdering();
@@ -884,9 +909,11 @@
 		return () => maplibregl.removeProtocol('pmtiles');
 	};
 
-	onMount(() => {
+		onMount(() => {
 		const unregisterPmtiles = registerPmtiles();
 		initialBoundsApplied = false;
+		hasInitialHashView = false;
+		lockAutoFitFromHash = false;
 		let resizeObserver: ResizeObserver | null = null;
 
 		map = new maplibregl.Map({
@@ -899,6 +926,8 @@
 
 		const hashView = parseHashView();
 		if (hashView) {
+			hasInitialHashView = true;
+			lockAutoFitFromHash = true;
 			map.jumpTo({ center: hashView.center, zoom: hashView.zoom });
 		}
 
@@ -1008,9 +1037,11 @@
 			});
 
 			mapReady = true;
-			if (!initialBoundsApplied) {
+			if (!initialBoundsApplied && !hasInitialHashView) {
 				fitToMunicipios();
 				lastAutoFitSignature = '';
+				initialBoundsApplied = true;
+			} else if (!initialBoundsApplied) {
 				initialBoundsApplied = true;
 			}
 			isMapLoading = false;
@@ -1023,6 +1054,14 @@
 
 		map.on('moveend', () => {
 			writeHashView();
+		});
+
+		map.on('dragstart', () => {
+			lockAutoFitFromHash = false;
+		});
+
+		map.on('zoomstart', () => {
+			lockAutoFitFromHash = false;
 		});
 
 		map.on('dataloading', () => {
@@ -1094,19 +1133,8 @@
 	});
 
 	$effect(() => {
-		const scoreLookup = gridMixedScoreLookupExpression;
 		if (!mapReady || !map || !map.getLayer(gridFillLayerId)) return;
-		map.setPaintProperty(gridFillLayerId, 'fill-color', [
-			'interpolate',
-			['linear'],
-			scoreLookup as any,
-			0,
-			'#ef4444',
-			0.5,
-			'#eab308',
-			1,
-			'#22c55e'
-		] as any);
+		applyGridFillPaint();
 	});
 
 	$effect(() => {
@@ -1134,6 +1162,11 @@
 	$effect(() => {
 		if (!map || !mapReady) return;
 		if (selectedMunicipio) return;
+		if (lockAutoFitFromHash) return;
+		if (hasInitialHashView) {
+			hasInitialHashView = false;
+			return;
+		}
 		autoFitToWorkingMunicipios();
 	});
 </script>

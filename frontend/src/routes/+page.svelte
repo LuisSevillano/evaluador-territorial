@@ -133,7 +133,11 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 
 	const provinciasDisponibles = $derived([
 		'Todas',
-		...Array.from(new Set(municipios.map((m) => normalizeProvinceName(m.provincia))))
+		...Array.from(
+			new Set(
+				municipios.map((m) => normalizeProvinceName((m as any).provincia_nombre_geo ?? m.provincia))
+			)
+		)
 			.filter((provincia) => provincia && provincia !== '53')
 			.sort((a, b) => a.localeCompare(b, 'es'))
 	]);
@@ -161,9 +165,10 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 
 	const municipiosFiltradosBase = $derived(
 		municipiosScoredForView.filter((m) => {
+			const provinceName = normalizeProvinceName((m as any).provincia_nombre_geo ?? m.provincia);
 			const provinceOk =
 				provinceFilter === 'Todas' ||
-				normalizeProvinceName(m.provincia) === normalizeProvinceName(provinceFilter);
+				provinceName === normalizeProvinceName(provinceFilter);
 			const bucketOk =
 				(bucketOrder[m.travel_bucket as TravelBucket] ?? bucketOrder['>4h00']) <=
 				bucketOrder[maxTravelBucket];
@@ -501,7 +506,8 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 
 		const queryString = params.toString();
 		const nextUrl = queryString ? `${window.location.pathname}?${queryString}` : window.location.pathname;
-		window.history.replaceState({}, '', nextUrl);
+		const nextUrlWithHash = `${nextUrl}${window.location.hash || ''}`;
+		window.history.replaceState({}, '', nextUrlWithHash);
 	});
 
 	$effect(() => {

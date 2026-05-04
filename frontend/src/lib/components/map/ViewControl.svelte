@@ -8,14 +8,14 @@
 
 	let { viewMode, onChange }: Props = $props();
 
-	const modes: { value: MapViewMode; label: string; icon: string }[] = [
-		{ value: 'auto', label: 'Auto', icon: '🔄' },
-		{ value: 'municipality', label: 'Municipios', icon: '🏘' },
-		{ value: 'grid', label: 'Rejilla', icon: '⊞' }
+	const modes: { value: MapViewMode; label: string }[] = [
+		{ value: 'auto', label: 'Auto' },
+		{ value: 'municipality', label: 'Municipios' },
+		{ value: 'grid', label: 'Rejilla' }
 	];
 </script>
 
-<div class="view-control">
+<div class="view-control" role="group" aria-label="Modo de vista del mapa">
 	{#each modes as mode}
 		<button
 			class="mode-btn"
@@ -23,51 +23,43 @@
 			onclick={() => onChange(mode.value)}
 			title={mode.label}
 		>
-			<span class="icon">{mode.icon}</span>
-			<span class="label">{mode.label}</span>
+			{mode.label}
 		</button>
 	{/each}
 </div>
 
 <style>
 	.view-control {
-		display: flex;
-		gap: 0.25rem;
-		background: rgba(255, 255, 255, 0.9);
-		padding: 0.25rem;
-		border-radius: 8px;
-		border: 1px solid rgba(21, 32, 33, 0.12);
+		display: inline-flex;
+		gap: 0;
+		padding: 0.18rem;
+		border-radius: 999px;
+		border: 1px solid rgba(21, 32, 33, 0.26);
+		background: rgba(255, 252, 245, 0.9);
+		box-shadow: 0 4px 10px rgba(16, 44, 54, 0.2);
 	}
 
 	.mode-btn {
-		display: flex;
-		align-items: center;
-		gap: 0.3rem;
-		padding: 0.35rem 0.6rem;
-		border: 1px solid rgba(21, 32, 33, 0.1);
-		border-radius: 6px;
+		width: auto;
+		border: 0;
 		background: transparent;
-		cursor: pointer;
-		font-size: 0.78rem;
 		color: #3f5652;
-		transition: all 160ms ease;
+		font-size: 0.74rem;
+		font-weight: 600;
+		padding: 0.34rem 0.72rem;
+		border-radius: 999px;
+		cursor: pointer;
+		transition:
+			background-color 180ms ease,
+			color 180ms ease;
 	}
 
 	.mode-btn:hover {
-		background: rgba(238, 248, 245, 0.6);
+		background: rgba(47, 125, 133, 0.14);
 	}
 
 	.mode-btn.active {
-		background: linear-gradient(120deg, #2f7d85, #245f66);
+		background: #2f7d85;
 		color: #f7f4ec;
-		border-color: #2f7d85;
-	}
-
-	.icon {
-		font-size: 0.9rem;
-	}
-
-	.label {
-		font-weight: 500;
 	}
 </style>
