@@ -177,7 +177,9 @@
 
 	$effect(() => {
 		if (provinceFilter === 'Todas' && viewMode === 'grid' && currentZoom < GRID_MIN_ZOOM) {
-			onViewModeChange('auto');
+			if (viewModeProp !== 'auto') {
+				onViewModeChange('auto');
+			}
 		}
 	});
 
@@ -922,8 +924,12 @@
 
 		if (!visibility.gridVisible) {
 			if (hasSelectedMunicipio) {
-				const selectedId = selectedMunicipio.id ?? selectedMunicipio.codigo;
-				const numeric = Number.parseInt(selectedId!, 10);
+				const selectedId = selectedMunicipio?.id ?? selectedMunicipio?.codigo;
+				if (!selectedId) {
+					setFilters(null);
+					return;
+				}
+				const numeric = Number.parseInt(selectedId, 10);
 				const expr: any = Number.isFinite(numeric)
 					? [
 							'any',
