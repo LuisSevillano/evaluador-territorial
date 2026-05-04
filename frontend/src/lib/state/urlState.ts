@@ -1,9 +1,7 @@
-export type ViewMode = 'exploracion' | 'evaluacion';
 export type SheetTab = 'sel' | 'filtr' | 'capas' | 'rank' | 'meta';
 export type TravelBucket = '<=1h30' | '<=2h00' | '<=2h30' | '<=3h30' | '<=4h00' | '>4h00';
 
 export type UrlState = {
-	mode?: ViewMode;
 	q?: string;
 	province?: string;
 	travel?: TravelBucket;
@@ -29,13 +27,11 @@ const toFiniteNumber = (value: string | null): number | undefined => {
 
 export const parseUrlState = (search: string): UrlState => {
 	const params = new URLSearchParams(search);
-	const mode = params.get('mode');
 	const travel = params.get('travel');
 	const tab = params.get('tab');
 	const mapView = params.get('mapView');
 
 	return {
-		mode: mode === 'exploracion' || mode === 'evaluacion' ? mode : undefined,
 		q: params.get('q') ?? undefined,
 		province: params.get('province') ?? undefined,
 		travel:
@@ -73,7 +69,6 @@ export const parseUrlState = (search: string): UrlState => {
 
 export const buildUrlState = (state: UrlState): URLSearchParams => {
 	const params = new URLSearchParams();
-	if (state.mode) params.set('mode', state.mode);
 	if (state.q) params.set('q', state.q);
 	if (state.province) params.set('province', state.province);
 	if (state.travel) params.set('travel', state.travel);

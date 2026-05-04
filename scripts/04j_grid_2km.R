@@ -162,6 +162,54 @@ grid_sf <- grid_base |>
     natural_cover_pct = pmax(0, pmin(100, forest_nature_quality * 100))
   )
 
+if (file.exists(paths$output_ccaa_geojson) && file.exists(paths$output_provincias_geojson)) {
+  log_step("Reasignando CCAA y provincia de celdas por join espacial")
+
+  ccaa_sf <- st_read(paths$output_ccaa_geojson, quiet = TRUE) |>
+    st_make_valid() |>
+    st_transform(st_crs(grid_sf)) |>
+    select(codnut2, nombre_ccaa, geometry)
+
+  prov_sf <- st_read(paths$output_provincias_geojson, quiet = TRUE) |>
+    st_make_valid() |>
+    st_transform(st_crs(grid_sf)) |>
+    select(codnut2, nombre_prov, geometry)
+
+  grid_centroids <- st_centroid(grid_sf)
+
+  ccaa_join <- suppressWarnings(st_join(grid_centroids, ccaa_sf, left = TRUE))
+  ccaa_missing <- which(is.na(ccaa_join$codnut2) | ccaa_join$codnut2 == "")
+  if (length(ccaa_missing) > 0) {
+    nearest_ccaa_idx <- st_nearest_feature(grid_centroids[ccaa_missing, ], ccaa_sf)
+    ccaa_join$codnut2[ccaa_missing] <- ccaa_sf$codnut2[nearest_ccaa_idx]
+    ccaa_join$nombre_ccaa[ccaa_missing] <- ccaa_sf$nombre_ccaa[nearest_ccaa_idx]
+  }
+
+  prov_join <- suppressWarnings(st_join(grid_centroids, prov_sf, left = TRUE))
+  prov_name <- as.character(prov_join$nombre_prov)
+  prov_codnut2 <- as.character(prov_join$codnut2)
+  target_codnut2 <- as.character(ccaa_join$codnut2)
+
+  invalid_idx <- which(is.na(prov_name) | prov_name == "" | is.na(prov_codnut2) | prov_codnut2 != target_codnut2)
+
+  if (length(invalid_idx) > 0) {
+    for (i in invalid_idx) {
+      cand <- prov_sf |> filter(codnut2 == target_codnut2[i])
+      if (nrow(cand) == 0) cand <- prov_sf
+      nearest_idx <- st_nearest_feature(grid_centroids[i, ], cand)
+      prov_name[i] <- cand$nombre_prov[nearest_idx]
+      prov_codnut2[i] <- cand$codnut2[nearest_idx]
+    }
+  }
+
+  grid_sf <- grid_sf |>
+    mutate(
+      ccaa = ifelse(!is.na(ccaa_join$nombre_ccaa) & ccaa_join$nombre_ccaa != "", as.character(ccaa_join$nombre_ccaa), NA_character_),
+      codnut2 = ifelse(!is.na(target_codnut2) & target_codnut2 != "", target_codnut2, NA_character_),
+      provincia = ifelse(!is.na(prov_name) & prov_name != "", prov_name, provincia)
+    )
+}
+
 grid_centroids_utm <- st_centroid(grid_sf)
 
 log_step("Calculando acceso hidrico por candidatos de baño (rios IGN con persistencia + embalses)")

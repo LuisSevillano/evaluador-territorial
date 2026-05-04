@@ -1,11 +1,11 @@
 import { DEFAULT_WEIGHTS_RAW } from '$lib/state/scoring';
-import type { TravelBucket } from '$lib/state/filters';
+import type { TravelBucketFilter } from '$lib/state/filters';
 
 export const createFiltersStore = () => {
 	const state = $state({
 		query: '',
 		provinceFilter: 'Todas',
-		maxTravelBucket: '>4h00' as TravelBucket,
+		maxTravelBucket: null as TravelBucketFilter,
 		minPrecipAnnual: 0,
 		minWinterTemp: -10,
 		maxSummerTemp: 40,
@@ -18,7 +18,7 @@ export const createFiltersStore = () => {
 
 	const clear = () => {
 		state.provinceFilter = 'Todas';
-		state.maxTravelBucket = '>4h00';
+		state.maxTravelBucket = null;
 		state.minPrecipAnnual = 0;
 		state.minWinterTemp = -10;
 		state.maxSummerTemp = 40;

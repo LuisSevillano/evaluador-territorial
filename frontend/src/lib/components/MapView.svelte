@@ -18,6 +18,8 @@
 	import 'maplibre-gl/dist/maplibre-gl.css';
 	import { type MapViewMode } from '$lib/state/mapViewMode';
 
+	import { bucketOrder, type TravelBucketFilter } from '$lib/state/filters';
+
 	type Props = {
 		municipios?: Municipio[];
 		allMunicipios?: Municipio[];
@@ -36,6 +38,7 @@
 		layerOrder?: string[];
 		visibleMunicipioIds?: string[];
 		provinceFilter?: string;
+		maxTravelBucket?: TravelBucketFilter;
 		pmtilesUrl?: string;
 		onMapSelection?: (municipio: Municipio | null) => void;
 		onToggleIgnSatellite?: (visible: boolean) => void;
@@ -64,6 +67,7 @@
 		layerOrder = ['municipios', 'isochrones', 'landuse', 'reservoirs', 'rivers'],
 		visibleMunicipioIds = [],
 		provinceFilter = 'Todas',
+		maxTravelBucket = null,
 		pmtilesUrl = '/tiles/municipios.pmtiles',
 		onMapSelection = () => undefined,
 		onToggleIgnSatellite = () => undefined,
@@ -166,15 +170,23 @@
 	let initialBoundsApplied = $state(false);
 	let lastAutoFitSignature = $state('');
 
-	const GRID_MIN_ZOOM = 6;
-	const GRID_FORCE_MIN_ZOOM = 7;
+	const getGridMinZoom = () => (isMobileView ? 8.5 : 6);
+	const GRID_FORCE_MIN_ZOOM = 6;
 	let currentZoom = $state(0);
 	let activeGridPmtilesPath = $state('/tiles/grid/grid_norte.pmtiles');
+
+	$effect(() => {
+		if (provinceFilter === 'Todas' && viewMode === 'grid' && currentZoom < getGridMinZoom()) {
+			if (viewModeProp !== 'auto') {
+				onViewModeChange('auto');
+			}
+		}
+	});
 
 	const visibility = $derived.by(() => {
 		const gridVisible =
 			viewMode === 'grid' ||
-			(viewMode === 'auto' && currentZoom >= GRID_MIN_ZOOM);
+			(viewMode === 'auto' && currentZoom >= getGridMinZoom());
 
 		const municipalityFillVisible =
 			viewMode === 'municipality' ||
@@ -196,11 +208,13 @@
 	const applyVisibilityBasedOnMode = () => {
 		if (!map) return;
 		const v = visibility;
-		setLayerVisibility(municipiosPolygonsFillLayerId, v.municipalityFillVisible);
-		setLayerVisibility(municipiosPolygonsLineLayerId, v.municipalityLineVisible);
-		setLayerVisibility(gridFillLayerId, v.gridVisible);
-		setLayerVisibility(gridLineLayerId, v.gridVisible || v.municipalityLineVisible);
-		setLayerVisibility(gridHoverLineLayerId, v.gridVisible);
+		const showGrid = v.gridVisible;
+		const showMunicipios = showMunicipioPolygons && v.municipalityFillVisible;
+		setLayerVisibility(municipiosPolygonsFillLayerId, showMunicipios);
+		setLayerVisibility(municipiosPolygonsLineLayerId, showMunicipios);
+		setLayerVisibility(gridFillLayerId, showGrid);
+		setLayerVisibility(gridLineLayerId, showGrid || v.municipalityLineVisible);
+		setLayerVisibility(gridHoverLineLayerId, showGrid);
 	};
 
 
@@ -398,8 +412,8 @@
 			minzoom: municipiosMinVisibleZoom,
 			...sourceLayerConfig,
 			paint: {
-				'line-color': '#bb5b31',
-				'line-width': ['interpolate', ['linear'], ['zoom'], 4, 1.6, 9, 3.8],
+				'line-color': '#ffffff',
+				'line-width': ['interpolate', ['linear'], ['zoom'], 4, 2.4, 9, 4.6],
 				'line-opacity': 1
 			},
 			filter: buildIdFilterExpression(null) as any
@@ -422,13 +436,13 @@
 			if (layerKey === 'isochrones') {
 				for (const isochrone of isochroneLayers) {
 					if (map.getLayer(isochrone.layerId))
-						map.moveLayer(isochrone.layerId, provinciasLineLayerId);
+						map.moveLayer(isochrone.layerId, ccaaLineLayerId);
 				}
 				continue;
 			}
 			const layerId = mapLayerIds[layerKey];
 			if (!layerId || !map.getLayer(layerId)) continue;
-			map.moveLayer(layerId, provinciasLineLayerId);
+			map.moveLayer(layerId, ccaaLineLayerId);
 		}
 		if (map.getLayer(municipiosPolygonsLineLayerId)) map.moveLayer(municipiosPolygonsLineLayerId);
 		if (map.getLayer(provinciasLineLayerId)) map.moveLayer(provinciasLineLayerId);
@@ -525,9 +539,15 @@
 
 	const applyMaxBoundsToMunicipios = () => {
 		if (!map) return;
-		const bounds = getMunicipiosBounds(allMunicipios);
-		if (!bounds) return;
-		map.setMaxBounds(bounds.padded as maplibregl.LngLatBoundsLike);
+		
+		if (isMobileView) {
+			map.setMaxBounds(null);
+			return;
+		}
+		
+		const munBounds = getMunicipiosBounds(allMunicipios);
+		if (!munBounds) return;
+		map.setMaxBounds(munBounds.padded as maplibregl.LngLatBoundsLike);
 	};
 
 	const fitToMunicipios = () => {
@@ -540,6 +560,19 @@
 			maxZoom: 7.4,
 			duration: 0
 		});
+	};
+
+	const centerOnMunicipios = () => {
+		if (!map) return;
+		const bounds = getMunicipiosBounds(getWorkingMunicipios());
+		if (!bounds) return;
+
+		const centerLon = (bounds.raw[0][0] + bounds.raw[1][0]) / 2;
+		const centerLat = (bounds.raw[0][1] + bounds.raw[1][1]) / 2;
+		const zoom = isMobileView ? 5.2 : 5.8;
+
+		map.setCenter([centerLon, centerLat], { duration: 0 });
+		map.setZoom(zoom);
 	};
 
 	const getWorkingMunicipios = () => {
@@ -557,7 +590,7 @@
 			return {
 				top: 72,
 				right: 24,
-				bottom: isBottomSheetOpen ? 300 : 120,
+				bottom: isBottomSheetOpen ? 380 : 180,
 				left: 24
 			};
 		}
@@ -585,11 +618,19 @@
 
 		if (signature === lastAutoFitSignature) return;
 
-		map.fitBounds(bounds.raw, {
-			padding: getFitPadding(),
-			maxZoom: normalizeProvinceName(provinceFilter) === 'Todas' ? 7.4 : 9,
-			duration
-		});
+		if (isMobileView) {
+			const centerLon = (bounds.raw[0][0] + bounds.raw[1][0]) / 2;
+			const centerLat = (bounds.raw[0][1] + bounds.raw[1][1]) / 2;
+			const zoom = normalizeProvinceName(provinceFilter) === 'Todas' ? 5.2 : 6.2;
+			map.setCenter([centerLon, centerLat], { duration });
+			map.setZoom(zoom);
+		} else {
+			map.fitBounds(bounds.raw, {
+				padding: getFitPadding(),
+				maxZoom: normalizeProvinceName(provinceFilter) === 'Todas' ? 7.4 : 9,
+				duration
+			});
+		}
 
 		lastAutoFitSignature = signature;
 	};
@@ -889,40 +930,72 @@
 		}
 	};
 
+
 	const applyGridFilter = () => {
 		if (!map) return;
+
+		const setFilters = (expr: any) => {
+			if (map.getLayer(gridFillLayerId)) map.setFilter(gridFillLayerId, expr);
+			if (map.getLayer(gridLineLayerId)) map.setFilter(gridLineLayerId, expr);
+			if (map.getLayer(gridHoverLineLayerId)) map.setFilter(gridHoverLineLayerId, expr);
+		};
+
 		if (selectedMunicipio?.id?.startsWith('cell_')) {
-			if (map.getLayer(gridFillLayerId)) map.setFilter(gridFillLayerId, null);
-			if (map.getLayer(gridLineLayerId)) map.setFilter(gridLineLayerId, null);
-			if (map.getLayer(gridHoverLineLayerId)) map.setFilter(gridHoverLineLayerId, null);
-			return;
-		}
-		if (viewMode === 'grid') {
-			if (map.getLayer(gridFillLayerId)) map.setFilter(gridFillLayerId, null);
-			if (map.getLayer(gridLineLayerId)) map.setFilter(gridLineLayerId, null);
-			if (map.getLayer(gridHoverLineLayerId)) map.setFilter(gridHoverLineLayerId, null);
-			return;
-		}
-		const selectedId = selectedMunicipio?.id ?? selectedMunicipio?.codigo ?? null;
-		if (!selectedId) {
-			if (map.getLayer(gridFillLayerId)) map.setFilter(gridFillLayerId, null);
-			if (map.getLayer(gridLineLayerId)) map.setFilter(gridLineLayerId, null);
-			if (map.getLayer(gridHoverLineLayerId)) map.setFilter(gridHoverLineLayerId, null);
+			setFilters(null);
 			return;
 		}
 
-		const numeric = Number.parseInt(selectedId, 10);
-		const expr: any = Number.isFinite(numeric)
-			? [
-					'any',
-					['==', ['to-string', ['coalesce', ['get', 'municipio_id'], ['get', 'codigo']]], selectedId],
-					['==', ['to-number', ['coalesce', ['get', 'municipio_id'], ['get', 'codigo']]], numeric]
-				]
-			: ['==', ['to-string', ['coalesce', ['get', 'municipio_id'], ['get', 'codigo']]], selectedId];
+		const hasTravelFilter = maxTravelBucket !== null;
+		const hasProvinceFilter = provinceFilter && provinceFilter !== 'Todas';
+		const hasSelectedMunicipio = selectedMunicipio?.id || selectedMunicipio?.codigo;
 
-		if (map.getLayer(gridFillLayerId)) map.setFilter(gridFillLayerId, expr);
-		if (map.getLayer(gridLineLayerId)) map.setFilter(gridLineLayerId, expr);
-		if (map.getLayer(gridHoverLineLayerId)) map.setFilter(gridHoverLineLayerId, expr);
+		if (!visibility.gridVisible) {
+			if (hasSelectedMunicipio) {
+				const selectedId = selectedMunicipio?.id ?? selectedMunicipio?.codigo;
+				if (!selectedId) {
+					setFilters(null);
+					return;
+				}
+				const numeric = Number.parseInt(selectedId, 10);
+				const expr: any = Number.isFinite(numeric)
+					? [
+							'any',
+							['==', ['to-string', ['coalesce', ['get', 'municipio_id'], ['get', 'codigo']]], selectedId],
+							['==', ['to-number', ['coalesce', ['get', 'municipio_id'], ['get', 'codigo']]], numeric]
+						]
+					: ['==', ['to-string', ['coalesce', ['get', 'municipio_id'], ['get', 'codigo']]], selectedId];
+				setFilters(expr);
+			} else {
+				setFilters(null);
+			}
+			return;
+		}
+
+		const filterParts: any[] = [];
+
+		if (hasTravelFilter) {
+			const selectedRank = bucketOrder[maxTravelBucket as keyof typeof bucketOrder] ?? 6;
+			const isochroneExpr: any = [
+				'in',
+				['get', 'isochrone_bucket'],
+				['literal', Object.entries(bucketOrder).filter(([, r]) => r <= selectedRank).map(([b]) => b)]
+			];
+			filterParts.push(isochroneExpr);
+		}
+
+		if (hasProvinceFilter) {
+			const normalizedProvince = normalizeProvinceName(provinceFilter);
+			const provinceExpr: any = ['==', ['get', 'provincia'], normalizedProvince];
+			filterParts.push(provinceExpr);
+		}
+
+		if (filterParts.length === 0) {
+			setFilters(null);
+			return;
+		}
+
+		const finalExpr = filterParts.length === 1 ? filterParts[0] : ['all', ...filterParts];
+		setFilters(finalExpr);
 	};
 
 	const addCcaaBoundaries = () => {
@@ -961,13 +1034,19 @@
 		lockAutoFitFromHash = false;
 		let resizeObserver: ResizeObserver | null = null;
 
-		map = new maplibregl.Map({
-			container: mapContainer,
-			style: baseStyle,
-			center: [-4.7, 41.8],
-			zoom: 6,
-			attributionControl: false
-		});
+		try {
+			map = new maplibregl.Map({
+				container: mapContainer,
+				style: baseStyle,
+				center: [-4.7, 41.8],
+				zoom: 6,
+				attributionControl: false
+			});
+		} catch (err) {
+			console.error('Failed to initialize map:', err);
+			isMapLoading = false;
+			return;
+		}
 
 		const hashView = parseHashView();
 		if (hashView) {
@@ -977,6 +1056,18 @@
 		}
 
 		map.addControl(new maplibregl.NavigationControl(), 'top-right');
+
+		map.on('webglcontextlost', () => {
+			console.warn('WebGL context lost, attempting recovery...');
+		});
+
+		map.on('webglcontextrestored', () => {
+			console.log('WebGL context restored, reinitializing...');
+			map.remove();
+			isMapLoading = true;
+			mapReady = false;
+			location.reload();
+		});
 
 		map.on('load', () => {
 			mapReady = false;
@@ -1031,7 +1122,7 @@
 			setLayerVisibility(municipiosPolygonsLineLayerId, showMunicipioPolygons);
 			setIsochroneVisibility(showIsochronesLayer);
 			setLayerVisibility(municipiosHoverLineLayerId, showMunicipioPolygons);
-			setLayerVisibility(municipiosSelectedLineLayerId, showMunicipioPolygons);
+			setLayerVisibility(municipiosSelectedLineLayerId, showMunicipioPolygons || !!selectedMunicipio);
 			applyPolygonFilter();
 			applyLayerOrdering();
 			applyMaxBoundsToMunicipios();
@@ -1043,11 +1134,18 @@
 				if (gridHits.length > 0) {
 					const props = gridHits[0].properties;
 					if (props?.cell_id) {
+						const sourceMunicipios = (allMunicipios && allMunicipios.length > 0 ? allMunicipios : municipios) as Municipio[];
+						const parentMunicipio = sourceMunicipios.find(
+							(m) => String(m.codigo ?? m.id) === String(props.municipio_id)
+						);
+						const parentProvince = normalizeProvinceName(
+							((parentMunicipio as any)?.provincia_nombre_geo ?? parentMunicipio?.provincia ?? props.provincia) as string
+						);
 						const cellAsMunicipio = {
 							id: props.cell_id,
 							codigo: props.municipio_id,
 							nombre: props.municipio_nombre,
-							provincia: props.provincia,
+							provincia: parentProvince,
 							population: undefined,
 							mixed_score: props.mixed_score,
 							precip_annual_mm: props.precip_annual ?? props.precip_annual_mm,
@@ -1210,11 +1308,14 @@
 		setLayerVisibility(ignSatelliteLayerId, showIgnSatellite);
 		setLayerVisibility(ignRiversLayerId, showIgnRivers);
 		setLayerVisibility(ignReservoirsLayerId, showIgnReservoirs);
-		setLayerVisibility(municipiosPolygonsFillLayerId, showMunicipioPolygons);
-		setLayerVisibility(municipiosPolygonsLineLayerId, showMunicipioPolygons);
+		const gridActive = visibility.gridVisible;
+		const showMunicipiosPolygons = showMunicipioPolygons && !gridActive;
+		const keepSelectedOutline = !!selectedMunicipio;
+		setLayerVisibility(municipiosPolygonsFillLayerId, showMunicipiosPolygons);
+		setLayerVisibility(municipiosPolygonsLineLayerId, showMunicipiosPolygons);
 		setIsochroneVisibility(showIsochronesLayer);
-		setLayerVisibility(municipiosHoverLineLayerId, showMunicipioPolygons);
-		setLayerVisibility(municipiosSelectedLineLayerId, showMunicipioPolygons);
+		setLayerVisibility(municipiosHoverLineLayerId, showMunicipiosPolygons);
+		setLayerVisibility(municipiosSelectedLineLayerId, showMunicipiosPolygons || keepSelectedOutline);
 		setLayerVisibility(municipiosLayerId, showMunicipioPoints);
 		setLayerVisibility(forestLayerId, showForestLayer);
 		setLayerVisibility(landUseLayerId, showLandUseLayer);
@@ -1259,7 +1360,8 @@
 	$effect(() => {
 		if (!map || !selectedMunicipio) return;
 		if (!Number.isFinite(selectedMunicipio.lon) || !Number.isFinite(selectedMunicipio.lat)) return;
-		map.flyTo({ center: [selectedMunicipio.lon, selectedMunicipio.lat], zoom: 9, speed: 0.8 });
+		const zoom = isMobileView ? 7 : 9;
+		map.flyTo({ center: [selectedMunicipio.lon, selectedMunicipio.lat], zoom, speed: 0.8 });
 	});
 
 	$effect(() => {

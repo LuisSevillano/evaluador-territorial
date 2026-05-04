@@ -18,7 +18,6 @@
 		weights?: { climate: number; access: number; nature: number };
 		weightsRaw?: { climateWeight: number; accessWeight: number; natureWeight: number };
 		sensitivityOverlap?: number;
-		isEvaluationMode?: boolean;
 		climateSeries?: MunicipioClimateMonthly[];
 		provinceClimateSeries?: Array<{ month: number; temp_mean_c: number }>;
 		ccaaClimateSeries?: Array<{ month: number; temp_mean_c: number }>;
@@ -42,7 +41,6 @@
 		weights = DEFAULT_WEIGHTS_NORMALIZED,
 		weightsRaw = DEFAULT_WEIGHTS_RAW,
 		sensitivityOverlap = 0,
-		isEvaluationMode = false,
 		climateSeries = [],
 		provinceClimateSeries = [],
 		ccaaClimateSeries = [],
@@ -215,8 +213,7 @@
 		{/if}
 	</section>
 
-	{#if isEvaluationMode}
-		<section class="panel score-panel">
+	<section class="panel score-panel">
 			<h2>Ajuste del score</h2>
 			<p class="muted">
 				Estos pesos cambian el score y el ranking; el filtro de score mínimo del panel izquierdo
@@ -295,7 +292,6 @@
 			</p>
 			<p class="muted">Robustez top-10 vs base equilibrada: {sensitivityOverlap}/10</p>
 		</section>
-	{/if}
 </aside>
 
 <style>
