@@ -10,7 +10,6 @@
 		maxSummerTemp: number;
 		maxThermalAmplitude: number;
 		maxThermalAmplitudeLimit: number;
-		isEvaluationMode?: boolean;
 		minCompositeScore?: number;
 		onMinPrecipAnnualChange: (value: number) => void;
 		onMinWinterTempChange: (value: number) => void;
@@ -27,7 +26,6 @@
 		maxSummerTemp,
 		maxThermalAmplitude,
 		maxThermalAmplitudeLimit,
-		isEvaluationMode = false,
 		minCompositeScore = 0,
 		onMinPrecipAnnualChange,
 		onMinWinterTempChange,
@@ -106,25 +104,23 @@
 		/>
 	</div>
 
-	{#if isEvaluationMode}
-		<div class="item" class:full-width={variant === 'sheet'}>
-			<div class="label-help-row">
-				<label for={`${idPrefix}-min-score`}
-					>Score mínimo visible: {minCompositeScore.toFixed(2)}</label
-				>
-				<FilterHelp text={FILTER_HELP.minScore} />
-			</div>
-			<input
-				id={`${idPrefix}-min-score`}
-				type="range"
-				min="0"
-				max="1"
-				step="0.01"
-				value={minCompositeScore}
-				oninput={(e) => onMinCompositeScoreChange(toNumber(e))}
-			/>
+	<div class="item" class:full-width={variant === 'sheet'}>
+		<div class="label-help-row">
+			<label for={`${idPrefix}-min-score`}
+				>Score mínimo visible: {minCompositeScore.toFixed(2)}</label
+			>
+			<FilterHelp text={FILTER_HELP.minScore} />
 		</div>
-	{/if}
+		<input
+			id={`${idPrefix}-min-score`}
+			type="range"
+			min="0"
+			max="1"
+			step="0.01"
+			value={minCompositeScore}
+			oninput={(e) => onMinCompositeScoreChange(toNumber(e))}
+		/>
+	</div>
 </div>
 
 <style>

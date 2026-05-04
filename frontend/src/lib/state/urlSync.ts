@@ -1,9 +1,7 @@
-import { buildUrlState, parseUrlState } from '$lib/state/urlState';
+import { buildUrlState, parseUrlState, type SheetTab } from '$lib/state/urlState';
 import { clampNumber, type TravelBucketFilter } from '$lib/state/filters';
-import { tabForMode } from '$lib/state/viewMode';
 
 type SyncState = {
-	viewMode: 'exploracion' | 'evaluacion';
 	mapViewMode: 'auto' | 'municipality' | 'grid';
 	query: string;
 	provinceFilter: string;
@@ -17,7 +15,7 @@ type SyncState = {
 	climateWeight: number;
 	accessWeight: number;
 	natureWeight: number;
-	activeSheetTab: 'sel' | 'filtr' | 'capas' | 'rank' | 'meta';
+	activeSheetTab: SheetTab;
 	isMobileView: boolean;
 	isBottomSheetOpen: boolean;
 	selectedMunicipioId?: string;
@@ -27,7 +25,6 @@ export const applyUrlToState = (search: string, current: SyncState) => {
 	const parsed = parseUrlState(search);
 	const next: Partial<SyncState> = {};
 
-	if (parsed.mode) next.viewMode = parsed.mode;
 	if (parsed.mapView) next.mapViewMode = parsed.mapView;
 	if (parsed.q) next.query = parsed.q;
 	if (parsed.province) next.provinceFilter = parsed.province;
@@ -44,14 +41,7 @@ export const applyUrlToState = (search: string, current: SyncState) => {
 		next.accessWeight = clampNumber(parsed.accesibilidad, 0, 100);
 	if (parsed.naturaleza !== undefined) next.natureWeight = clampNumber(parsed.naturaleza, 0, 100);
 
-	if (parsed.tab) {
-		next.activeSheetTab = tabForMode(
-			parsed.mode ?? current.viewMode,
-			parsed.tab,
-			current.isMobileView,
-			Boolean(parsed.sel)
-		);
-	}
+	if (parsed.tab) next.activeSheetTab = parsed.tab;
 
 	if (parsed.open && current.isMobileView) next.isBottomSheetOpen = true;
 
@@ -63,7 +53,6 @@ export const applyUrlToState = (search: string, current: SyncState) => {
 
 export const buildUrlFromState = (state: SyncState) =>
 	buildUrlState({
-		mode: state.viewMode,
 		q: state.query.trim().length > 0 ? state.query.trim() : undefined,
 		province: state.provinceFilter !== 'Todas' ? state.provinceFilter : undefined,
 		travel: state.maxTravelBucket !== null && state.maxTravelBucket !== '>4h00' ? state.maxTravelBucket : undefined,
@@ -75,9 +64,9 @@ export const buildUrlFromState = (state: SyncState) =>
 				? Number(state.maxThermalAmplitude.toFixed(1))
 				: undefined,
 		score: state.minCompositeScore > 0 ? state.minCompositeScore : undefined,
-		clima: state.viewMode === 'evaluacion' ? state.climateWeight : undefined,
-		accesibilidad: state.viewMode === 'evaluacion' ? state.accessWeight : undefined,
-		naturaleza: state.viewMode === 'evaluacion' ? state.natureWeight : undefined,
+		clima: state.climateWeight,
+		accesibilidad: state.accessWeight,
+		naturaleza: state.natureWeight,
 		mapView: state.mapViewMode !== 'auto' ? state.mapViewMode : undefined,
 		tab: state.isMobileView && state.activeSheetTab !== 'filtr' ? state.activeSheetTab : undefined,
 		sel: state.selectedMunicipioId,

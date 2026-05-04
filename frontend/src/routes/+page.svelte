@@ -4,20 +4,19 @@
 	import Sidebar from '$lib/components/Sidebar.svelte';
 	import InspectorPanel from '$lib/components/InspectorPanel.svelte';
 	import BottomSheet from '$lib/components/ui/BottomSheet.svelte';
-	import ModeToggle from '$lib/components/ui/ModeToggle.svelte';
 	import RankingList from '$lib/components/RankingList.svelte';
-	import ChipButton from '$lib/components/ui/ChipButton.svelte';
-	import LayerOrderList from '$lib/components/layers/LayerOrderList.svelte';
+import ChipButton from '$lib/components/ui/ChipButton.svelte';
+	import ColorLegend from '$lib/components/ColorLegend.svelte';
 	import FilterHelp from '$lib/components/ui/FilterHelp.svelte';
+	import LayerOrderList from '$lib/components/layers/LayerOrderList.svelte';
 	import MunicipioSearch from '$lib/components/ui/MunicipioSearch.svelte';
 	import ClimateFilters from '$lib/components/filters/ClimateFilters.svelte';
-	import ColorLegend from '$lib/components/ColorLegend.svelte';
 	import { getLegendConfig } from '$lib/components/map/coloring';
 	import { classifyMixedScore, labelForScoreBand } from '$lib/components/map/scoreClassification';
 	import { applyUrlToState, buildUrlFromState } from '$lib/state/urlSync';
 	import { normalizeProvinceName } from '$lib/state/provinces';
 	import { FILTER_HELP } from '$lib/state/filterHelp';
-	import { modeCopy, tabForMode } from '$lib/state/viewMode';
+	
 	import {
 		bucketOrder,
 		isPlausiblePrecipAnnual,
@@ -83,10 +82,9 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 	const rankingStore = createRankingStore();
 	const isBottomSheetOpen = $derived(uiStore.state.isBottomSheetOpen);
 	const mapColorMetric = $derived(uiStore.state.mapColorMetric);
-	const viewMode = $derived(uiStore.state.viewMode);
 	const activeSheetTab = $derived(uiStore.state.activeSheetTab);
 	const isMobileView = $derived(uiStore.state.isMobileView);
-	const desktopEvalPanel = $derived(uiStore.state.desktopEvalPanel);
+	const desktopPanel = $derived(uiStore.state.desktopPanel);
 	const query = $derived(filtersStore.state.query);
 	const provinceFilter = $derived(filtersStore.state.provinceFilter);
 	const maxTravelBucket = $derived(filtersStore.state.maxTravelBucket);
@@ -367,7 +365,7 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 	const handleToggleShortlist = (municipioId: string) => {
 		const wasAdded = selectionStore.toggleShortlist(municipioId);
 		if (wasAdded) {
-			uiStore.state.desktopEvalPanel = 'shortlist';
+			uiStore.state.desktopPanel = 'shortlist';
 		}
 	};
 
@@ -466,7 +464,6 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 	$effect(() => {
 		if (typeof window === 'undefined' || urlStateReady) return;
 		const { next, pendingSelectedMunicipioId } = applyUrlToState(window.location.search, {
-			viewMode,
 			mapViewMode: uiStore.state.mapViewMode,
 			query,
 			provinceFilter,
@@ -486,7 +483,6 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 			selectedMunicipioId: selectedMunicipio?.id
 		});
 		Object.assign(uiStore.state, {
-			viewMode: next.viewMode ?? uiStore.state.viewMode,
 			mapViewMode: next.mapViewMode ?? uiStore.state.mapViewMode,
 			activeSheetTab: next.activeSheetTab ?? uiStore.state.activeSheetTab,
 			isBottomSheetOpen: next.isBottomSheetOpen ?? uiStore.state.isBottomSheetOpen
@@ -528,7 +524,6 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 	$effect(() => {
 		if (typeof window === 'undefined' || !urlStateReady) return;
 		const params = buildUrlFromState({
-			viewMode,
 			mapViewMode: uiStore.state.mapViewMode,
 			query,
 			provinceFilter,
@@ -587,22 +582,6 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 
 	$effect(() => {
 		saveStringArray('ebv-shortlist-v1', shortlistedIds);
-	});
-
-	$effect(() => {
-		if (viewMode === 'evaluacion') {
-			setMapColorMetric('mixed_score');
-		}
-		uiStore.state.activeSheetTab = tabForMode(
-			viewMode,
-			activeSheetTab,
-			isMobileView,
-			Boolean(selectedMunicipio)
-		);
-	});
-
-	$effect(() => {
-		if (viewMode === 'exploracion') showDesktopEvalTable = false;
 	});
 
 	$effect(() => {
@@ -686,7 +665,7 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 			<strong>El Buen Vivir</strong>
 		</a>
 		<div class="topbar-brand-meta">
-			<small>{modeCopy[viewMode].tagline} · {municipiosFiltrados.length}/{municipios.length}</small>
+			<small>Explora y evalúa · {municipiosFiltrados.length}/{municipios.length}</small>
 			<a
 				class="topbar-docs-link-mobile"
 				href="https://observatorio-territorial.netlify.app/docs/"
@@ -711,28 +690,17 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 				width={320}
 			/>
 		</div>
-		<div class="topbar-mode">
-			<ModeToggle mode={viewMode} onChange={(nextMode) => (uiStore.state.viewMode = nextMode)} />
-		</div>
 	</div>
 </header>
 
-<section class="mode-strip" class:evaluation={viewMode === 'evaluacion'}>
-	{#if viewMode === 'exploracion'}
-		<p><strong>Exploración activa.</strong> Ajusta filtros y capas para reconocer patrones territoriales.</p>
-		<div class="mode-strip-metrics">
-			<span>Color mapa: {mapColorLabel}</span>
-			<span>Capas activas: {activeLayerCount}</span>
-			<span>Filtro provincia: {provinceFilter}</span>
-		</div>
-	{:else}
-		<p><strong>Evaluación activa.</strong> El ranking usa los pesos actuales y se actualiza en tiempo real.</p>
-		<div class="mode-strip-metrics">
-			<span>Clima: {climateWeight} · Accesibilidad: {accessWeight} · Naturaleza: {natureWeight}</span>
-			<span>Robustez top-10: {sensitivityOverlap}/10</span>
-			<span>Top actual: {topCandidate ? `${topCandidate.nombre} (${topCandidate.mixed_score?.toFixed(3) ?? '-'})` : 'sin datos'}</span>
-		</div>
-	{/if}
+<section class="mode-strip">
+	<p><strong>Explora y evalúa.</strong> Ajusta filtros, pesos y criterios para encontrar el municipio ideal.</p>
+	<div class="mode-strip-metrics">
+		<span>Color mapa: {mapColorLabel}</span>
+		<span>Capas activas: {activeLayerCount}</span>
+		<span>Filtro provincia: {provinceFilter}</span>
+		<span>Pesos: clima {climateWeight} · acceso {accessWeight} · naturaleza {natureWeight}</span>
+	</div>
 </section>
 
 <main>
@@ -766,7 +734,7 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 				activeFiltersSummary={activeFiltersSummary}
 				shortlistMunicipios={shortlistMunicipios}
 				shortlistedIds={shortlistedIds}
-				isEvaluationMode={viewMode === 'evaluacion'}
+				
 				weights={normalizedWeights}
 				weightsRaw={{ climateWeight, accessWeight, natureWeight }}
 				sensitivityOverlap={sensitivityOverlap}
@@ -802,7 +770,7 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 			/>
 		</div>
 
-		<section class="map-wrap" class:table-hidden={viewMode === 'evaluacion' && !showDesktopEvalTable}>
+		<section class="map-wrap" class:table-hidden={false}>
 			<div class="map-desktop-zone">
 				<MapView
 					municipios={municipiosScoredForView}
@@ -833,14 +801,6 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 					onViewModeChange={(mode) => (uiStore.state.mapViewMode = mode)}
 				/>
 			</div>
-			{#if viewMode === 'evaluacion'}
-				<div class="desktop-table-toggle-wrap">
-					<button type="button" class="desktop-table-toggle" onclick={() => (showDesktopEvalTable = !showDesktopEvalTable)}>
-						{showDesktopEvalTable ? 'Ocultar tabla completa' : 'Mostrar tabla completa'}
-					</button>
-				</div>
-			{/if}
-			{#if viewMode !== 'evaluacion' || showDesktopEvalTable}
 			<section class="desktop-table" aria-label="Tabla analítica de municipios">
 				<div
 					class="desktop-table-inner"
@@ -896,7 +856,6 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 					{/if}
 				</div>
 			</section>
-			{/if}
 			<BottomSheet initialHeight="34vh" expandedHeight="62vh" peekHeight="5.2rem" snapPoints={[0.14, 0.66, 0.94]} bind:isOpen={uiStore.state.isBottomSheetOpen}>
 				{#snippet children()}
 					<div class="sheet-tabs" role="tablist" aria-label="Panel móvil">
@@ -923,7 +882,7 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 									weights={normalizedWeights}
 									weightsRaw={{ climateWeight, accessWeight, natureWeight }}
 									sensitivityOverlap={sensitivityOverlap}
-									isEvaluationMode={viewMode === 'evaluacion'}
+									
 									climateSeries={selectedClimateSeries}
 									provinceClimateSeries={selectedProvinceClimateSeries}
 									ccaaClimateSeries={selectedCcaaClimateSeries}
@@ -940,18 +899,14 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 								<p class="sheet-empty">Selecciona un municipio en el mapa para ver su ficha.</p>
 								<button
 									class="sheet-clear"
-									onclick={() => {
-										uiStore.state.viewMode = 'evaluacion';
-										handleSelectSheetTab('rank');
-									}}
+									onclick={() => handleSelectSheetTab('rank')}
 								>
 									Ir al ranking
 								</button>
 							{/if}
 						{:else if activeSheetTab === 'filtr'}
 							<div class="sheet-block">
-								<ModeToggle mode={viewMode} onChange={(nextMode) => (uiStore.state.viewMode = nextMode)} />
-								<p class="sheet-meta">{modeCopy[viewMode].helper}</p>
+								<p class="sheet-meta">Ajusta filtros y criterios para encontrar el municipio ideal.</p>
 								<section class="sheet-section">
 									<p class="sheet-subtitle">Filtros base</p>
 									<div class="sheet-score-item">
@@ -990,7 +945,7 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 										{maxSummerTemp}
 										{maxThermalAmplitude}
 										{maxThermalAmplitudeLimit}
-										isEvaluationMode={viewMode === 'evaluacion'}
+										
 										{minCompositeScore}
 										onMinPrecipAnnualChange={(value) => (filtersStore.state.minPrecipAnnual = value)}
 										onMinWinterTempChange={(value) => (filtersStore.state.minWinterTemp = value)}
@@ -999,8 +954,7 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 										onMinCompositeScoreChange={(value) => (filtersStore.state.minCompositeScore = value)}
 									/>
 								</section>
-								{#if viewMode === 'evaluacion'}
-									<section class="sheet-section sheet-section-score">
+								<section class="sheet-section sheet-section-score">
 										<div class="sheet-score-summary">
 											<span>Clima: {climateWeight} · Accesibilidad: {accessWeight} · Naturaleza: {natureWeight}</span>
 											<span>Robustez top-10: {sensitivityOverlap}/10</span>
@@ -1028,12 +982,9 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 											</div>
 										</div>
 									</section>
-								{/if}
 								<div class="sheet-actions">
 									<button class="sheet-clear" onclick={handleClearFilters}>Limpiar filtros</button>
-									{#if viewMode === 'evaluacion'}
-										<button class="sheet-clear" onclick={() => handleSelectSheetTab('rank')}>Ir a ranking</button>
-									{/if}
+									<button class="sheet-clear" onclick={() => handleSelectSheetTab('rank')}>Ir a ranking</button>
 								</div>
 							</div>
 						{:else if activeSheetTab === 'capas'}
@@ -1053,13 +1004,8 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 							</div>
 						{:else if activeSheetTab === 'rank'}
 							<div class="sheet-rank">
-								{#if viewMode === 'evaluacion'}
-									<p class="sheet-meta">Top 25 en base a score mixto actual.</p>
-									<RankingList rows={tableRows} limit={25} compact={true} onSelect={handleSelectMunicipio} scoreThresholds={mixedScoreThresholds} />
-								{:else}
-									<p class="sheet-meta">El ranking se utiliza en modo evaluación.</p>
-									<button class="sheet-clear" onclick={() => { uiStore.state.viewMode = 'evaluacion'; handleSelectSheetTab('rank'); }}>Cambiar a evaluación</button>
-								{/if}
+								<p class="sheet-meta">Top 25 en base a score mixto actual.</p>
+								<RankingList rows={tableRows} limit={25} compact={true} onSelect={handleSelectMunicipio} scoreThresholds={mixedScoreThresholds} />
 							</div>
 						{:else}
 							<section class="sheet-meta-panel" aria-label="Metodología y metadatos">
@@ -1087,27 +1033,27 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 		</section>
 
 		<div class="inspector-desktop">
-			{#if viewMode === 'evaluacion' && !selectedMunicipio}
+			{#if !selectedMunicipio}
 				<section class="desktop-ranking">
-					<h2>Evaluación</h2>
+					<h2>Análisis y ranking</h2>
 					<p>Selecciona un municipio para ver su ficha o usa este ranking para comparar.</p>
 					<div class="desktop-toggle" role="tablist" aria-label="Vista de evaluación">
 						<button
 							type="button"
-							class:active={desktopEvalPanel === 'top'}
-							onclick={() => (uiStore.state.desktopEvalPanel = 'top')}
+							class:active={desktopPanel === 'rank'}
+							onclick={() => (uiStore.state.desktopPanel = 'rank')}
 						>
 							Top 25
 						</button>
 						<button
 							type="button"
-							class:active={desktopEvalPanel === 'shortlist'}
-							onclick={() => (uiStore.state.desktopEvalPanel = 'shortlist')}
+							class:active={desktopPanel === 'shortlist'}
+							onclick={() => (uiStore.state.desktopPanel = 'shortlist')}
 						>
 							Shortlist ({shortlistMunicipios.length})
 						</button>
 					</div>
-					{#if desktopEvalPanel === 'top'}
+					{#if desktopPanel === 'rank'}
 						<p class="muted">Top 25 por score mixto · robustez {sensitivityOverlap}/10</p>
 						<RankingList rows={tableRows} limit={25} onSelect={handleSelectMunicipio} scoreThresholds={mixedScoreThresholds} />
 					{:else}
@@ -1118,37 +1064,6 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 							<p class="muted">Tu shortlist está vacía. Abre un municipio y pulsa "Guardar shortlist".</p>
 						{/if}
 					{/if}
-
-					<section class="desktop-score-panel">
-						<h3>Ajuste del score</h3>
-						<p class="muted">Estos pesos cambian el score y el ranking; el filtro de score mínimo del panel izquierdo decide qué municipios se muestran en mapa y tabla.</p>
-						<div class="chips-row">
-							<ChipButton label="Equilibrado" active={activePreset === 'equilibrado'} onclick={() => handlePresetWeights('equilibrado')} />
-							<ChipButton label="Priorizar naturaleza" active={activePreset === 'naturaleza'} onclick={() => handlePresetWeights('naturaleza')} />
-							<ChipButton label="Priorizar accesibilidad" active={activePreset === 'accesibilidad'} onclick={() => handlePresetWeights('accesibilidad')} />
-							<ChipButton label="Priorizar clima" active={activePreset === 'clima'} onclick={() => handlePresetWeights('clima')} />
-							<ChipButton label="Clima estricto" active={activePreset === 'clima_estricto'} onclick={() => handlePresetWeights('clima_estricto')} />
-						</div>
-						<div class="desktop-score-control">
-							<label for="desktop-rw-climate">Peso clima: {climateWeight}</label>
-							<input id="desktop-rw-climate" type="range" min="0" max="100" step="1" value={climateWeight} oninput={(e) => handleClimateWeightChange(toNumber(e))} />
-						</div>
-						<div class="desktop-score-control">
-							<label for="desktop-rw-access">Peso accesibilidad: {accessWeight}</label>
-							<input id="desktop-rw-access" type="range" min="0" max="100" step="1" value={accessWeight} oninput={(e) => handleAccessWeightChange(toNumber(e))} />
-						</div>
-						<div class="desktop-score-control">
-							<label for="desktop-rw-nature">Peso naturaleza: {natureWeight}</label>
-							<input id="desktop-rw-nature" type="range" min="0" max="100" step="1" value={natureWeight} oninput={(e) => handleNatureWeightChange(toNumber(e))} />
-						</div>
-						<p class="muted">Normalizados: clima {(normalizedWeights.climate * 100).toFixed(0)}% · accesibilidad {(normalizedWeights.access * 100).toFixed(0)}% · naturaleza {(normalizedWeights.nature * 100).toFixed(0)}%</p>
-						<p class="muted">Robustez top-10 vs base equilibrada: {sensitivityOverlap}/10</p>
-					</section>
-				</section>
-			{:else if viewMode === 'exploracion' && !selectedMunicipio}
-				<section class="desktop-ranking">
-					<h2>Exploración</h2>
-					<p>Explora el mapa, capas y filtros. Al seleccionar un municipio verás la ficha completa aquí.</p>
 				</section>
 			{:else}
 				<InspectorPanel
@@ -1158,7 +1073,7 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 					weights={normalizedWeights}
 					weightsRaw={{ climateWeight, accessWeight, natureWeight }}
 					sensitivityOverlap={sensitivityOverlap}
-					isEvaluationMode={viewMode === 'evaluacion'}
+					
 					climateSeries={selectedClimateSeries}
 					provinceClimateSeries={selectedProvinceClimateSeries}
 					ccaaClimateSeries={selectedCcaaClimateSeries}
