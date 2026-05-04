@@ -424,7 +424,14 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 		if (gridClimateLoading) return;
 		
 		gridClimateLoading = true;
-		const slug = provincia.toLowerCase().replace(/ñ/g, 'n').replace(/ /g, '_').replace(/[^a-z0-9_]/g, '').replace(/_+/g, '_');
+		const slug = provincia
+			.normalize('NFD')
+			.replace(/[\u0300-\u036f]/g, '')
+			.toLowerCase()
+			.replace(/\//g, '_')
+			.replace(/[^a-z0-9_]/g, '_')
+			.replace(/_+/g, '_')
+			.replace(/^_+|_+$/g, '');
 		try {
 			const res = await fetch(`/data/grid_climate/grid_climate_${slug}.json`);
 			if (res.ok) {

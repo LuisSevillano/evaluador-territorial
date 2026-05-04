@@ -167,7 +167,7 @@
 	let lastAutoFitSignature = $state('');
 
 	const GRID_MIN_ZOOM = 6;
-	const GRID_FORCE_MIN_ZOOM = 7;
+	const GRID_FORCE_MIN_ZOOM = 6;
 	let currentZoom = $state(0);
 	let activeGridPmtilesPath = $state('/tiles/grid/grid_norte.pmtiles');
 
@@ -889,6 +889,7 @@
 		}
 	};
 
+
 	const applyGridFilter = () => {
 		if (!map) return;
 		if (selectedMunicipio?.id?.startsWith('cell_')) {
@@ -897,7 +898,15 @@
 			if (map.getLayer(gridHoverLineLayerId)) map.setFilter(gridHoverLineLayerId, null);
 			return;
 		}
-		if (viewMode === 'grid') {
+		if (visibility.gridVisible) {
+			if (provinceFilter && provinceFilter !== 'Todas') {
+				const normalizedProvince = normalizeProvinceName(provinceFilter);
+				const provinceExpr: any = ['==', ['get', 'provincia'], normalizedProvince];
+				if (map.getLayer(gridFillLayerId)) map.setFilter(gridFillLayerId, provinceExpr);
+				if (map.getLayer(gridLineLayerId)) map.setFilter(gridLineLayerId, provinceExpr);
+				if (map.getLayer(gridHoverLineLayerId)) map.setFilter(gridHoverLineLayerId, provinceExpr);
+				return;
+			}
 			if (map.getLayer(gridFillLayerId)) map.setFilter(gridFillLayerId, null);
 			if (map.getLayer(gridLineLayerId)) map.setFilter(gridLineLayerId, null);
 			if (map.getLayer(gridHoverLineLayerId)) map.setFilter(gridHoverLineLayerId, null);
@@ -961,13 +970,19 @@
 		lockAutoFitFromHash = false;
 		let resizeObserver: ResizeObserver | null = null;
 
-		map = new maplibregl.Map({
-			container: mapContainer,
-			style: baseStyle,
-			center: [-4.7, 41.8],
-			zoom: 6,
-			attributionControl: false
-		});
+		try {
+			map = new maplibregl.Map({
+				container: mapContainer,
+				style: baseStyle,
+				center: [-4.7, 41.8],
+				zoom: 6,
+				attributionControl: false
+			});
+		} catch (err) {
+			console.error('Failed to initialize map:', err);
+			isMapLoading = false;
+			return;
+		}
 
 		const hashView = parseHashView();
 		if (hashView) {
@@ -977,6 +992,18 @@
 		}
 
 		map.addControl(new maplibregl.NavigationControl(), 'top-right');
+
+		map.on('webglcontextlost', () => {
+			console.warn('WebGL context lost, attempting recovery...');
+		});
+
+		map.on('webglcontextrestored', () => {
+			console.log('WebGL context restored, reinitializing...');
+			map.remove();
+			isMapLoading = true;
+			mapReady = false;
+			location.reload();
+		});
 
 		map.on('load', () => {
 			mapReady = false;
@@ -1043,11 +1070,18 @@
 				if (gridHits.length > 0) {
 					const props = gridHits[0].properties;
 					if (props?.cell_id) {
+						const sourceMunicipios = (allMunicipios && allMunicipios.length > 0 ? allMunicipios : municipios) as Municipio[];
+						const parentMunicipio = sourceMunicipios.find(
+							(m) => String(m.codigo ?? m.id) === String(props.municipio_id)
+						);
+						const parentProvince = normalizeProvinceName(
+							((parentMunicipio as any)?.provincia_nombre_geo ?? parentMunicipio?.provincia ?? props.provincia) as string
+						);
 						const cellAsMunicipio = {
 							id: props.cell_id,
 							codigo: props.municipio_id,
 							nombre: props.municipio_nombre,
-							provincia: props.provincia,
+							provincia: parentProvince,
 							population: undefined,
 							mixed_score: props.mixed_score,
 							precip_annual_mm: props.precip_annual ?? props.precip_annual_mm,
