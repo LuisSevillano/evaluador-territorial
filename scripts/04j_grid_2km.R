@@ -222,6 +222,11 @@ if (length(tramocurso_shps) > 0) {
     )
     if (is.null(out)) return(NULL)
     names(out) <- tolower(names(out))
+
+    if (!"ficticio" %in% names(out)) out$ficticio <- NA_character_
+    if (!"canaliza" %in% names(out)) out$canaliza <- NA_character_
+    if (!"delineatio" %in% names(out)) out$delineatio <- NA_character_
+
     out <- out |>
       mutate(
         source_layer = as.character(source_layer),
@@ -229,11 +234,17 @@ if (length(tramocurso_shps) > 0) {
         nombre = clean_code(nombre),
         name_norm = normalize_name(nombre),
         tipo_curso = clean_code(tipo_curso),
+        origen = clean_code(origen),
         persist_num = to_int(persist),
         orden_num = to_int(orden),
         ancho_max_num = to_numeric_comma(ancho_max),
         ancho_min_num = to_numeric_comma(ancho_min),
-        longitud_num = to_numeric_comma(longitud)
+        longitud_num = to_numeric_comma(longitud),
+        is_ficticio = tolower(trimws(as.character(ficticio))) == "t",
+        is_canalizado = tolower(trimws(as.character(canaliza))) == "t",
+        es_natural_origen = origen == "8001",
+        es_artificial_origen = origen == "8002",
+        es_natural_tipo = tipo_curso == "1001"
       )
     normalize_line_geometry(out)
   }
@@ -249,26 +260,31 @@ if (length(tramocurso_shps) > 0) {
 
     riv <- riv |>
       mutate(
-        is_artificial = artificial_like,
+        is_artificial = artificial_like | riv$es_artificial_origen,
         is_temporal = persist_num %in% c(18002L, 18003L),
         is_permanent = persist_num == 18001L,
+        clase_banio = case_when(
+          es_natural_tipo & es_natural_origen & is_permanent & !is_canalizado & !is_ficticio & !is.na(ancho_max_num) & ancho_max_num >= 20 ~ "rio_grande_permanente",
+          es_natural_tipo & es_natural_origen & is_permanent & !is_canalizado & !is_ficticio ~ "rio_permanente_revision",
+          es_natural_tipo & es_natural_origen & is_temporal & !is_canalizado & !is_ficticio ~ "rio_temporal_baja_confianza",
+          is_artificial | is_canalizado | is_ficticio | is_temporal ~ "descartar",
+          TRUE ~ "descartar"
+        ),
         river_rank = case_when(
-          is_permanent & !is_artificial & orden_num <= 1 ~ "alto",
-          is_permanent & !is_artificial & orden_num <= 3 ~ "alto",
-          !is.na(ancho_max_num) & ancho_max_num >= 8 & !is_artificial ~ "medio",
-          !is.na(ancho_max_num) & ancho_max_num >= 4 & !is_artificial ~ "medio",
-          !is.na(longitud_num) & longitud_num >= 5000 & !is_temporal ~ "medio",
-          is_temporal ~ "bajo",
-          is_artificial ~ "ninguno",
-          TRUE ~ "bajo"
+          clase_banio == "rio_grande_permanente" ~ "alto",
+          clase_banio == "rio_permanente_revision" ~ "medio",
+          clase_banio == "rio_temporal_baja_confianza" ~ "bajo",
+          TRUE ~ "ninguno"
         )
       )
 
     riv_filtered <- riv |>
       filter(river_rank != "ninguno")
     if (nrow(riv_filtered) > 0) {
+      count_by_class <- summarise(group_by(st_drop_geometry(riv_filtered), clase_banio), n = n(), .groups = "drop")
+      class_str <- paste(paste0(count_by_class$clase_banio, "=", count_by_class$n), collapse = ", ")
       hydro_layers[[length(hydro_layers) + 1]] <- riv_filtered
-      log_step(paste0("  ", basename(shp_file), ": ", nrow(riv_filtered), " km de cauces relevantes (rank: ", paste(unique(riv_filtered$river_rank), collapse=", "), ")"))
+      log_step(paste0("  ", basename(shp_file), ": ", nrow(riv_filtered), " km (clases: ", class_str, ")"))
     }
   }
 }
