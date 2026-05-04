@@ -22,6 +22,8 @@
 		climateSeries?: MunicipioClimateMonthly[];
 		provinceClimateSeries?: Array<{ month: number; temp_mean_c: number }>;
 		ccaaClimateSeries?: Array<{ month: number; temp_mean_c: number }>;
+		isGridCell?: boolean;
+		gridClimateLoading?: boolean;
 		onToggleShortlist?: (municipioId: string) => void;
 		onClimateWeightChange?: (value: number) => void;
 		onAccessWeightChange?: (value: number) => void;
@@ -36,6 +38,7 @@
 		selectedMunicipio = null,
 		municipios = [],
 		shortlistedIds = [],
+		isGridCell = false,
 		weights = DEFAULT_WEIGHTS_NORMALIZED,
 		weightsRaw = DEFAULT_WEIGHTS_RAW,
 		sensitivityOverlap = 0,
@@ -43,6 +46,7 @@
 		climateSeries = [],
 		provinceClimateSeries = [],
 		ccaaClimateSeries = [],
+		gridClimateLoading = false,
 		onToggleShortlist = () => undefined,
 		onClimateWeightChange = () => undefined,
 		onAccessWeightChange = () => undefined,
@@ -89,7 +93,9 @@
 		});
 	});
 
-	const mixedLegendThresholds = $derived(getLegendConfig('mixed_score', municipios).thresholds as number[]);
+	const mixedLegendThresholds = $derived(
+		getLegendConfig('mixed_score', municipios).thresholds as number[]
+	);
 	const scoreLabelWithValue = $derived.by(() => {
 		if (!selectedMunicipio || !Number.isFinite(selectedMunicipio.mixed_score)) return '-';
 		const score = selectedMunicipio.mixed_score as number;
@@ -102,7 +108,9 @@
 	<section class="panel">
 		{#if selectedMunicipio}
 			<div class="title-row">
-				<h3>{selectedMunicipio.nombre}</h3>
+				<div class="title-with-badge">
+					<h3>{selectedMunicipio.nombre}</h3>
+				</div>
 				<button class="ghost-btn" onclick={onClearMunicipio}>Cerrar</button>
 			</div>
 			<p>
@@ -110,7 +118,17 @@
 					? ` · ${selectedMunicipio.population.toLocaleString('es-ES')} hab.`
 					: ''}
 			</p>
-			<MunicipioContextCard {context} scoreThresholds={mixedLegendThresholds} relieveNorm={selectedMunicipio.relieve_norm} />
+			{#if isGridCell}
+				<p class="grid-notice">
+					<span class="grid-notice-dot" aria-hidden="true"></span>Viendo estadísticas de esta celda,
+					no del municipio completo.{#if gridClimateLoading} <span class="grid-loading">(cargando datos climáticos...)</span>{/if}
+				</p>
+			{/if}
+			<MunicipioContextCard
+				{context}
+				scoreThresholds={mixedLegendThresholds}
+				relieveNorm={selectedMunicipio.relieve_norm}
+			/>
 			<div class="metric-grid">
 				<div class="metric score">
 					<span>Score mixto</span><strong>{scoreLabelWithValue}</strong>
@@ -136,13 +154,19 @@
 						>{selectedMunicipio.forest_pct ?? '-'} / {selectedMunicipio.water_pct ?? '-'}</strong
 					>
 				</div>
-			<div class="metric">
-				<span>Acceso a baño</span><strong>{selectedMunicipio.river_access_class ?? '-'} ({selectedMunicipio.river_access_score ?? '-'} )</strong>
+				<div class="metric">
+					<span>Acceso a baño</span><strong
+						>{selectedMunicipio.river_access_class ?? '-'} ({selectedMunicipio.river_access_score ??
+							'-'} )</strong
+					>
+				</div>
+				<div class="metric">
+					<span>Río más cercano</span><strong
+						>{selectedMunicipio.river_nearest_name ?? '-'} ({selectedMunicipio.river_nearest_distance_km ??
+							'-'} km)</strong
+					>
+				</div>
 			</div>
-			<div class="metric">
-				<span>Río más cercano</span><strong>{selectedMunicipio.river_nearest_name ?? '-'} ({selectedMunicipio.river_nearest_distance_km ?? '-'} km)</strong>
-			</div>
-		</div>
 			<div class="transport-mini">
 				<strong>Transporte de referencia</strong>
 				<table>
@@ -322,6 +346,38 @@
 		align-items: center;
 		justify-content: space-between;
 		gap: 0.4rem;
+	}
+	.title-with-badge {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+	}
+	.title-with-badge h3 {
+		margin: 0;
+	}
+	.grid-notice {
+		display: flex;
+		align-items: flex-start;
+		gap: 0.45rem;
+		margin-top: 0.35rem;
+		padding: 0.25rem 0.3rem;
+		border-radius: 8px;
+		background: rgba(254, 243, 199, 0.35);
+		color: #7a4a1c;
+		font-size: 0.74rem;
+		line-height: 1.35;
+	}
+	.grid-notice-dot {
+		width: 0.4rem;
+		height: 0.4rem;
+		margin-top: 0.3rem;
+		border-radius: 999px;
+		background: #d97706;
+		flex: 0 0 auto;
+	}
+	.grid-loading {
+		color: #92400e;
+		font-style: italic;
 	}
 	.ghost-btn {
 		width: auto;

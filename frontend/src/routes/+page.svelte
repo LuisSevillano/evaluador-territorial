@@ -74,6 +74,9 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 
 	let municipios = $state<Municipio[]>([]);
 	let climateMonthly = $state<MunicipioClimateMonthly[]>([]);
+	let gridClimateMonthly = $state<MunicipioClimateMonthly[]>([]);
+	let gridClimateLoading = $state(false);
+	const loadedGridProvinces = $state(new Set<string>());
 	const uiStore = createUiStore();
 	const filtersStore = createFiltersStore();
 	const layersStore = createLayersStore();
@@ -310,7 +313,14 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 	const visibleMunicipioIds = $derived(municipiosFiltrados.map((m) => m.id));
 
 	const selectedClimateSeries = $derived(
-		selectedMunicipioClimateSeries(climateMonthly, selectedMunicipio?.id ?? null)
+		selectedMunicipioClimateSeries(
+			selectedMunicipio?.id?.startsWith('cell_')
+				? gridClimateMonthly
+				: climateMonthly,
+			selectedMunicipio?.id?.startsWith('cell_')
+				? selectedMunicipio.id
+				: selectedMunicipio?.id ?? null
+		)
 	);
 
 	const selectedProvinceClimateSeries = $derived(
@@ -407,6 +417,32 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 	$effect(() => {
 		municipios = data.municipios ?? [];
 		climateMonthly = data.climateMonthly ?? [];
+	});
+
+	const loadGridClimate = async (provincia: string) => {
+		if (loadedGridProvinces.has(provincia)) return;
+		if (gridClimateLoading) return;
+		
+		gridClimateLoading = true;
+		const slug = provincia.toLowerCase().replace(/ñ/g, 'n').replace(/ /g, '_').replace(/[^a-z0-9_]/g, '').replace(/_+/g, '_');
+		try {
+			const res = await fetch(`/data/grid_climate/grid_climate_${slug}.json`);
+			if (res.ok) {
+				const data = await res.json() as MunicipioClimateMonthly[];
+				gridClimateMonthly = [...gridClimateMonthly, ...data];
+				loadedGridProvinces.add(provincia);
+			}
+		} catch (e) {
+			console.error('Error loading grid climate:', e);
+		} finally {
+			gridClimateLoading = false;
+		}
+	};
+
+	$effect(() => {
+		if (selectedMunicipio?.id?.startsWith('cell_') && selectedMunicipio.provincia) {
+			loadGridClimate(selectedMunicipio.provincia);
+		}
 	});
 
 	$effect(() => {
@@ -511,7 +547,7 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 	});
 
 	$effect(() => {
-		if (selectedMunicipio && !municipiosScoredForView.some((m) => m.id === selectedMunicipio?.id)) {
+		if (selectedMunicipio && !selectedMunicipio.id.startsWith('cell_') && !municipiosScoredForView.some((m) => m.id === selectedMunicipio?.id)) {
 			selectionStore.state.selectedMunicipio = null;
 		}
 	});
@@ -882,6 +918,8 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 									climateSeries={selectedClimateSeries}
 									provinceClimateSeries={selectedProvinceClimateSeries}
 									ccaaClimateSeries={selectedCcaaClimateSeries}
+									isGridCell={selectedMunicipio?.id?.startsWith('cell_') ?? false}
+									gridClimateLoading={gridClimateLoading}
 									onToggleShortlist={handleToggleShortlist}
 									onClimateWeightChange={handleClimateWeightChange}
 									onAccessWeightChange={handleAccessWeightChange}
@@ -1115,6 +1153,8 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 					climateSeries={selectedClimateSeries}
 					provinceClimateSeries={selectedProvinceClimateSeries}
 					ccaaClimateSeries={selectedCcaaClimateSeries}
+					isGridCell={selectedMunicipio?.id?.startsWith('cell_') ?? false}
+					gridClimateLoading={gridClimateLoading}
 					onToggleShortlist={handleToggleShortlist}
 					onClimateWeightChange={handleClimateWeightChange}
 					onAccessWeightChange={handleAccessWeightChange}

@@ -134,6 +134,7 @@
 	const gridPmtilesSourceId = 'grid-pmtiles-source';
 	const gridFillLayerId = 'grid-fill-layer';
 	const gridLineLayerId = 'grid-line-layer';
+	const gridHoverLineLayerId = 'grid-hover-line-layer';
 	const ignWmsSourceId = 'ign-wms-source';
 	const ignWmsLayerId = 'ign-wms-layer';
 	const ignSatelliteSourceId = 'ign-satellite-wms-source';
@@ -155,6 +156,8 @@
 	const ccaaSourceLayerName = 'ccaa';
 	const municipiosMinVisibleZoom = 5;
 	let hoveredFeatureId: string | number | null = null;
+	let hoveredFeatureSource: string = municipiosPmtilesSourceId;
+	let hoveredFeatureSourceLayer: string = sourceLayerName;
 	let isMapLoading = $state(true);
 	let loadedOverlayLayers = $state({ forest: false, landuse: false, vegetation: false });
 	let lastSelectedFilterId: string | null = null;
@@ -163,7 +166,7 @@
 	let initialBoundsApplied = $state(false);
 	let lastAutoFitSignature = $state('');
 
-	const GRID_MIN_ZOOM = 9.6;
+	const GRID_MIN_ZOOM = 6;
 	const GRID_FORCE_MIN_ZOOM = 7;
 	let currentZoom = $state(0);
 	let activeGridPmtilesPath = $state('/tiles/grid/grid_norte.pmtiles');
@@ -171,7 +174,7 @@
 	const visibility = $derived.by(() => {
 		const gridVisible =
 			viewMode === 'grid' ||
-			(viewMode === 'auto' && (selectedMunicipio !== null && selectedMunicipio !== undefined || currentZoom >= GRID_MIN_ZOOM));
+			(viewMode === 'auto' && currentZoom >= GRID_MIN_ZOOM);
 
 		const municipalityFillVisible =
 			viewMode === 'municipality' ||
@@ -185,6 +188,11 @@
 		};
 	});
 
+	const controlViewMode = $derived.by(() => {
+		if (viewMode !== 'auto') return viewMode;
+		return visibility.gridVisible ? 'grid' : 'municipality';
+	});
+
 	const applyVisibilityBasedOnMode = () => {
 		if (!map) return;
 		const v = visibility;
@@ -192,6 +200,7 @@
 		setLayerVisibility(municipiosPolygonsLineLayerId, v.municipalityLineVisible);
 		setLayerVisibility(gridFillLayerId, v.gridVisible);
 		setLayerVisibility(gridLineLayerId, v.gridVisible || v.municipalityLineVisible);
+		setLayerVisibility(gridHoverLineLayerId, v.gridVisible);
 	};
 
 
@@ -342,19 +351,25 @@
 		}
 	};
 
-	const setHoverFeatureState = (nextId: string | number | null) => {
+	const setHoverFeatureState = (
+		nextId: string | number | null,
+		source: string = activeMunicipiosSourceId,
+		sourceLayer: string = activeMunicipiosSourceLayer ?? sourceLayerName
+	) => {
 		if (!map) return;
 		if (hoveredFeatureId !== null) {
-			const prevTarget: any = { source: activeMunicipiosSourceId, id: hoveredFeatureId };
-			if (activeMunicipiosSourceLayer) prevTarget.sourceLayer = activeMunicipiosSourceLayer;
+			const prevTarget: any = { source: hoveredFeatureSource, id: hoveredFeatureId };
+			prevTarget.sourceLayer = hoveredFeatureSourceLayer;
 			map.setFeatureState(prevTarget, { hover: false });
 		}
 
 		hoveredFeatureId = nextId;
+		hoveredFeatureSource = source;
+		hoveredFeatureSourceLayer = sourceLayer;
 
 		if (hoveredFeatureId !== null) {
-			const nextTarget: any = { source: activeMunicipiosSourceId, id: hoveredFeatureId };
-			if (activeMunicipiosSourceLayer) nextTarget.sourceLayer = activeMunicipiosSourceLayer;
+			const nextTarget: any = { source, id: hoveredFeatureId };
+			nextTarget.sourceLayer = sourceLayer;
 			map.setFeatureState(nextTarget, { hover: true });
 		}
 	};
@@ -418,6 +433,7 @@
 		if (map.getLayer(municipiosPolygonsLineLayerId)) map.moveLayer(municipiosPolygonsLineLayerId);
 		if (map.getLayer(provinciasLineLayerId)) map.moveLayer(provinciasLineLayerId);
 		if (map.getLayer(ccaaLineLayerId)) map.moveLayer(ccaaLineLayerId);
+		if (map.getLayer(gridHoverLineLayerId)) map.moveLayer(gridHoverLineLayerId);
 		if (map.getLayer(municipiosHoverLineLayerId)) map.moveLayer(municipiosHoverLineLayerId);
 		if (map.getLayer(municipiosSelectedLineLayerId)) map.moveLayer(municipiosSelectedLineLayerId);
 	};
@@ -795,6 +811,18 @@
 				}
 			});
 
+			map.addLayer({
+				id: gridHoverLineLayerId,
+				type: 'line',
+				source: gridPmtilesSourceId,
+				'source-layer': 'grid',
+				paint: {
+					'line-color': '#ffffff',
+					'line-width': ['interpolate', ['linear'], ['zoom'], 4, 2.2, 8, 4.2, 10, 5.4],
+					'line-opacity': ['case', ['boolean', ['feature-state', 'hover'], false], 1, 0]
+				}
+			});
+
 			applyGridFillPaint();
 		} catch (error) {
 			console.error('No se pudo cargar grid PMTiles.', error);
@@ -827,6 +855,7 @@
 		const hadFill = Boolean(map.getLayer(gridFillLayerId));
 		if (map.getLayer(gridFillLayerId)) map.removeLayer(gridFillLayerId);
 		if (map.getLayer(gridLineLayerId)) map.removeLayer(gridLineLayerId);
+		if (map.getLayer(gridHoverLineLayerId)) map.removeLayer(gridHoverLineLayerId);
 		if (map.getSource(gridPmtilesSourceId)) map.removeSource(gridPmtilesSourceId);
 		addGridPmtiles();
 		if (hadFill) {
@@ -862,22 +891,38 @@
 
 	const applyGridFilter = () => {
 		if (!map) return;
+		if (selectedMunicipio?.id?.startsWith('cell_')) {
+			if (map.getLayer(gridFillLayerId)) map.setFilter(gridFillLayerId, null);
+			if (map.getLayer(gridLineLayerId)) map.setFilter(gridLineLayerId, null);
+			if (map.getLayer(gridHoverLineLayerId)) map.setFilter(gridHoverLineLayerId, null);
+			return;
+		}
+		if (viewMode === 'grid') {
+			if (map.getLayer(gridFillLayerId)) map.setFilter(gridFillLayerId, null);
+			if (map.getLayer(gridLineLayerId)) map.setFilter(gridLineLayerId, null);
+			if (map.getLayer(gridHoverLineLayerId)) map.setFilter(gridHoverLineLayerId, null);
+			return;
+		}
 		const selectedId = selectedMunicipio?.id ?? selectedMunicipio?.codigo ?? null;
 		if (!selectedId) {
 			if (map.getLayer(gridFillLayerId)) map.setFilter(gridFillLayerId, null);
 			if (map.getLayer(gridLineLayerId)) map.setFilter(gridLineLayerId, null);
+			if (map.getLayer(gridHoverLineLayerId)) map.setFilter(gridHoverLineLayerId, null);
 			return;
 		}
 
 		const numeric = Number.parseInt(selectedId, 10);
-		const expr: any = [
-			'any',
-			['==', ['to-string', ['coalesce', ['get', 'municipio_id'], ['get', 'codigo']]], selectedId],
-			['==', ['to-number', ['coalesce', ['get', 'municipio_id'], ['get', 'codigo']]], numeric]
-		];
+		const expr: any = Number.isFinite(numeric)
+			? [
+					'any',
+					['==', ['to-string', ['coalesce', ['get', 'municipio_id'], ['get', 'codigo']]], selectedId],
+					['==', ['to-number', ['coalesce', ['get', 'municipio_id'], ['get', 'codigo']]], numeric]
+				]
+			: ['==', ['to-string', ['coalesce', ['get', 'municipio_id'], ['get', 'codigo']]], selectedId];
 
 		if (map.getLayer(gridFillLayerId)) map.setFilter(gridFillLayerId, expr);
 		if (map.getLayer(gridLineLayerId)) map.setFilter(gridLineLayerId, expr);
+		if (map.getLayer(gridHoverLineLayerId)) map.setFilter(gridHoverLineLayerId, expr);
 	};
 
 	const addCcaaBoundaries = () => {
@@ -992,26 +1037,67 @@
 			applyMaxBoundsToMunicipios();
 
 			map.on('click', (event) => {
-				// Try grid layers first
 				const gridHits = map.queryRenderedFeatures(event.point, {
 					layers: [gridFillLayerId, gridLineLayerId]
 				});
 				if (gridHits.length > 0) {
-					const feature = gridHits[0];
-					const cellId = feature.id ?? feature.properties?.cell_id;
-					if (cellId) {
-						console.log('Grid cell selected:', {
-							cellId,
-							municipioId: feature.properties?.municipio_id,
-							municipioNombre: feature.properties?.municipio_nombre,
-							areaKm2: feature.properties?.area_km2
-						});
-						// TODO: Show cell detail popup/panel
+					const props = gridHits[0].properties;
+					if (props?.cell_id) {
+						const cellAsMunicipio = {
+							id: props.cell_id,
+							codigo: props.municipio_id,
+							nombre: props.municipio_nombre,
+							provincia: props.provincia,
+							population: undefined,
+							mixed_score: props.mixed_score,
+							precip_annual_mm: props.precip_annual ?? props.precip_annual_mm,
+							temp_winter_mean_c: props.temp_winter,
+							temp_summer_mean_c: props.temp_summer,
+							temp_jan_mean_c: props.temp_winter,
+							temp_jul_mean_c: props.temp_summer,
+							travel_bucket: props.isochrone_bucket,
+							forest_pct: props.natural_cover_pct,
+							water_pct: undefined,
+							artificial_pct: undefined,
+							naturality_index: undefined,
+							landcover_diversity: undefined,
+							forest_norm: undefined,
+							water_norm: undefined,
+							artificial_norm: undefined,
+							naturality_norm: props.natural_cover_norm,
+							diversity_norm: undefined,
+							river_access_norm: props.river_access_norm,
+							river_access_score: props.river_access_score,
+							river_access_class: props.river_buffer_class,
+							river_nearest_name: undefined,
+							river_nearest_distance_km: props.river_distance_km,
+							climate_block_score: props.climate_block_score,
+							access_block_score: props.access_block_score,
+							nature_block_score: props.nature_block_score,
+							dist_estacion_tren_km: undefined,
+							dist_parada_bus_km: undefined,
+							transporte_norm: props.accesibilidad_norm,
+							dist_renfe_km: undefined,
+							renfe_salidas_dia: undefined,
+							renfe_tipo_servicio: undefined,
+							servicio_renfe_norm: props.accesibilidad_norm,
+							relieve_norm: 0.5,
+							relieve_score_raw: undefined,
+							iso_01h30m: props.isochrone_bucket === '<=1h30',
+							iso_02h00m: props.isochrone_bucket === '<=2h00',
+							iso_02h30m: props.isochrone_bucket === '<=2h30',
+							iso_03h30m: props.isochrone_bucket === '<=3h30',
+							iso_04h00m: props.isochrone_bucket === '<=4h00',
+							precip_norm: props.precip_norm,
+							temp_verano_norm: props.temp_verano_norm,
+							temp_invierno_norm: props.temp_invierno_norm,
+							accesibilidad_norm: props.accesibilidad_norm,
+						} as unknown as Municipio;
+						onMapSelection(cellAsMunicipio);
 					}
 					return;
 				}
 
-				// Fallback to municipality
 				const hits = map.queryRenderedFeatures(event.point, {
 					layers: [municipiosPolygonsFillLayerId]
 				});
@@ -1034,6 +1120,22 @@
 			map.on('mouseleave', municipiosPolygonsFillLayerId, () => {
 				map.getCanvas().style.cursor = '';
 				setHoverFeatureState(null);
+			});
+
+			map.on('mouseenter', gridFillLayerId, () => {
+				map.getCanvas().style.cursor = 'pointer';
+			});
+
+			map.on('mousemove', gridFillLayerId, (e: maplibregl.MapLayerMouseEvent) => {
+				const feature = e.features?.[0];
+				const nextHoveredId = feature ? (feature.properties?.cell_id ?? null) : null;
+				if (nextHoveredId === hoveredFeatureId) return;
+				setHoverFeatureState(nextHoveredId, gridPmtilesSourceId, 'grid');
+			});
+
+			map.on('mouseleave', gridFillLayerId, () => {
+				map.getCanvas().style.cursor = '';
+				setHoverFeatureState(null, gridPmtilesSourceId, 'grid');
 			});
 
 			mapReady = true;
@@ -1150,6 +1252,7 @@
 
 	$effect(() => {
 		if (!map || !mapReady) return;
+		const province = selectedMunicipio?.provincia ?? provinceFilter;
 		refreshGridSource();
 	});
 
@@ -1199,6 +1302,8 @@
 			</div>
 			<ViewControl
 				viewMode={viewMode}
+				autoResolvedMode={controlViewMode === 'grid' ? 'grid' : 'municipality'}
+				gridMinZoom={currentZoom}
 				onChange={(mode) => {
 					onViewModeChange(mode);
 				}}
