@@ -4,6 +4,8 @@ library(sf)
 library(dplyr)
 library(readr)
 
+sf_use_s2(FALSE)
+
 if (!file.exists(paths$output_final_geojson)) {
   stop("No existe dataset post-isocronas. Ejecuta primero scripts/03_isochrones.R")
 }

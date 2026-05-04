@@ -1,10 +1,12 @@
 #!/usr/bin/env Rscript
+source("scripts/00_config.R")
+
 library(fs)
 library(jsonlite)
 library(sf, lib.loc = .libPaths()[1])
+library(arrow)
 
-project_root <- path_abs(".")
-output_final_geojson <- path(project_root, "output", "municipios_final.geojson")
+output_final_geojson <- paths$output_final_geojson
 
 sf::sf_use_s2(FALSE)
 
@@ -136,14 +138,25 @@ floor_val <- 0.2
 q95_train <- quantile(dist_train, 0.95, na.rm = TRUE)
 q95_bus <- quantile(dist_bus, 0.95, na.rm = TRUE)
 
-norm_train <- round(floor_val + (1 - floor_val) * (dist_train / q95_train), 4)
-norm_bus <- round(floor_val + (1 - floor_val) * (dist_bus / q95_bus), 4)
+norm_train <- round(floor_val + (1 - floor_val) * (dist_train / q95_train), 3)
+norm_bus <- round(floor_val + (1 - floor_val) * (dist_bus / q95_bus), 3)
 norm_train <- pmin(pmax(norm_train, floor_val), 1)
 norm_bus <- pmin(pmax(norm_bus, floor_val), 1)
 
 mun$dist_estacion_tren_km <- round(dist_train, 2)
 mun$dist_parada_bus_km <- round(dist_bus, 2)
-mun$transporte_norm <- round(pmax(norm_train, norm_bus, na.rm = TRUE), 4)
+mun$transporte_norm <- round(pmax(norm_train, norm_bus, na.rm = TRUE), 3)
+
+feature_transport <- mun |>
+  st_drop_geometry() |>
+  transmute(
+    codigo,
+    dist_estacion_tren_km,
+    dist_parada_bus_km,
+    transporte_norm
+  )
+saveRDS(feature_transport, paths$output_feature_transport_osm_rds)
+try(write_parquet(feature_transport, paths$output_feature_transport_osm_parquet), silent = TRUE)
 
 sf::st_write(mun, output_final_geojson, delete_dsn = TRUE, quiet = TRUE)
 message("OK: transporte integrado")

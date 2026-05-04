@@ -18,6 +18,7 @@ export type UrlState = {
 	tab?: SheetTab;
 	sel?: string;
 	open?: boolean;
+	mapView?: 'auto' | 'municipality' | 'grid';
 };
 
 const toFiniteNumber = (value: string | null): number | undefined => {
@@ -31,6 +32,7 @@ export const parseUrlState = (search: string): UrlState => {
 	const mode = params.get('mode');
 	const travel = params.get('travel');
 	const tab = params.get('tab');
+	const mapView = params.get('mapView');
 
 	return {
 		mode: mode === 'exploracion' || mode === 'evaluacion' ? mode : undefined,
@@ -55,11 +57,17 @@ export const parseUrlState = (search: string): UrlState => {
 			toFiniteNumber(params.get('accesibilidad')) ?? toFiniteNumber(params.get('aw')),
 		naturaleza: toFiniteNumber(params.get('naturaleza')) ?? toFiniteNumber(params.get('nw')),
 		tab:
-			tab === 'sel' || tab === 'filtr' || tab === 'capas' || tab === 'rank' || tab === 'meta'
-				? tab
+			tab === 'sel' ||
+			tab === 'filtr' ||
+			tab === 'filter' ||
+			tab === 'capas' ||
+			tab === 'rank' ||
+			tab === 'meta'
+				? (tab === 'filter' ? 'filtr' : tab)
 				: undefined,
 		sel: params.get('sel') ?? undefined,
-		open: params.get('open') === '1'
+		open: params.get('open') === '1',
+		mapView: mapView === 'auto' || mapView === 'municipality' || mapView === 'grid' ? mapView : undefined
 	};
 };
 
@@ -80,5 +88,6 @@ export const buildUrlState = (state: UrlState): URLSearchParams => {
 	if (state.tab) params.set('tab', state.tab);
 	if (state.sel) params.set('sel', state.sel);
 	if (state.open) params.set('open', '1');
+	if (state.mapView) params.set('mapView', state.mapView);
 	return params;
 };

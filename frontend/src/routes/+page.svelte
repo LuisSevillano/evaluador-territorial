@@ -133,7 +133,11 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 
 	const provinciasDisponibles = $derived([
 		'Todas',
-		...Array.from(new Set(municipios.map((m) => normalizeProvinceName(m.provincia))))
+		...Array.from(
+			new Set(
+				municipios.map((m) => normalizeProvinceName((m as any).provincia_nombre_geo ?? m.provincia))
+			)
+		)
 			.filter((provincia) => provincia && provincia !== '53')
 			.sort((a, b) => a.localeCompare(b, 'es'))
 	]);
@@ -161,9 +165,10 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 
 	const municipiosFiltradosBase = $derived(
 		municipiosScoredForView.filter((m) => {
+			const provinceName = normalizeProvinceName((m as any).provincia_nombre_geo ?? m.provincia);
 			const provinceOk =
 				provinceFilter === 'Todas' ||
-				normalizeProvinceName(m.provincia) === normalizeProvinceName(provinceFilter);
+				provinceName === normalizeProvinceName(provinceFilter);
 			const bucketOk =
 				(bucketOrder[m.travel_bucket as TravelBucket] ?? bucketOrder['>4h00']) <=
 				bucketOrder[maxTravelBucket];
@@ -418,6 +423,7 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 		if (typeof window === 'undefined' || urlStateReady) return;
 		const { next, pendingSelectedMunicipioId } = applyUrlToState(window.location.search, {
 			viewMode,
+			mapViewMode: uiStore.state.mapViewMode,
 			query,
 			provinceFilter,
 			maxTravelBucket,
@@ -437,6 +443,7 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 		});
 		Object.assign(uiStore.state, {
 			viewMode: next.viewMode ?? uiStore.state.viewMode,
+			mapViewMode: next.mapViewMode ?? uiStore.state.mapViewMode,
 			activeSheetTab: next.activeSheetTab ?? uiStore.state.activeSheetTab,
 			isBottomSheetOpen: next.isBottomSheetOpen ?? uiStore.state.isBottomSheetOpen
 		});
@@ -478,6 +485,7 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 		if (typeof window === 'undefined' || !urlStateReady) return;
 		const params = buildUrlFromState({
 			viewMode,
+			mapViewMode: uiStore.state.mapViewMode,
 			query,
 			provinceFilter,
 			maxTravelBucket,
@@ -498,7 +506,8 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 
 		const queryString = params.toString();
 		const nextUrl = queryString ? `${window.location.pathname}?${queryString}` : window.location.pathname;
-		window.history.replaceState({}, '', nextUrl);
+		const nextUrlWithHash = `${nextUrl}${window.location.hash || ''}`;
+		window.history.replaceState({}, '', nextUrlWithHash);
 	});
 
 	$effect(() => {
@@ -775,6 +784,8 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 					{isBottomSheetOpen}
 					pmtilesUrl={municipiosPmtilesUrl}
 					onMapSelection={handleSelectMunicipio}
+					viewMode={uiStore.state.mapViewMode}
+					onViewModeChange={(mode) => (uiStore.state.mapViewMode = mode)}
 				/>
 			</div>
 			{#if viewMode === 'evaluacion'}

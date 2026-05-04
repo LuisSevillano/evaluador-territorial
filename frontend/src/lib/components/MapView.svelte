@@ -7,8 +7,16 @@
 	import { normalizeProvinceName } from '$lib/state/provinces';
 	import LandUseLegend from '$lib/components/map/LandUseLegend.svelte';
 	import MapLoadingBadge from '$lib/components/map/MapLoadingBadge.svelte';
-	import { type MapColorMetric, buildMunicipioColorExpression } from '$lib/components/map/coloring';
+	import ViewControl from '$lib/components/map/ViewControl.svelte';
+	import {
+		type MapColorMetric,
+		buildMunicipioColorExpression,
+		getScoreThresholdsForMunicipios,
+		scoreColors,
+		missingDataColor
+	} from '$lib/components/map/coloring';
 	import 'maplibre-gl/dist/maplibre-gl.css';
+	import { type MapViewMode } from '$lib/state/mapViewMode';
 
 	type Props = {
 		municipios?: Municipio[];
@@ -34,6 +42,8 @@
 		onToggleIgnWmsBase?: (visible: boolean) => void;
 		isMobileView?: boolean;
 		isBottomSheetOpen?: boolean;
+		viewMode?: MapViewMode;
+		onViewModeChange?: (mode: MapViewMode) => void;
 	};
 
 	let {
@@ -59,12 +69,18 @@
 		onToggleIgnSatellite = () => undefined,
 		onToggleIgnWmsBase = () => undefined,
 		isMobileView = false,
-		isBottomSheetOpen = false
+		isBottomSheetOpen = false,
+		viewMode: viewModeProp = 'auto',
+		onViewModeChange = () => undefined
 	}: Props = $props();
 
 	let mapContainer: HTMLDivElement;
 	let map: maplibregl.Map;
 	let mapReady = $state(false);
+	let hasInitialHashView = $state(false);
+	let lockAutoFitFromHash = $state(false);
+
+	const viewMode = $derived(viewModeProp ?? 'auto');
 
 	const municipiosSourceId = 'municipios-centroides-source';
 	const municipiosLayerId = 'municipios-centroides-layer';
@@ -115,6 +131,9 @@
 	const provinciasLineLayerId = 'provincias-line-layer';
 	const ccaaPmtilesSourceId = 'ccaa-pmtiles-source';
 	const ccaaLineLayerId = 'ccaa-line-layer';
+	const gridPmtilesSourceId = 'grid-pmtiles-source';
+	const gridFillLayerId = 'grid-fill-layer';
+	const gridLineLayerId = 'grid-line-layer';
 	const ignWmsSourceId = 'ign-wms-source';
 	const ignWmsLayerId = 'ign-wms-layer';
 	const ignSatelliteSourceId = 'ign-satellite-wms-source';
@@ -144,9 +163,73 @@
 	let initialBoundsApplied = $state(false);
 	let lastAutoFitSignature = $state('');
 
+	const GRID_MIN_ZOOM = 9.6;
+	const GRID_FORCE_MIN_ZOOM = 7;
+	let currentZoom = $state(0);
+	let activeGridPmtilesPath = $state('/tiles/grid/grid_norte.pmtiles');
+
+	const visibility = $derived.by(() => {
+		const gridVisible =
+			viewMode === 'grid' ||
+			(viewMode === 'auto' && (selectedMunicipio !== null && selectedMunicipio !== undefined || currentZoom >= GRID_MIN_ZOOM));
+
+		const municipalityFillVisible =
+			viewMode === 'municipality' ||
+			(viewMode === 'auto' && !gridVisible);
+
+		return {
+			gridVisible,
+			municipalityFillVisible: municipalityFillVisible,
+			municipalityLineVisible: true,
+			showBoundaries: true
+		};
+	});
+
+	const applyVisibilityBasedOnMode = () => {
+		if (!map) return;
+		const v = visibility;
+		setLayerVisibility(municipiosPolygonsFillLayerId, v.municipalityFillVisible);
+		setLayerVisibility(municipiosPolygonsLineLayerId, v.municipalityLineVisible);
+		setLayerVisibility(gridFillLayerId, v.gridVisible);
+		setLayerVisibility(gridLineLayerId, v.gridVisible || v.municipalityLineVisible);
+	};
+
+
+
 	const paintColorExpression = $derived.by(() =>
 		buildMunicipioColorExpression(municipios, mapColorMetric)
 	);
+
+	const gridFillColorExpression = $derived.by(() => {
+		if (mapColorMetric !== 'mixed_score') {
+			return missingDataColor;
+		}
+
+		const thresholds = getScoreThresholdsForMunicipios(municipios);
+		return [
+			'case',
+			['!', ['has', 'mixed_score']],
+			missingDataColor,
+			[
+				'step',
+				['to-number', ['get', 'mixed_score']],
+				scoreColors[0],
+				thresholds[0],
+				scoreColors[1],
+				thresholds[1],
+				scoreColors[2],
+				thresholds[2],
+				scoreColors[3],
+				thresholds[3],
+				scoreColors[4]
+			]
+		] as any;
+	});
+
+	const applyGridFillPaint = () => {
+		if (!map || !map.getLayer(gridFillLayerId)) return;
+		map.setPaintProperty(gridFillLayerId, 'fill-color', gridFillColorExpression);
+	};
 
 	const landUsePalette: Array<{ key: string; color: string; label: string }> = [
 		{ key: 'forest', color: '#1b5e20', label: 'Bosque' },
@@ -677,6 +760,126 @@
 		}
 	};
 
+	const addGridPmtiles = () => {
+		if (!map) return;
+		if (map.getSource(gridPmtilesSourceId)) return;
+		try {
+			map.addSource(gridPmtilesSourceId, {
+				type: 'vector',
+				url: `pmtiles://${activeGridPmtilesPath}`,
+				promoteId: 'cell_id',
+				minzoom: GRID_FORCE_MIN_ZOOM,
+				maxzoom: 14
+			});
+
+			map.addLayer({
+				id: gridLineLayerId,
+				type: 'line',
+				source: gridPmtilesSourceId,
+				'source-layer': 'grid',
+				paint: {
+					'line-color': '#a1a1aa',
+					'line-width': ['interpolate', ['linear'], ['zoom'], 7, 0.18, 14, 1.2],
+					'line-opacity': ['interpolate', ['linear'], ['zoom'], 7, 0.06, 12, 0.42]
+				}
+			});
+
+			map.addLayer({
+				id: gridFillLayerId,
+				type: 'fill',
+				source: gridPmtilesSourceId,
+				'source-layer': 'grid',
+				paint: {
+					'fill-color': gridFillColorExpression,
+					'fill-opacity': 0.62
+				}
+			});
+
+			applyGridFillPaint();
+		} catch (error) {
+			console.error('No se pudo cargar grid PMTiles.', error);
+		}
+	};
+
+	const slugifyProvinceName = (value: string) =>
+		value
+			.normalize('NFD')
+			.replace(/[\u0300-\u036f]/g, '')
+			.replace(/\//g, '-')
+			.toLowerCase()
+			.replace(/[^a-z0-9]+/g, '_')
+			.replace(/^_+|_+$/g, '');
+
+	const resolveGridPmtilesPath = () => {
+		const fromSelected = selectedMunicipio?.provincia?.trim();
+		const fromFilter = provinceFilter && provinceFilter !== 'Todas' ? provinceFilter.trim() : null;
+		const province = fromSelected || fromFilter;
+		if (!province) return '/tiles/grid/grid_norte.pmtiles';
+		return `/tiles/grid/provincias/grid_${slugifyProvinceName(province)}.pmtiles`;
+	};
+
+	const refreshGridSource = () => {
+		if (!map) return;
+		const nextPath = resolveGridPmtilesPath();
+		if (nextPath === activeGridPmtilesPath) return;
+		activeGridPmtilesPath = nextPath;
+
+		const hadFill = Boolean(map.getLayer(gridFillLayerId));
+		if (map.getLayer(gridFillLayerId)) map.removeLayer(gridFillLayerId);
+		if (map.getLayer(gridLineLayerId)) map.removeLayer(gridLineLayerId);
+		if (map.getSource(gridPmtilesSourceId)) map.removeSource(gridPmtilesSourceId);
+		addGridPmtiles();
+		if (hadFill) {
+			applyGridFillPaint();
+			applyGridFilter();
+			applyVisibilityBasedOnMode();
+			applyLayerOrdering();
+		}
+	};
+
+	const parseHashView = (): { zoom: number; center: [number, number] } | null => {
+		if (typeof window === 'undefined') return null;
+		const hash = window.location.hash;
+		if (!hash.startsWith('#map=')) return null;
+		const parts = hash.slice(5).split('/');
+		if (parts.length !== 3) return null;
+		const zoom = Number(parts[0]);
+		const lat = Number(parts[1]);
+		const lon = Number(parts[2]);
+		if (!Number.isFinite(zoom) || !Number.isFinite(lat) || !Number.isFinite(lon)) return null;
+		return { zoom, center: [lon, lat] };
+	};
+
+	const writeHashView = () => {
+		if (!map || typeof window === 'undefined') return;
+		const center = map.getCenter();
+		const zoom = map.getZoom();
+		const nextHash = `#map=${zoom.toFixed(2)}/${center.lat.toFixed(5)}/${center.lng.toFixed(5)}`;
+		if (window.location.hash !== nextHash) {
+			history.replaceState(history.state, '', `${window.location.pathname}${window.location.search}${nextHash}`);
+		}
+	};
+
+	const applyGridFilter = () => {
+		if (!map) return;
+		const selectedId = selectedMunicipio?.id ?? selectedMunicipio?.codigo ?? null;
+		if (!selectedId) {
+			if (map.getLayer(gridFillLayerId)) map.setFilter(gridFillLayerId, null);
+			if (map.getLayer(gridLineLayerId)) map.setFilter(gridLineLayerId, null);
+			return;
+		}
+
+		const numeric = Number.parseInt(selectedId, 10);
+		const expr: any = [
+			'any',
+			['==', ['to-string', ['coalesce', ['get', 'municipio_id'], ['get', 'codigo']]], selectedId],
+			['==', ['to-number', ['coalesce', ['get', 'municipio_id'], ['get', 'codigo']]], numeric]
+		];
+
+		if (map.getLayer(gridFillLayerId)) map.setFilter(gridFillLayerId, expr);
+		if (map.getLayer(gridLineLayerId)) map.setFilter(gridLineLayerId, expr);
+	};
+
 	const addCcaaBoundaries = () => {
 		if (!map) return;
 		try {
@@ -706,9 +909,11 @@
 		return () => maplibregl.removeProtocol('pmtiles');
 	};
 
-	onMount(() => {
+		onMount(() => {
 		const unregisterPmtiles = registerPmtiles();
 		initialBoundsApplied = false;
+		hasInitialHashView = false;
+		lockAutoFitFromHash = false;
 		let resizeObserver: ResizeObserver | null = null;
 
 		map = new maplibregl.Map({
@@ -718,6 +923,13 @@
 			zoom: 6,
 			attributionControl: false
 		});
+
+		const hashView = parseHashView();
+		if (hashView) {
+			hasInitialHashView = true;
+			lockAutoFitFromHash = true;
+			map.jumpTo({ center: hashView.center, zoom: hashView.zoom });
+		}
 
 		map.addControl(new maplibregl.NavigationControl(), 'top-right');
 
@@ -755,6 +967,7 @@
 			});
 
 			addMunicipiosPmtiles();
+			addGridPmtiles();
 			addIgnHydroWmsLayers();
 			addProvinciasBoundaries();
 			addCcaaBoundaries();
@@ -779,6 +992,26 @@
 			applyMaxBoundsToMunicipios();
 
 			map.on('click', (event) => {
+				// Try grid layers first
+				const gridHits = map.queryRenderedFeatures(event.point, {
+					layers: [gridFillLayerId, gridLineLayerId]
+				});
+				if (gridHits.length > 0) {
+					const feature = gridHits[0];
+					const cellId = feature.id ?? feature.properties?.cell_id;
+					if (cellId) {
+						console.log('Grid cell selected:', {
+							cellId,
+							municipioId: feature.properties?.municipio_id,
+							municipioNombre: feature.properties?.municipio_nombre,
+							areaKm2: feature.properties?.area_km2
+						});
+						// TODO: Show cell detail popup/panel
+					}
+					return;
+				}
+
+				// Fallback to municipality
 				const hits = map.queryRenderedFeatures(event.point, {
 					layers: [municipiosPolygonsFillLayerId]
 				});
@@ -804,12 +1037,31 @@
 			});
 
 			mapReady = true;
-			if (!initialBoundsApplied) {
+			if (!initialBoundsApplied && !hasInitialHashView) {
 				fitToMunicipios();
 				lastAutoFitSignature = '';
 				initialBoundsApplied = true;
+			} else if (!initialBoundsApplied) {
+				initialBoundsApplied = true;
 			}
 			isMapLoading = false;
+		});
+
+		map.on('zoomend', () => {
+			currentZoom = map.getZoom();
+			writeHashView();
+		});
+
+		map.on('moveend', () => {
+			writeHashView();
+		});
+
+		map.on('dragstart', () => {
+			lockAutoFitFromHash = false;
+		});
+
+		map.on('zoomstart', () => {
+			lockAutoFitFromHash = false;
 		});
 
 		map.on('dataloading', () => {
@@ -881,11 +1133,24 @@
 	});
 
 	$effect(() => {
+		if (!mapReady || !map || !map.getLayer(gridFillLayerId)) return;
+		applyGridFillPaint();
+	});
+
+	$effect(() => {
 		syncHighlightFilters();
 	});
 
 	$effect(() => {
+		if (!map) return;
+		applyVisibilityBasedOnMode();
+		applyGridFilter();
 		applyLayerOrdering();
+	});
+
+	$effect(() => {
+		if (!map || !mapReady) return;
+		refreshGridSource();
 	});
 
 	$effect(() => {
@@ -897,6 +1162,11 @@
 	$effect(() => {
 		if (!map || !mapReady) return;
 		if (selectedMunicipio) return;
+		if (lockAutoFitFromHash) return;
+		if (hasInitialHashView) {
+			hasInitialHashView = false;
+			return;
+		}
 		autoFitToWorkingMunicipios();
 	});
 </script>
@@ -927,6 +1197,12 @@
 					Satelite
 				</button>
 			</div>
+			<ViewControl
+				viewMode={viewMode}
+				onChange={(mode) => {
+					onViewModeChange(mode);
+				}}
+			/>
 			{#if isMapLoading}
 				<MapLoadingBadge />
 			{/if}

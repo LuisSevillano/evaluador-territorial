@@ -64,6 +64,9 @@ const deriveScoreThresholds = (municipios: Municipio[]) => {
 	return dynamic;
 };
 
+export const getScoreThresholdsForMunicipios = (municipios: Municipio[]) =>
+	deriveScoreThresholds(municipios);
+
 const resolveBucketColor = (value: number, thresholds: readonly number[], colors: readonly string[]) => {
 	if (value <= thresholds[0]) return colors[0];
 	if (value <= thresholds[1]) return colors[1];
