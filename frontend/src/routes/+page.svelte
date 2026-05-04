@@ -16,7 +16,7 @@ import ChipButton from '$lib/components/ui/ChipButton.svelte';
 	import { applyUrlToState, buildUrlFromState } from '$lib/state/urlSync';
 	import { normalizeProvinceName } from '$lib/state/provinces';
 	import { FILTER_HELP } from '$lib/state/filterHelp';
-	
+
 	import {
 		bucketOrder,
 		isPlausiblePrecipAnnual,
@@ -421,7 +421,7 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 	const loadGridClimate = async (provincia: string) => {
 		if (loadedGridProvinces.has(provincia)) return;
 		if (gridClimateLoading) return;
-		
+
 		gridClimateLoading = true;
 		const slug = provincia
 			.normalize('NFD')
@@ -734,7 +734,7 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 				activeFiltersSummary={activeFiltersSummary}
 				shortlistMunicipios={shortlistMunicipios}
 				shortlistedIds={shortlistedIds}
-				
+
 				weights={normalizedWeights}
 				weightsRaw={{ climateWeight, accessWeight, natureWeight }}
 				sensitivityOverlap={sensitivityOverlap}
@@ -856,7 +856,7 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 					{/if}
 				</div>
 			</section>
-			<BottomSheet initialHeight="34vh" expandedHeight="62vh" peekHeight="5.2rem" snapPoints={[0.14, 0.66, 0.94]} bind:isOpen={uiStore.state.isBottomSheetOpen}>
+			<BottomSheet initialHeight="28vh" expandedHeight="52vh" peekHeight="5.2rem" snapPoints={[0.14, 0.48, 0.82]} bind:isOpen={uiStore.state.isBottomSheetOpen}>
 				{#snippet children()}
 					<div class="sheet-tabs" role="tablist" aria-label="Panel móvil">
 						<button
@@ -882,7 +882,7 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 									weights={normalizedWeights}
 									weightsRaw={{ climateWeight, accessWeight, natureWeight }}
 									sensitivityOverlap={sensitivityOverlap}
-									
+
 									climateSeries={selectedClimateSeries}
 									provinceClimateSeries={selectedProvinceClimateSeries}
 									ccaaClimateSeries={selectedCcaaClimateSeries}
@@ -945,7 +945,7 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 										{maxSummerTemp}
 										{maxThermalAmplitude}
 										{maxThermalAmplitudeLimit}
-										
+
 										{minCompositeScore}
 										onMinPrecipAnnualChange={(value) => (filtersStore.state.minPrecipAnnual = value)}
 										onMinWinterTempChange={(value) => (filtersStore.state.minWinterTemp = value)}
@@ -1073,7 +1073,7 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 					weights={normalizedWeights}
 					weightsRaw={{ climateWeight, accessWeight, natureWeight }}
 					sensitivityOverlap={sensitivityOverlap}
-					
+
 					climateSeries={selectedClimateSeries}
 					provinceClimateSeries={selectedProvinceClimateSeries}
 					ccaaClimateSeries={selectedCcaaClimateSeries}
