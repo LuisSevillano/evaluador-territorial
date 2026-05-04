@@ -3,10 +3,12 @@
 
 	type Props = {
 		viewMode: MapViewMode;
+		autoResolvedMode?: Exclude<MapViewMode, 'auto'>;
+		gridMinZoom?: number;
 		onChange: (mode: MapViewMode) => void;
 	};
 
-	let { viewMode, onChange }: Props = $props();
+	let { viewMode, autoResolvedMode = 'municipality', gridMinZoom = 6, onChange }: Props = $props();
 
 	const modes: { value: MapViewMode; label: string }[] = [
 		{ value: 'auto', label: 'Auto' },
@@ -17,10 +19,16 @@
 
 <div class="view-control" role="group" aria-label="Modo de vista del mapa">
 	{#each modes as mode}
+		{@const isGridDisabled = mode.value === 'grid' && gridMinZoom < 6}
 		<button
 			class="mode-btn"
 			class:active={viewMode === mode.value}
-			onclick={() => onChange(mode.value)}
+			class:auto-preview={
+				viewMode === 'auto' && mode.value !== 'auto' && autoResolvedMode === mode.value
+			}
+			class:disabled={isGridDisabled}
+			disabled={isGridDisabled}
+			onclick={() => !isGridDisabled && onChange(mode.value)}
 			title={mode.label}
 		>
 			{mode.label}
@@ -61,5 +69,19 @@
 	.mode-btn.active {
 		background: #2f7d85;
 		color: #f7f4ec;
+	}
+
+	.mode-btn.auto-preview {
+		background: rgba(47, 125, 133, 0.22);
+		color: #285a60;
+	}
+
+	.mode-btn.disabled {
+		opacity: 0.4;
+		cursor: not-allowed;
+	}
+
+	.mode-btn.disabled:hover {
+		background: transparent;
 	}
 </style>
