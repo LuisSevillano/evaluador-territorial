@@ -170,13 +170,13 @@
 	let initialBoundsApplied = $state(false);
 	let lastAutoFitSignature = $state('');
 
-	const GRID_MIN_ZOOM = 6;
+	const getGridMinZoom = () => (isMobileView ? 8.5 : 6);
 	const GRID_FORCE_MIN_ZOOM = 6;
 	let currentZoom = $state(0);
 	let activeGridPmtilesPath = $state('/tiles/grid/grid_norte.pmtiles');
 
 	$effect(() => {
-		if (provinceFilter === 'Todas' && viewMode === 'grid' && currentZoom < GRID_MIN_ZOOM) {
+		if (provinceFilter === 'Todas' && viewMode === 'grid' && currentZoom < getGridMinZoom()) {
 			if (viewModeProp !== 'auto') {
 				onViewModeChange('auto');
 			}
@@ -186,7 +186,7 @@
 	const visibility = $derived.by(() => {
 		const gridVisible =
 			viewMode === 'grid' ||
-			(viewMode === 'auto' && currentZoom >= GRID_MIN_ZOOM);
+			(viewMode === 'auto' && currentZoom >= getGridMinZoom());
 
 		const municipalityFillVisible =
 			viewMode === 'municipality' ||
@@ -412,8 +412,8 @@
 			minzoom: municipiosMinVisibleZoom,
 			...sourceLayerConfig,
 			paint: {
-				'line-color': '#bb5b31',
-				'line-width': ['interpolate', ['linear'], ['zoom'], 4, 1.6, 9, 3.8],
+				'line-color': '#ffffff',
+				'line-width': ['interpolate', ['linear'], ['zoom'], 4, 2.4, 9, 4.6],
 				'line-opacity': 1
 			},
 			filter: buildIdFilterExpression(null) as any
@@ -539,9 +539,15 @@
 
 	const applyMaxBoundsToMunicipios = () => {
 		if (!map) return;
-		const bounds = getMunicipiosBounds(allMunicipios);
-		if (!bounds) return;
-		map.setMaxBounds(bounds.padded as maplibregl.LngLatBoundsLike);
+		
+		if (isMobileView) {
+			map.setMaxBounds(null);
+			return;
+		}
+		
+		const munBounds = getMunicipiosBounds(allMunicipios);
+		if (!munBounds) return;
+		map.setMaxBounds(munBounds.padded as maplibregl.LngLatBoundsLike);
 	};
 
 	const fitToMunicipios = () => {
@@ -554,6 +560,19 @@
 			maxZoom: 7.4,
 			duration: 0
 		});
+	};
+
+	const centerOnMunicipios = () => {
+		if (!map) return;
+		const bounds = getMunicipiosBounds(getWorkingMunicipios());
+		if (!bounds) return;
+
+		const centerLon = (bounds.raw[0][0] + bounds.raw[1][0]) / 2;
+		const centerLat = (bounds.raw[0][1] + bounds.raw[1][1]) / 2;
+		const zoom = isMobileView ? 5.2 : 5.8;
+
+		map.setCenter([centerLon, centerLat], { duration: 0 });
+		map.setZoom(zoom);
 	};
 
 	const getWorkingMunicipios = () => {
@@ -571,7 +590,7 @@
 			return {
 				top: 72,
 				right: 24,
-				bottom: isBottomSheetOpen ? 300 : 120,
+				bottom: isBottomSheetOpen ? 380 : 180,
 				left: 24
 			};
 		}
@@ -599,11 +618,19 @@
 
 		if (signature === lastAutoFitSignature) return;
 
-		map.fitBounds(bounds.raw, {
-			padding: getFitPadding(),
-			maxZoom: normalizeProvinceName(provinceFilter) === 'Todas' ? 7.4 : 9,
-			duration
-		});
+		if (isMobileView) {
+			const centerLon = (bounds.raw[0][0] + bounds.raw[1][0]) / 2;
+			const centerLat = (bounds.raw[0][1] + bounds.raw[1][1]) / 2;
+			const zoom = normalizeProvinceName(provinceFilter) === 'Todas' ? 5.2 : 6.2;
+			map.setCenter([centerLon, centerLat], { duration });
+			map.setZoom(zoom);
+		} else {
+			map.fitBounds(bounds.raw, {
+				padding: getFitPadding(),
+				maxZoom: normalizeProvinceName(provinceFilter) === 'Todas' ? 7.4 : 9,
+				duration
+			});
+		}
 
 		lastAutoFitSignature = signature;
 	};
@@ -1095,7 +1122,7 @@
 			setLayerVisibility(municipiosPolygonsLineLayerId, showMunicipioPolygons);
 			setIsochroneVisibility(showIsochronesLayer);
 			setLayerVisibility(municipiosHoverLineLayerId, showMunicipioPolygons);
-			setLayerVisibility(municipiosSelectedLineLayerId, showMunicipioPolygons);
+			setLayerVisibility(municipiosSelectedLineLayerId, showMunicipioPolygons || !!selectedMunicipio);
 			applyPolygonFilter();
 			applyLayerOrdering();
 			applyMaxBoundsToMunicipios();
@@ -1283,11 +1310,12 @@
 		setLayerVisibility(ignReservoirsLayerId, showIgnReservoirs);
 		const gridActive = visibility.gridVisible;
 		const showMunicipiosPolygons = showMunicipioPolygons && !gridActive;
+		const keepSelectedOutline = !!selectedMunicipio;
 		setLayerVisibility(municipiosPolygonsFillLayerId, showMunicipiosPolygons);
 		setLayerVisibility(municipiosPolygonsLineLayerId, showMunicipiosPolygons);
 		setIsochroneVisibility(showIsochronesLayer);
 		setLayerVisibility(municipiosHoverLineLayerId, showMunicipiosPolygons);
-		setLayerVisibility(municipiosSelectedLineLayerId, showMunicipiosPolygons);
+		setLayerVisibility(municipiosSelectedLineLayerId, showMunicipiosPolygons || keepSelectedOutline);
 		setLayerVisibility(municipiosLayerId, showMunicipioPoints);
 		setLayerVisibility(forestLayerId, showForestLayer);
 		setLayerVisibility(landUseLayerId, showLandUseLayer);
@@ -1332,7 +1360,8 @@
 	$effect(() => {
 		if (!map || !selectedMunicipio) return;
 		if (!Number.isFinite(selectedMunicipio.lon) || !Number.isFinite(selectedMunicipio.lat)) return;
-		map.flyTo({ center: [selectedMunicipio.lon, selectedMunicipio.lat], zoom: 9, speed: 0.8 });
+		const zoom = isMobileView ? 7 : 9;
+		map.flyTo({ center: [selectedMunicipio.lon, selectedMunicipio.lat], zoom, speed: 0.8 });
 	});
 
 	$effect(() => {
