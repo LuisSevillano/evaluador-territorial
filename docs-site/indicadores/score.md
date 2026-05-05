@@ -6,7 +6,7 @@ Sirve para priorizar opciones. No sustituye el análisis local.
 
 ## Fórmula global
 
-`mixed_score = 0.4 * climate_block_score + 0.3 * access_block_score + 0.3 * nature_block_score`
+`mixed_score = 40% puntuación clima + 30% puntuación accesibilidad + 30% puntuación naturaleza`
 
 ![Mapa del score mixto municipal](/assets/map_mixed_score.light.png){.theme-image-light}
 ![Mapa del score mixto municipal](/assets/map_mixed_score.dark.png){.theme-image-dark}
@@ -16,9 +16,9 @@ Sirve para priorizar opciones. No sustituye el análisis local.
 
 ## Qué resume cada bloque
 
-- `climate_block_score`: precipitación y temperaturas estacionales.
-- `access_block_score`: posición relativa en isocronas de acceso.
-- `nature_block_score`: entorno natural y acceso fluvial con pesos publicados.
+- Clima `climate_block_score`: precipitación y temperaturas estacionales.
+- Accesibilidad `access_block_score`: posición relativa en isocronas de acceso.
+- Natualeza `nature_block_score`: entorno natural y acceso fluvial con pesos publicados.
 
 ## Ponderación interna de naturaleza
 
@@ -27,6 +27,18 @@ Sirve para priorizar opciones. No sustituye el análisis local.
 - `naturality_norm`: 0.25
 - `diversity_norm`: 0.15
 - `river_access_norm`: 0.10
+
+![Ponderación global del score mixto](/assets/score_weights_global_treemap.light.png){.theme-image-light}
+![Ponderación global del score mixto](/assets/score_weights_global_treemap.dark.png){.theme-image-dark}
+
+![Ponderación interna del bloque naturaleza](/assets/score_weights_nature_treemap.light.png){.theme-image-light}
+![Ponderación interna del bloque naturaleza](/assets/score_weights_nature_treemap.dark.png){.theme-image-dark}
+
+![Contribución media de componentes de naturaleza](/assets/nature_component_mean_contribution.light.png){.theme-image-light}
+![Contribución media de componentes de naturaleza](/assets/nature_component_mean_contribution.dark.png){.theme-image-dark}
+
+![Descomposición score mixto: Top 10 municipios](/assets/score_rank_tornado_top10.light.png){.theme-image-light}
+![Descomposición score mixto: Top 10 municipios](/assets/score_rank_tornado_top10.dark.png){.theme-image-dark}
 
 ## Cómo leer la puntuación
 

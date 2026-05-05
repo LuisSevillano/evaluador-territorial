@@ -26,6 +26,9 @@ La leyenda usa los mismos tramos temporales que la app (`<=1h30` a `<=4h00`) par
 ![Distribución bloque accesibilidad](/assets/access_block_distribution.png){.theme-image-light}
 ![Distribución bloque accesibilidad](/assets/access_block_distribution.dark.png){.theme-image-dark}
 
+![Distribución buckets de accesibilidad](/assets/access_bucket_counts.light.png){.theme-image-light}
+![Distribución buckets de accesibilidad](/assets/access_bucket_counts.dark.png){.theme-image-dark}
+
 ## Cómo interpretarlo
 
 Un bucket bajo sugiere mejor acceso relativo. Aún así, no implica que todos los servicios estén cubiertos dentro del municipio.

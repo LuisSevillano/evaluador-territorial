@@ -22,6 +22,9 @@ Sirve para detectar gradientes climáticos útiles, no para decidir una parcela 
 ![Distribución bloque clima](/assets/climate_block_distribution.png){.theme-image-light}
 ![Distribución bloque clima](/assets/climate_block_distribution.dark.png){.theme-image-dark}
 
+![Precipitación vs temperatura verano](/assets/climate_scatter_precip_vs_summer.light.png){.theme-image-light}
+![Precipitación vs temperatura verano](/assets/climate_scatter_precip_vs_summer.dark.png){.theme-image-dark}
+
 ## Cómo leerlo bien
 
 Este bloque ayuda a comparar clima entre municipios del mismo alcance.
