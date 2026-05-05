@@ -5,17 +5,16 @@
 	import InspectorPanel from '$lib/components/InspectorPanel.svelte';
 	import BottomSheet from '$lib/components/ui/BottomSheet.svelte';
 	import RankingList from '$lib/components/RankingList.svelte';
-import ChipButton from '$lib/components/ui/ChipButton.svelte';
 	import ColorLegend from '$lib/components/ColorLegend.svelte';
-	import FilterHelp from '$lib/components/ui/FilterHelp.svelte';
-	import LayerOrderList from '$lib/components/layers/LayerOrderList.svelte';
-	import MunicipioSearch from '$lib/components/ui/MunicipioSearch.svelte';
-	import ClimateFilters from '$lib/components/filters/ClimateFilters.svelte';
+import MobileSheetTabs from '$lib/components/mobile/MobileSheetTabs.svelte';
+	import MobileSheetRank from '$lib/components/mobile/MobileSheetRank.svelte';
+	import MobileSheetMeta from '$lib/components/mobile/MobileSheetMeta.svelte';
+	import MobileSheetFilters from '$lib/components/mobile/MobileSheetFilters.svelte';
+	import MobileSheetLayers from '$lib/components/mobile/MobileSheetLayers.svelte';
 	import { getLegendConfig } from '$lib/components/map/coloring';
 	import { classifyMixedScore, labelForScoreBand } from '$lib/components/map/scoreClassification';
 	import { applyUrlToState, buildUrlFromState } from '$lib/state/urlSync';
 	import { normalizeProvinceName } from '$lib/state/provinces';
-	import { FILTER_HELP } from '$lib/state/filterHelp';
 
 	import {
 		bucketOrder,
@@ -61,7 +60,7 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 		sortRows,
 		type SortField
 	} from '$lib/state/ranking';
-	import { MapPin, SlidersHorizontal, Layers, BarChart3, Info } from 'lucide-svelte';
+
 	import type { DatasetMetadata, Municipio, MunicipioClimateMonthly } from '$lib/types/municipio';
 
 	type PageData = {
@@ -240,7 +239,6 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 		].filter(Boolean) as string[]
 	);
 
-	const toNumber = (event: Event) => Number((event.currentTarget as HTMLInputElement).value);
 
 	const activePreset = $derived.by(() =>
 		activePresetFromWeights({ climateWeight, accessWeight, natureWeight })
@@ -858,20 +856,7 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 			</section>
 			<BottomSheet initialHeight="28vh" expandedHeight="52vh" peekHeight="5.2rem" snapPoints={[0.14, 0.48, 0.82]} bind:isOpen={uiStore.state.isBottomSheetOpen}>
 				{#snippet children()}
-					<div class="sheet-tabs" role="tablist" aria-label="Panel móvil">
-						<button
-							class:active={activeSheetTab === 'sel'}
-							class:has-selection={Boolean(selectedMunicipio)}
-							onclick={() => handleSelectSheetTab('sel')}
-							aria-label={selectedMunicipio ? `Selección activa: ${selectedMunicipio.nombre}` : 'Selección'}
-						>
-							<MapPin size={16} />Sel.
-						</button>
-						<button class:active={activeSheetTab === 'filtr'} onclick={() => handleSelectSheetTab('filtr')}><SlidersHorizontal size={16} />Filtros</button>
-						<button class:active={activeSheetTab === 'capas'} onclick={() => handleSelectSheetTab('capas')}><Layers size={16} />Capas</button>
-						<button class:active={activeSheetTab === 'rank'} onclick={() => handleSelectSheetTab('rank')}><BarChart3 size={16} />Rank</button>
-						<button class:active={activeSheetTab === 'meta'} onclick={() => handleSelectSheetTab('meta')}><Info size={16} />Meta</button>
-					</div>
+					<MobileSheetTabs activeSheetTab={activeSheetTab} selectedName={selectedMunicipio?.nombre ?? null} onSelect={handleSelectSheetTab} />
 					<div class="sheet-content">
 						{#if activeSheetTab === 'sel'}
 							{#if selectedMunicipio}
@@ -905,127 +890,61 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 								</button>
 							{/if}
 						{:else if activeSheetTab === 'filtr'}
-							<div class="sheet-block">
-								<p class="sheet-meta">Ajusta filtros y criterios para encontrar el municipio ideal.</p>
-								<section class="sheet-section">
-									<p class="sheet-subtitle">Filtros base</p>
-									<div class="sheet-score-item">
-										<label for="sheet-search">Buscar municipio</label>
-										<MunicipioSearch
-											query={query}
-											municipios={municipiosScoredForView}
-											searchMunicipios={municipiosFiltradosBase}
-											inputId="sheet-search"
-											variant="sheet"
-											onQueryChange={(value) => (filtersStore.state.query = value)}
-											onSelectMunicipio={handleSelectMunicipio}
-										/>
-									</div>
-									<div class="sheet-label-help-row sheet-label-help-row-nowrap">
-										<label for="sheet-province">Provincia</label>
-										<FilterHelp text={FILTER_HELP.province} />
-									</div>
-								<select id="sheet-province" value={provinceFilter} onchange={(e) => (filtersStore.state.provinceFilter = (e.currentTarget as HTMLSelectElement).value)}>
-										{#each provinciasDisponibles as provincia}
-											<option value={provincia}>{provincia}</option>
-										{/each}
-									</select>
-									<p class="sheet-subtitle sheet-subtitle-help">Accesibilidad máxima <FilterHelp text={FILTER_HELP.accessibility} /></p>
-									<div class="chips-row">
-										{#each travelBuckets as bucket}
-											<ChipButton label={bucket.label} size="small" compact={true} active={maxTravelBucket === bucket.value} onclick={() => (filtersStore.state.maxTravelBucket = bucket.value)} />
-										{/each}
-									</div>
-									<p class="sheet-subtitle">Filtros de climatología</p>
-									<ClimateFilters
-										variant="sheet"
-										idPrefix="sheet"
-										{minPrecipAnnual}
-										{minWinterTemp}
-										{maxSummerTemp}
-										{maxThermalAmplitude}
-										{maxThermalAmplitudeLimit}
-
-										{minCompositeScore}
-										onMinPrecipAnnualChange={(value) => (filtersStore.state.minPrecipAnnual = value)}
-										onMinWinterTempChange={(value) => (filtersStore.state.minWinterTemp = value)}
-										onMaxSummerTempChange={(value) => (filtersStore.state.maxSummerTemp = value)}
-										onMaxThermalAmplitudeChange={(value) => (filtersStore.state.maxThermalAmplitude = value)}
-										onMinCompositeScoreChange={(value) => (filtersStore.state.minCompositeScore = value)}
-									/>
-								</section>
-								<section class="sheet-section sheet-section-score">
-										<div class="sheet-score-summary">
-											<span>Clima: {climateWeight} · Accesibilidad: {accessWeight} · Naturaleza: {natureWeight}</span>
-											<span>Robustez top-10: {sensitivityOverlap}/10</span>
-										</div>
-										<p class="sheet-subtitle">Ajuste del score</p>
-										<div class="chips-row">
-											<ChipButton label="Equilibrado" active={activePreset === 'equilibrado'} onclick={() => handlePresetWeights('equilibrado')} />
-											<ChipButton label="Naturaleza" active={activePreset === 'naturaleza'} onclick={() => handlePresetWeights('naturaleza')} />
-											<ChipButton label="Accesibilidad" active={activePreset === 'accesibilidad'} onclick={() => handlePresetWeights('accesibilidad')} />
-											<ChipButton label="Clima" active={activePreset === 'clima'} onclick={() => handlePresetWeights('clima')} />
-											<ChipButton label="Clima estricto" active={activePreset === 'clima_estricto'} onclick={() => handlePresetWeights('clima_estricto')} />
-										</div>
-									<div class="sheet-slider-grid">
-										<div class="sheet-score-item">
-											<label for="sheet-w-clima">Peso clima: {climateWeight}</label>
-												<input id="sheet-w-clima" type="range" min="0" max="100" step="1" value={climateWeight} oninput={(e) => handleClimateWeightChange(toNumber(e))} />
-											</div>
-											<div class="sheet-score-item">
-												<label for="sheet-w-acceso">Peso accesibilidad: {accessWeight}</label>
-												<input id="sheet-w-acceso" type="range" min="0" max="100" step="1" value={accessWeight} oninput={(e) => handleAccessWeightChange(toNumber(e))} />
-											</div>
-											<div class="sheet-score-item">
-												<label for="sheet-w-nat">Peso naturaleza: {natureWeight}</label>
-												<input id="sheet-w-nat" type="range" min="0" max="100" step="1" value={natureWeight} oninput={(e) => handleNatureWeightChange(toNumber(e))} />
-											</div>
-										</div>
-									</section>
-								<div class="sheet-actions">
-									<button class="sheet-clear" onclick={handleClearFilters}>Limpiar filtros</button>
-									<button class="sheet-clear" onclick={() => handleSelectSheetTab('rank')}>Ir a ranking</button>
-								</div>
-							</div>
+							<MobileSheetFilters
+								{query}
+								{municipiosScoredForView}
+								{municipiosFiltradosBase}
+								{provinciasDisponibles}
+								{provinceFilter}
+								{maxTravelBucket}
+								{minPrecipAnnual}
+								{minWinterTemp}
+								{maxSummerTemp}
+								{maxThermalAmplitude}
+								{maxThermalAmplitudeLimit}
+								{minCompositeScore}
+								{climateWeight}
+								{accessWeight}
+								{natureWeight}
+								{sensitivityOverlap}
+								{activePreset}
+								onQueryChange={(value) => (filtersStore.state.query = value)}
+								onSelectMunicipio={handleSelectMunicipio}
+								onProvinceFilterChange={(value) => (filtersStore.state.provinceFilter = value)}
+								onMaxTravelBucketChange={(value) => (filtersStore.state.maxTravelBucket = value)}
+								onMinPrecipAnnualChange={(value) => (filtersStore.state.minPrecipAnnual = value)}
+								onMinWinterTempChange={(value) => (filtersStore.state.minWinterTemp = value)}
+								onMaxSummerTempChange={(value) => (filtersStore.state.maxSummerTemp = value)}
+								onMaxThermalAmplitudeChange={(value) => (filtersStore.state.maxThermalAmplitude = value)}
+								onMinCompositeScoreChange={(value) => (filtersStore.state.minCompositeScore = value)}
+								onPresetWeights={handlePresetWeights}
+								onClimateWeightChange={handleClimateWeightChange}
+								onAccessWeightChange={handleAccessWeightChange}
+								onNatureWeightChange={handleNatureWeightChange}
+								onClearFilters={handleClearFilters}
+								onGoToRank={() => handleSelectSheetTab('rank')}
+							/>
 						{:else if activeSheetTab === 'capas'}
-							<div class="sheet-block">
-							<p class="sheet-subtitle sheet-subtitle-help">Color municipal <FilterHelp text={FILTER_HELP.mapColor} /></p>
-								<div class="chips-row">
-								<ChipButton label="Puntuación global" active={mapColorMetric === 'mixed_score'} onclick={() => setMapColorMetric('mixed_score')} />
-								<ChipButton label="Precipitación" active={mapColorMetric === 'precip_annual_mm'} onclick={() => setMapColorMetric('precip_annual_mm')} />
-								<ChipButton label="Tiempo de desplazamiento" active={mapColorMetric === 'travel_bucket'} onclick={() => setMapColorMetric('travel_bucket')} />
-								<ChipButton label="Transporte OSM" active={mapColorMetric === 'transporte_norm'} onclick={() => setMapColorMetric('transporte_norm')} />
-								<ChipButton label="Servicio Renfe" active={mapColorMetric === 'servicio_renfe_norm'} onclick={() => setMapColorMetric('servicio_renfe_norm')} />
-								<ChipButton label="Acceso a baño" active={mapColorMetric === 'river_access_score'} onclick={() => setMapColorMetric('river_access_score')} />
-							</div>
-								<LayerOrderList items={layerItems} onToggle={toggleLayerVisibility} onReorder={handleLayerOrderChange} />
-								<label><input type="checkbox" checked={showIgnWmsBase} onchange={(e) => (layersStore.state.showIgnWmsBase = (e.currentTarget as HTMLInputElement).checked)} /> Base IGN</label>
-								<label><input type="checkbox" checked={showIgnSatellite} onchange={(e) => (layersStore.state.showIgnSatellite = (e.currentTarget as HTMLInputElement).checked)} /> Satélite IGN</label>
-							</div>
+							<MobileSheetLayers
+								{mapColorMetric}
+								{layerItems}
+								{showIgnWmsBase}
+								{showIgnSatellite}
+								onMapColorMetricChange={setMapColorMetric}
+								onToggleLayer={toggleLayerVisibility}
+								onLayerOrderChange={handleLayerOrderChange}
+								onToggleIgnWmsBase={(value) => (layersStore.state.showIgnWmsBase = value)}
+								onToggleIgnSatellite={(value) => (layersStore.state.showIgnSatellite = value)}
+							/>
 						{:else if activeSheetTab === 'rank'}
-							<div class="sheet-rank">
-								<p class="sheet-meta">Top 25 en base a score mixto actual.</p>
-								<RankingList rows={tableRows} limit={25} compact={true} onSelect={handleSelectMunicipio} scoreThresholds={mixedScoreThresholds} />
-							</div>
+							<MobileSheetRank rows={tableRows} scoreThresholds={mixedScoreThresholds} onSelect={handleSelectMunicipio} />
 						{:else}
-							<section class="sheet-meta-panel" aria-label="Metodología y metadatos">
-								<h3>Datos y metodología</h3>
-								{#if data.datasetMetadata}
-									<ul>
-										<li><strong>Versión:</strong> {data.datasetMetadata.dataset_version}</li>
-										<li><strong>Generado:</strong> {new Date(data.datasetMetadata.generated_at_utc).toLocaleDateString('es-ES')}</li>
-										<li><strong>Período clima:</strong> {data.datasetMetadata.climate_period}</li>
-										<li><strong>Fuente clima:</strong> {data.datasetMetadata.climate_source}</li>
-										<li><strong>Alcance:</strong> {data.datasetMetadata.analysis_scope}</li>
-									</ul>
-								{:else}
-									<p class="sheet-meta">No hay metadatos de dataset disponibles.</p>
-								{/if}
-								<div class="sheet-export-actions">
-									<button class="sheet-clear" onclick={handleExportShortlistCsv} disabled={shortlistMunicipios.length === 0}>Exportar shortlist CSV</button>
-									<button class="sheet-clear" onclick={handleExportShortlistJson} disabled={shortlistMunicipios.length === 0}>Exportar shortlist JSON</button>
-								</div>
-							</section>
+							<MobileSheetMeta
+								datasetMetadata={data.datasetMetadata}
+								{shortlistMunicipios}
+								onExportCsv={handleExportShortlistCsv}
+								onExportJson={handleExportShortlistJson}
+							/>
 						{/if}
 					</div>
 				{/snippet}
@@ -1164,9 +1083,6 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 		display: block;
 		min-width: 0;
 	}
-	.topbar-mode {
-		display: block;
-	}
 	.mode-strip {
 		display: flex;
 		align-items: center;
@@ -1175,9 +1091,6 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 		padding: 0.45rem 0.9rem;
 		border-bottom: 1px solid rgba(21, 32, 33, 0.14);
 		background: rgba(245, 239, 226, 0.78);
-	}
-	.mode-strip.evaluation {
-		background: rgba(236, 245, 242, 0.9);
 	}
 	.mode-strip p {
 		margin: 0;
@@ -1226,22 +1139,6 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 		min-height: 0;
 		flex: 1;
 		overflow: hidden;
-	}
-	.desktop-table-toggle-wrap {
-		display: flex;
-		justify-content: flex-end;
-		padding: 0.35rem 0.5rem 0.2rem;
-		border-top: 1px solid rgba(21, 32, 33, 0.1);
-		background: rgba(255, 251, 243, 0.88);
-	}
-	.desktop-table-toggle {
-		border: 1px solid rgba(21, 32, 33, 0.2);
-		border-radius: 999px;
-		background: rgba(255, 255, 255, 0.86);
-		padding: 0.26rem 0.6rem;
-		font-size: 0.72rem;
-		color: #3f5853;
-		cursor: pointer;
 	}
 	.desktop-table {
 		border-top: 1px solid rgba(21, 32, 33, 0.14);
@@ -1391,40 +1288,6 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 		font-size: 0.76rem;
 		color: #4b6460;
 	}
-	.desktop-score-panel {
-		margin-top: 0.5rem;
-		padding: 0.85rem;
-		display: grid;
-		gap: 0.45rem;
-		border: 1px solid rgba(21, 32, 33, 0.16);
-		border-radius: 12px;
-		background: rgba(255, 255, 255, 0.72);
-	}
-	.desktop-score-panel h3 {
-		margin: 0;
-		font-family: 'Fraunces', serif;
-		font-size: 1.02rem;
-	}
-	.chips-row {
-		display: flex;
-		flex-wrap: wrap;
-		column-gap: 0.35rem;
-		row-gap: 0.45rem;
-	}
-	.desktop-score-control {
-		display: grid;
-		gap: 0.28rem;
-		max-width: 240px;
-	}
-	.desktop-score-control label {
-		font-size: 0.76rem;
-		letter-spacing: 0.02em;
-		color: #3f5853;
-	}
-	.desktop-score-control input[type='range'] {
-		height: 10px;
-	}
-	.sheet-tabs,
 	.sheet-content {
 		display: none;
 	}
@@ -1465,9 +1328,6 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 		.mode-strip {
 			display: none;
 		}
-		.topbar-mode {
-			display: none;
-		}
 		.topbar-brand strong {
 			font-size: 0.98rem;
 		}
@@ -1501,60 +1361,13 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 		.desktop-table {
 			display: none;
 		}
-		.desktop-table-toggle-wrap {
-			display: none;
-		}
 		.map-desktop-zone {
 			height: 100%;
 		}
 		.panel-wrapper {
 			display: none;
 		}
-		.sheet-tabs {
-			display: grid;
-			grid-template-columns: repeat(5, minmax(0, 1fr));
-			gap: 0.25rem;
-			position: sticky;
-			top: 0;
-			padding: 0.2rem 0 0.45rem;
-			background: linear-gradient(180deg, rgba(252, 248, 238, 0.98), rgba(248, 242, 226, 0.96));
-			z-index: 2;
-		}
-		.sheet-tabs button {
-			border: 0;
-			border-radius: 8px;
-			padding: 0.4rem 0.2rem;
-			font-size: 0.68rem;
-			display: inline-flex;
-			align-items: center;
-			justify-content: center;
-			gap: 0.22rem;
-			background: transparent;
-			color: #3d5551;
-		}
-		.sheet-tabs button :global(svg) {
-			width: 15px;
-			height: 15px;
-		}
-		.sheet-tabs button.active {
-			background: rgba(47, 125, 133, 0.14);
-			color: #2f7d85;
-			font-weight: 600;
-		}
-		.sheet-tabs button.has-selection {
-			position: relative;
-		}
-		.sheet-tabs button.has-selection::after {
-			content: '';
-			position: absolute;
-			top: 0.22rem;
-			right: 0.35rem;
-			width: 0.42rem;
-			height: 0.42rem;
-			border-radius: 999px;
-			background: #2f7d85;
-			box-shadow: 0 0 0 2px rgba(252, 248, 238, 0.95);
-		}
+
 		.sheet-content {
 			display: block;
 			padding-bottom: 0.3rem;
@@ -1564,101 +1377,6 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 			color: #415955;
 			margin: 0.35rem 0;
 		}
-		.sheet-block {
-			display: grid;
-			gap: 0.45rem;
-		}
-		.sheet-section {
-			display: grid;
-			gap: 0.4rem;
-			padding: 0.5rem;
-			border: 1px solid rgba(21, 32, 33, 0.13);
-			border-radius: 10px;
-			background: rgba(255, 255, 255, 0.45);
-		}
-		.sheet-section-score {
-			padding-top: 0.45rem;
-		}
-		.sheet-score-summary {
-			display: flex;
-			flex-wrap: wrap;
-			gap: 0.25rem;
-		}
-		.sheet-score-summary span {
-			font-size: 0.68rem;
-			padding: 0.16rem 0.45rem;
-			border-radius: 999px;
-			border: 1px solid rgba(21, 32, 33, 0.16);
-			background: rgba(255, 255, 255, 0.6);
-			color: #3d5652;
-		}
-		.sheet-slider-grid {
-			display: grid;
-			grid-template-columns: repeat(2, minmax(0, 1fr));
-			gap: 0.45rem 0.5rem;
-		}
-		.sheet-score-item {
-			display: grid;
-			gap: 0.2rem;
-		}
-		.sheet-label-help-row {
-			display: inline-flex;
-			align-items: center;
-			gap: 0.3rem;
-			flex-wrap: nowrap;
-		}
-		.sheet-label-help-row label {
-			display: inline;
-			min-width: 0;
-			line-height: 1.15;
-		}
-		.sheet-label-help-row :global(.help-wrap) {
-			flex: 0 0 auto;
-			margin-top: 0;
-		}
-		.sheet-label-help-row-nowrap label {
-			white-space: nowrap;
-		}
-		.sheet-block label {
-			font-size: 0.75rem;
-			color: #3f5753;
-		}
-		.sheet-subtitle {
-			margin: 0.3rem 0 0.05rem;
-			font-size: 0.7rem;
-			font-weight: 700;
-			letter-spacing: 0.06em;
-			text-transform: uppercase;
-			color: #3d5551;
-		}
-		.sheet-subtitle-help {
-			display: inline-flex;
-			align-items: center;
-			gap: 0.3rem;
-			white-space: nowrap;
-		}
-		.sheet-subtitle-help :global(.help-wrap) {
-			flex: 0 0 auto;
-		}
-		@media (max-width: 435px) {
-			.sheet-label-help-row label,
-			.sheet-subtitle-help {
-				font-size: 0.68rem;
-			}
-		}
-		.sheet-block select {
-			border: 1px solid rgba(21, 32, 33, 0.2);
-			border-radius: 8px;
-			height: 30px;
-			padding: 0 0.5rem;
-			font-size: 0.8rem;
-			line-height: 1.2;
-			background: rgba(255, 255, 255, 0.86);
-		}
-		.chips-row {
-			column-gap: 0.25rem;
-			row-gap: 0.25rem;
-		}
 		.sheet-clear {
 			width: auto;
 			justify-self: start;
@@ -1667,49 +1385,6 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 			background: rgba(255, 255, 255, 0.8);
 			padding: 0.3rem 0.6rem;
 			font-size: 0.75rem;
-		}
-		.sheet-actions {
-			display: flex;
-			flex-wrap: wrap;
-			gap: 0.35rem;
-			padding: 0.15rem 0 calc(env(safe-area-inset-bottom) + 0.1rem);
-		}
-		.sheet-rank {
-			display: grid;
-			gap: 0.2rem;
-		}
-		.sheet-meta-panel {
-			display: grid;
-			gap: 0.45rem;
-		}
-		.sheet-meta-panel h3 {
-			margin: 0;
-			font-family: 'Fraunces', serif;
-			font-size: 1rem;
-		}
-		.sheet-meta-panel ul {
-			margin: 0;
-			padding-left: 1rem;
-			display: grid;
-			gap: 0.2rem;
-		}
-		.sheet-meta-panel li {
-			font-size: 0.76rem;
-			color: #3f5753;
-		}
-		.sheet-export-actions {
-			display: flex;
-			gap: 0.35rem;
-			flex-wrap: wrap;
-		}
-		.sheet-export-actions .sheet-clear[disabled] {
-			opacity: 0.5;
-			cursor: not-allowed;
-		}
-		.sheet-meta {
-			margin: 0.1rem 0 0.2rem;
-			font-size: 0.72rem;
-			color: #48605c;
 		}
 		.inspector-desktop {
 			display: none;

@@ -377,9 +377,7 @@
 	.panel { border: 1px solid rgba(21, 32, 33, 0.16); border-radius: 12px; padding: 0.8rem; background: rgba(255, 255, 255, 0.62); }
 	h2,p { margin: 0; }
 	h2 { font-family: 'Fraunces', serif; font-size: 1rem; margin-bottom: 0.5rem; }
-	.mode-context p { font-size: 0.78rem; line-height: 1.35; color: #48615d; }
 	.control-title { margin: 0; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.06em; color: #405753; }
-	.control > label { font-size: 0.78rem; letter-spacing: 0.02em; color: #425955; }
 	.label-help-row { display: inline-flex; align-items: center; gap: 0.32rem; flex-wrap: wrap; }
 	.control-title-help { display: inline-flex; align-items: center; gap: 0.32rem; flex-wrap: wrap; }
 	.search-control { position: relative; z-index: 24; }
@@ -417,7 +415,6 @@
 	@media (max-width: 900px) {
 		.sidebar { max-width: 100%; height: auto; min-height: 0; border-right: 0; max-height: none; overflow: visible; scrollbar-gutter: auto; padding: 1rem 1rem 1.15rem; }
 		h2 { font-size: 1.02rem; }
-		.control > label,
 		.score-panel .desktop-grid .label-help-row label,
 		.layers label { font-size: 0.8rem; }
 		.methodology summary { font-size: 0.9rem; }
