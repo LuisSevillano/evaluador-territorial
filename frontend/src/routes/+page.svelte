@@ -6,6 +6,7 @@
 	import BottomSheet from '$lib/components/ui/BottomSheet.svelte';
 	import RankingList from '$lib/components/RankingList.svelte';
 	import ColorLegend from '$lib/components/ColorLegend.svelte';
+    import WelcomeModal from '$lib/components/ui/WelcomeModal.svelte';
 import MobileSheetTabs from '$lib/components/mobile/MobileSheetTabs.svelte';
 	import MobileSheetRank from '$lib/components/mobile/MobileSheetRank.svelte';
 	import MobileSheetMeta from '$lib/components/mobile/MobileSheetMeta.svelte';
@@ -38,7 +39,12 @@ import MobileSheetTabs from '$lib/components/mobile/MobileSheetTabs.svelte';
 		panelStateOnSelect,
 		panelStateOnTabClick
 	} from '$lib/state/panel';
-	import { loadStringArray, saveStringArray } from '$lib/state/persistence';
+	import {
+		loadBooleanFlag,
+		loadStringArray,
+		saveBooleanFlag,
+		saveStringArray
+	} from '$lib/state/persistence';
 	import { createSelectionStore } from '$lib/state/selectionStore.svelte';
 	import { createUiStore } from '$lib/state/uiStore.svelte';
 	import { createFiltersStore } from '$lib/state/filtersStore.svelte';
@@ -128,6 +134,10 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 	let tableScrollTop = $state(0);
 	let tableViewportHeight = $state(520);
 	let desktopTableEl = $state<HTMLDivElement | null>(null);
+	let isWelcomeOpen = $state(false);
+	let dontShowWelcomeAgain = $state(false);
+	let welcomeHydrated = $state(false);
+	const welcomeStorageKey = 'ebv-welcome-dismissed-v1';
 	const tableRowHeight = 38;
 	const tableOverscan = 24;
 
@@ -377,6 +387,18 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 		layersStore.state.layerOrder = nextOrder;
 	};
 
+	const openWelcomeModal = () => {
+		dontShowWelcomeAgain = false;
+		isWelcomeOpen = true;
+	};
+
+	const closeWelcomeModal = () => {
+		if (dontShowWelcomeAgain) {
+			saveBooleanFlag(welcomeStorageKey, true);
+		}
+		isWelcomeOpen = false;
+	};
+
 	const setMapColorMetric = (value: MapColorMetric) => {
 		uiStore.state.mapColorMetric = value;
 		layersStore.state.showMunicipioPolygons = true;
@@ -583,6 +605,13 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 	});
 
 	$effect(() => {
+		if (typeof window === 'undefined' || welcomeHydrated) return;
+		const dismissed = loadBooleanFlag(welcomeStorageKey);
+		isWelcomeOpen = !dismissed;
+		welcomeHydrated = true;
+	});
+
+	$effect(() => {
 		if (!desktopTableEl) return;
 		tableViewportHeight = desktopTableEl.clientHeight;
 	});
@@ -664,20 +693,25 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 		</a>
 		<div class="topbar-brand-meta">
 			<small>Explora y evalúa · {municipiosFiltrados.length}/{municipios.length}</small>
-			<a
-				class="topbar-docs-link-mobile"
-				href="https://observatorio-territorial.netlify.app/docs/"
-				rel="noopener noreferrer"
-				aria-label="Abrir la documentación técnica del proyecto"
-			>
-				Documentación
-			</a>
+			<div class="topbar-actions-mobile" aria-label="Ayuda y documentación">
+				<button class="topbar-help-btn" type="button" onclick={openWelcomeModal} aria-label="Abrir ayuda de uso">
+					Ayuda
+				</button>
+				<a class="topbar-docs-link" href="https://observatorio-territorial.netlify.app/docs/" rel="noopener noreferrer" aria-label="Abrir la documentación técnica del proyecto">
+					<span>Documentación</span>
+				</a>
+			</div>
 		</div>
 	</div>
 	<div class="topbar-controls">
-		<a class="topbar-docs-link" href="https://observatorio-territorial.netlify.app/docs/" rel="noopener noreferrer" aria-label="Abrir la documentación técnica del proyecto">
-			<span>Documentación</span>
-		</a>
+		<div class="topbar-actions" aria-label="Ayuda y documentación">
+			<button class="topbar-help-btn" type="button" onclick={openWelcomeModal} aria-label="Abrir ayuda de uso">
+				Ayuda
+			</button>
+			<a class="topbar-docs-link" href="https://observatorio-territorial.netlify.app/docs/" rel="noopener noreferrer" aria-label="Abrir la documentación técnica del proyecto">
+				<span>Documentación</span>
+			</a>
+		</div>
 		<div class="topbar-legend">
 			<ColorLegend
 				title={topbarLegendTitle}
@@ -973,7 +1007,7 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 						</button>
 					</div>
 					{#if desktopPanel === 'rank'}
-						<p class="muted">Top 25 por score mixto · robustez {sensitivityOverlap}/10</p>
+					<p class="muted">Top 25 por score mixto · robustez {sensitivityOverlap}/10</p>
 						<RankingList rows={tableRows} limit={25} onSelect={handleSelectMunicipio} scoreThresholds={mixedScoreThresholds} />
 					{:else}
 						{#if shortlistMunicipios.length > 0}
@@ -1008,6 +1042,8 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 			{/if}
 		</div>
 	</main>
+
+<WelcomeModal bind:isOpen={isWelcomeOpen} bind:dontShowAgain={dontShowWelcomeAgain} onClose={closeWelcomeModal} />
 
 <style>
 	.topbar {
@@ -1050,6 +1086,15 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 		gap: 2rem;
 		margin-left: auto;
 	}
+	.topbar-actions {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.35rem;
+		flex: 0 0 auto;
+	}
+	.topbar-actions-mobile {
+		display: none;
+	}
 	.topbar-docs-link {
 		display: inline-flex;
 		align-items: center;
@@ -1065,6 +1110,29 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 		color: #264944;
 		transition: transform 120ms ease, background-color 120ms ease;
 	}
+	.topbar-help-btn {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.35rem;
+		padding: 0.34rem 0.62rem;
+		border-radius: 999px;
+		border: 1px solid rgba(21, 32, 33, 0.24);
+		background: rgba(255, 255, 255, 0.82);
+		font-size: 0.74rem;
+		font-weight: 600;
+		letter-spacing: 0.02em;
+		color: #264944;
+		cursor: pointer;
+		transition: transform 120ms ease, background-color 120ms ease;
+	}
+	.topbar-help-btn:hover {
+		background: rgba(255, 255, 255, 0.98);
+		transform: translateY(-1px);
+	}
+	.topbar-help-btn:focus-visible {
+		outline: 2px solid rgba(47, 125, 133, 0.65);
+		outline-offset: 2px;
+	}
 	.topbar-docs-link:visited {
 		color: #264944;
 	}
@@ -1075,9 +1143,6 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 	.topbar-docs-link:focus-visible {
 		outline: 2px solid rgba(47, 125, 133, 0.65);
 		outline-offset: 2px;
-	}
-	.topbar-docs-link-mobile {
-		display: none;
 	}
 	.topbar-legend {
 		display: block;
@@ -1299,23 +1364,51 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 			overflow: hidden;
 		}
 		.topbar-controls {
-			gap: 0.2rem;
+			gap: 0.35rem;
+			min-width: 0;
 		}
-		.topbar-docs-link {
+		.topbar-actions {
 			display: none;
 		}
-		.topbar-docs-link {
-			padding: 0.22rem 0.45rem;
-			font-size: 0.65rem;
-			gap: 0.22rem;
+		.topbar-actions-mobile {
+			display: inline-flex;
+			align-items: center;
+			gap: 0.3rem;
 		}
-		.topbar-docs-link-mobile {
-			display: block;
+		.topbar-help-btn {
+			padding: 0;
+			border: 0;
+			background: transparent;
+			border-radius: 0;
 			font-size: 0.58rem;
+			font-weight: 500;
+			letter-spacing: 0;
 			color: #2f676a;
 			text-decoration: underline;
 			text-underline-offset: 0.11rem;
-			white-space: nowrap;
+			line-height: 1;
+		}
+		.topbar-docs-link {
+			padding: 0;
+			border: 0;
+			background: transparent;
+			border-radius: 0;
+			font-size: 0.58rem;
+			font-weight: 500;
+			letter-spacing: 0;
+			gap: 0;
+			color: #2f676a;
+			text-decoration: underline;
+			text-underline-offset: 0.11rem;
+			line-height: 1;
+		}
+		.topbar-docs-link:visited {
+			color: #2f676a;
+		}
+		.topbar-help-btn:hover,
+		.topbar-docs-link:hover {
+			transform: none;
+			background: transparent;
 		}
 		.topbar-brand-meta {
 			display: grid;
