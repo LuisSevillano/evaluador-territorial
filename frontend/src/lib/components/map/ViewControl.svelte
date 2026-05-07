@@ -23,9 +23,9 @@
 		<button
 			class="mode-btn"
 			class:active={viewMode === mode.value}
-			class:auto-preview={
-				viewMode === 'auto' && mode.value !== 'auto' && autoResolvedMode === mode.value
-			}
+			class:auto-preview={viewMode === 'auto' &&
+				mode.value !== 'auto' &&
+				autoResolvedMode === mode.value}
 			class:disabled={isGridDisabled}
 			disabled={isGridDisabled}
 			onclick={() => !isGridDisabled && onChange(mode.value)}
@@ -39,7 +39,7 @@
 <style>
 	.view-control {
 		display: inline-flex;
-		gap: 0;
+		gap: 0.25rem;
 		padding: 0.18rem;
 		border-radius: 999px;
 		border: 1px solid rgba(21, 32, 33, 0.26);

@@ -66,7 +66,7 @@
 	<h2>Filtros</h2>
 	<div class="control search-control">
 		<div class="label-help-row">
-			<label for="search">Buscar municipio</label>
+			<label class="control-title" for="search">Buscar municipio</label>
 			<FilterHelp text={FILTER_HELP.search} />
 		</div>
 		<MunicipioSearch
@@ -156,6 +156,7 @@
 		align-items: center;
 		gap: 0.32rem;
 		flex-wrap: wrap;
+		margin-top: 0.4rem;
 	}
 	.control-title-help {
 		display: inline-flex;

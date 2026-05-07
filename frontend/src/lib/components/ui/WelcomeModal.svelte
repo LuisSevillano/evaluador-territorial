@@ -206,23 +206,23 @@
 		font-weight: 700;
 		line-height: 1.15;
 		white-space: nowrap;
-		box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.72);
+		color: white;
 	}
 
 	.topic-badge.climate {
-		border-color: color-mix(in srgb, #2b6cb0 28%, transparent);
+		border-color: #2b6cb0;
 		background: color-mix(in srgb, #2b6cb0 16%, white);
 		color: #2b6cb0;
 	}
 
 	.topic-badge.nature {
-		border-color: color-mix(in srgb, #2f855a 28%, transparent);
+		border-color: #2f855a;
 		background: color-mix(in srgb, #2f855a 16%, white);
 		color: #2f855a;
 	}
 
 	.topic-badge.access {
-		border-color: color-mix(in srgb, #805ad5 28%, transparent);
+		border-color: #805ad5;
 		background: color-mix(in srgb, #805ad5 16%, white);
 		color: #805ad5;
 	}

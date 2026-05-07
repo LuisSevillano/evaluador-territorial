@@ -65,8 +65,16 @@ export type Municipio = {
 	renfe_madrid_routes_count?: number;
 	renfe_madrid_stop_id?: string;
 	renfe_madrid_stop_name?: string;
+	renfe_madrid_stop_municipality?: string;
+	renfe_madrid_stop_province?: string;
 	renfe_madrid_connection_type?: string;
 	renfe_madrid_service_norm?: number;
+	// Transport status derived fields
+	has_direct_madrid_service?: boolean;
+	has_nearby_station?: boolean;
+	nearest_station_distance_km?: number;
+	transport_confidence?: 'high' | 'medium' | 'low';
+	transport_status?: 'direct_madrid' | 'station_nearby' | 'no_station';
 	relieve_norm?: number;
 	relieve_score_raw?: number;
 	// Grid aggregation (from 2km cells)

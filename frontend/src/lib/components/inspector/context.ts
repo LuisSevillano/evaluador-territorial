@@ -136,22 +136,18 @@ export const buildMunicipioContext = ({
 		}
 	];
 
-	const medianPrecip = median(municipios.map((m) => m.precip_annual_mm));
-	const medianForest = median(municipios.map((m) => m.forest_pct ?? 0));
-	const medianWater = median(municipios.map((m) => m.water_pct ?? 0));
-
 	const blockDetails: Record<BlockKey, string> = {
 		clima:
-			selectedMunicipio.precip_annual_mm >= medianPrecip
-				? `Lluvia anual favorable frente a la media de los municipios analizados (${selectedMunicipio.precip_annual_mm.toFixed(0)} mm).`
-				: `Lluvia anual limitada frente a la media de los municipios analizados (${selectedMunicipio.precip_annual_mm.toFixed(0)} mm).`,
+			selectedBlocks.clima >= avgBlocks.clima
+				? `Bloque climático por encima de la mediana del conjunto (${selectedMunicipio.precip_annual_mm.toFixed(0)} mm anuales).`
+				: `Bloque climático por debajo de la mediana del conjunto (${selectedMunicipio.precip_annual_mm.toFixed(0)} mm anuales).`,
 		accesibilidad:
 			selectedMunicipio.travel_bucket === '>4h00'
 				? `Desplazamiento largo (${selectedMunicipio.travel_bucket}), con encaje bajo en accesibilidad.`
 				: selectedMunicipio.travel_bucket === '<=1h30' || selectedMunicipio.travel_bucket === '<=2h00'
 					? `Desplazamiento corto (${selectedMunicipio.travel_bucket}), buen encaje de acceso.`
 					: `Accesibilidad intermedia (${selectedMunicipio.travel_bucket}).`,
-		naturaleza: `Entorno natural ${selectedMunicipio.nature_block_score && selectedMunicipio.nature_block_score >= avgBlocks.naturaleza ? 'por encima de la media' : 'similar a la media'} de los municipios analizados.`
+		naturaleza: `Entorno natural ${selectedBlocks.naturaleza >= avgBlocks.naturaleza ? 'por encima de la mediana' : 'por debajo de la mediana'} de los municipios analizados.`
 	};
 
 	const driverCandidates: DriverEvidence[] = breakdown.map((item) => ({

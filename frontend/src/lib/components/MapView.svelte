@@ -543,7 +543,8 @@
 		const fromFilter = provinceFilter && provinceFilter !== 'Todas' ? provinceFilter.trim() : null;
 		const province = fromFilter;
 		if (!province) return '/tiles/grid/grid_norte.pmtiles';
-		return `/tiles/grid/provincias/grid_${slugifyProvinceName(province)}.pmtiles`;
+		const provinceSlug = slugifyProvinceName(province);
+		return `/tiles/grid/provincias/grid_${provinceSlug}.pmtiles`;
 	};
 
 	const refreshGridSource = () => {
