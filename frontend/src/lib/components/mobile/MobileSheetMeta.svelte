@@ -1,4 +1,5 @@
 <script lang="ts">
+	import AppButton from '$lib/components/ui/AppButton.svelte';
 	import type { DatasetMetadata, Municipio } from '$lib/types/municipio';
 
 	type Props = {
@@ -25,8 +26,8 @@
 		<p class="sheet-meta">No hay metadatos de dataset disponibles.</p>
 	{/if}
 	<div class="sheet-export-actions">
-		<button class="sheet-clear" onclick={onExportCsv} disabled={shortlistMunicipios.length === 0}>Exportar shortlist CSV</button>
-		<button class="sheet-clear" onclick={onExportJson} disabled={shortlistMunicipios.length === 0}>Exportar shortlist JSON</button>
+		<AppButton label="Exportar shortlist CSV" onclick={onExportCsv} disabled={shortlistMunicipios.length === 0} />
+		<AppButton label="Exportar shortlist JSON" onclick={onExportJson} disabled={shortlistMunicipios.length === 0} />
 	</div>
 </section>
 
@@ -55,8 +56,7 @@
 		gap: 0.35rem;
 		flex-wrap: wrap;
 	}
-	.sheet-export-actions .sheet-clear[disabled] {
-		opacity: 0.5;
-		cursor: not-allowed;
+	:global(.sheet-export-actions .app-btn) {
+		font-size: 0.72rem;
 	}
 </style>

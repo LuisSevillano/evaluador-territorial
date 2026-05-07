@@ -235,6 +235,7 @@
 	.content {
 		padding: 0 0.75rem calc(0.75rem + env(safe-area-inset-bottom));
 		overflow-y: auto;
+		overflow-x: hidden;
 		max-height: calc(var(--visible-height, var(--sheet-height, var(--expanded-height, 92vh))) - 1.6rem);
 		-webkit-overflow-scrolling: touch;
 	}

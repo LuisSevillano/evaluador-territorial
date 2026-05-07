@@ -3,6 +3,8 @@
 	import FilterHelp from '$lib/components/ui/FilterHelp.svelte';
 	import MunicipioSearch from '$lib/components/ui/MunicipioSearch.svelte';
 	import ClimateFilters from '$lib/components/filters/ClimateFilters.svelte';
+	import ScoreControls from '$lib/components/scoring/ScoreControls.svelte';
+	import AppButton from '$lib/components/ui/AppButton.svelte';
 	import { FILTER_HELP } from '$lib/state/filterHelp';
 	import { travelBuckets, type TravelBucket } from '$lib/state/filters';
 	import type { Municipio } from '$lib/types/municipio';
@@ -44,7 +46,18 @@
 	};
 
 	let props: Props = $props();
-	const toNumber = (event: Event) => Number((event.currentTarget as HTMLInputElement).value);
+
+	const normalizedWeights = $derived.by(() => {
+		const total = props.climateWeight + props.accessWeight + props.natureWeight;
+		if (total <= 0) {
+			return { climate: 0, access: 0, nature: 0 };
+		}
+		return {
+			climate: props.climateWeight / total,
+			access: props.accessWeight / total,
+			nature: props.natureWeight / total
+		};
+	});
 </script>
 
 <div class="sheet-block">
@@ -95,37 +108,30 @@
 			onMinCompositeScoreChange={props.onMinCompositeScoreChange}
 		/>
 	</section>
-	<section class="sheet-section sheet-section-score">
-		<div class="sheet-score-summary">
-			<span>Clima: {props.climateWeight} · Accesibilidad: {props.accessWeight} · Naturaleza: {props.natureWeight}</span>
-			<span>Robustez top-10: {props.sensitivityOverlap}/10</span>
-		</div>
-		<p class="sheet-subtitle">Ajuste del score</p>
-		<div class="chips-row">
-			<ChipButton label="Equilibrado" active={props.activePreset === 'equilibrado'} onclick={() => props.onPresetWeights('equilibrado')} />
-			<ChipButton label="Naturaleza" active={props.activePreset === 'naturaleza'} onclick={() => props.onPresetWeights('naturaleza')} />
-			<ChipButton label="Accesibilidad" active={props.activePreset === 'accesibilidad'} onclick={() => props.onPresetWeights('accesibilidad')} />
-			<ChipButton label="Clima" active={props.activePreset === 'clima'} onclick={() => props.onPresetWeights('clima')} />
-			<ChipButton label="Clima estricto" active={props.activePreset === 'clima_estricto'} onclick={() => props.onPresetWeights('clima_estricto')} />
-		</div>
-		<div class="sheet-slider-grid">
-			<div class="sheet-score-item">
-				<label for="sheet-w-clima">Peso clima: {props.climateWeight}</label>
-				<input id="sheet-w-clima" type="range" min="0" max="100" step="1" value={props.climateWeight} oninput={(e) => props.onClimateWeightChange(toNumber(e))} />
-			</div>
-			<div class="sheet-score-item">
-				<label for="sheet-w-acceso">Peso accesibilidad: {props.accessWeight}</label>
-				<input id="sheet-w-acceso" type="range" min="0" max="100" step="1" value={props.accessWeight} oninput={(e) => props.onAccessWeightChange(toNumber(e))} />
-			</div>
-			<div class="sheet-score-item">
-				<label for="sheet-w-nat">Peso naturaleza: {props.natureWeight}</label>
-				<input id="sheet-w-nat" type="range" min="0" max="100" step="1" value={props.natureWeight} oninput={(e) => props.onNatureWeightChange(toNumber(e))} />
-			</div>
-		</div>
-	</section>
+	<div class="sheet-section sheet-section-score">
+		<ScoreControls
+			weights={normalizedWeights}
+			weightsRaw={{
+				climateWeight: props.climateWeight,
+				accessWeight: props.accessWeight,
+				natureWeight: props.natureWeight
+			}}
+			sensitivityOverlap={props.sensitivityOverlap}
+			activePreset={props.activePreset}
+			onPresetWeights={props.onPresetWeights}
+			onClimateWeightChange={props.onClimateWeightChange}
+			onAccessWeightChange={props.onAccessWeightChange}
+			onNatureWeightChange={props.onNatureWeightChange}
+			idPrefix="sheet"
+			layout="stack"
+			containerTag="div"
+			compactPresetLabels={true}
+			subtitle="Estos pesos cambian el score y el ranking del atlas en tiempo real."
+		/>
+	</div>
 	<div class="sheet-actions">
-		<button class="sheet-clear" onclick={props.onClearFilters}>Limpiar filtros</button>
-		<button class="sheet-clear" onclick={props.onGoToRank}>Ir a ranking</button>
+		<AppButton label="Limpiar filtros" onclick={props.onClearFilters} />
+		<AppButton label="Ir a ranking" onclick={props.onGoToRank} variant="solid" />
 	</div>
 </div>
 
@@ -133,10 +139,15 @@
 	.sheet-block {
 		display: grid;
 		gap: 0.45rem;
+		min-width: 0;
+		overflow-x: clip;
 	}
 	.sheet-section {
 		display: grid;
 		gap: 0.4rem;
+		width: 100%;
+		min-width: 0;
+		box-sizing: border-box;
 		padding: 0.5rem;
 		border: 1px solid rgba(21, 32, 33, 0.13);
 		border-radius: 10px;
@@ -144,28 +155,15 @@
 	}
 	.sheet-section-score {
 		padding-top: 0.45rem;
+		min-width: 0;
 	}
-	.sheet-score-summary {
-		display: flex;
-		flex-wrap: wrap;
-		gap: 0.25rem;
-	}
-	.sheet-score-summary span {
-		font-size: 0.68rem;
-		padding: 0.16rem 0.45rem;
-		border-radius: 999px;
-		border: 1px solid rgba(21, 32, 33, 0.16);
-		background: rgba(255, 255, 255, 0.6);
-		color: #3d5652;
-	}
-	.sheet-slider-grid {
-		display: grid;
-		grid-template-columns: repeat(2, minmax(0, 1fr));
-		gap: 0.45rem 0.5rem;
-	}
-	.sheet-score-item {
-		display: grid;
-		gap: 0.2rem;
+	:global(.sheet-section-score .score-panel) {
+		border: 0;
+		border-radius: 0;
+		padding: 0;
+		background: transparent;
+		width: 100%;
+		min-width: 0;
 	}
 	.sheet-label-help-row {
 		display: inline-flex;
@@ -222,14 +220,21 @@
 		background: rgba(255, 255, 255, 0.86);
 	}
 	.chips-row {
+		display: flex;
+		flex-wrap: wrap;
+		min-width: 0;
 		column-gap: 0.25rem;
 		row-gap: 0.25rem;
 	}
 	.sheet-actions {
 		display: flex;
 		flex-wrap: wrap;
+		min-width: 0;
 		gap: 0.35rem;
 		padding: 0.15rem 0 calc(env(safe-area-inset-bottom) + 0.1rem);
+	}
+	:global(.sheet-actions .app-btn) {
+		font-size: 0.72rem;
 	}
 	.sheet-meta {
 		margin: 0.1rem 0 0.2rem;
