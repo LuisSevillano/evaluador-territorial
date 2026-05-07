@@ -8,6 +8,13 @@ export const applyPolygonFilter = (
 	lineLayerId: string,
 	onAfterApply?: () => void
 ) => {
+	if (municipiosLength === 0) {
+		if (map.getLayer(fillLayerId)) map.setFilter(fillLayerId, null);
+		if (map.getLayer(lineLayerId)) map.setFilter(lineLayerId, null);
+		onAfterApply?.();
+		return;
+	}
+
 	if (visibleMunicipioIds.length === 0) {
 		const noneExpr: any = ['==', ['to-string', ['coalesce', ['get', 'id'], ['get', 'codigo']]], '__none__'];
 		if (map.getLayer(fillLayerId)) map.setFilter(fillLayerId, noneExpr);
