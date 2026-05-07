@@ -1,11 +1,13 @@
 # Cómo usar el Atlas
 
-Esta guía explica el uso del Atlas sin entrar en scripts ni detalles de implementación. Sirve para entender qué mirar primero, cómo leer el mapa y cómo evitar conclusiones rápidas.
+Esta página sirve para entender qué mirar primero y cómo leer el mapa.
 
 ## Qué vas a encontrar aquí
 
 - Un recorrido detallado de uso en **Desktop** con todos los componentes explicados.
 - Un recorrido detallado de uso en **Mobile** adaptado a la experiencia táctil.
+- Una guía para leer el detalle de un municipio sin perderse entre métricas.
+- Una guía para comparar municipios sin convertir el ranking en una respuesta cerrada.
 - Una lista de comportamientos esperados para validar que todo funciona correctamente.
 
 ## Para quién es esta guía
@@ -13,16 +15,17 @@ Esta guía explica el uso del Atlas sin entrar en scripts ni detalles de impleme
 Esta guía está diseñada para:
 
 - Personas del equipo que necesitan analizar municipios con una base común.
-- Personas que van a hacer presentaciones o demos del producto.
 - Cualquier persona que quiera entender cómo funciona la interfaz sin leer la documentación técnica.
 
 ## Qué guía necesitas
 
-Usa la **Guía de Escritorio** si vas a usar el Atlas desde un ordenador. Usa la **Guía de Móvil** si vas a acceder desde un teléfono o tablet.
+Si es tu primera vez, empieza por [Empieza aquí en 5 minutos](/empieza-aqui). Después usa la **Guía de Escritorio** si vas a trabajar desde un ordenador, o la **Guía de Móvil** si vas a acceder desde un teléfono o tablet.
 
-1. [Guía de Escritorio](/uso-atlas/desktop) — Uso desde ordenador.
-2. [Guía de Móvil](/uso-atlas/mobile) — Uso desde móvil o tablet.
-3. [Comportamientos esperados](/uso-atlas/comportamientos) — Valida que todo funciona correctamente.
+1. [Guía de Escritorio](/uso-atlas/desktop):  Uso desde ordenador.
+2. [Guía de Móvil](/uso-atlas/mobile):  Uso desde móvil o tablet.
+3. [Cómo leer un municipio](/uso-atlas/leer-un-municipio):  Interpretar el panel de detalle.
+4. [Cómo comparar municipios](/uso-atlas/comparar-municipios):  Usar ranking, filtros y pesos con criterio.
+5. [Comportamientos esperados](/uso-atlas/comportamientos):  Valida que todo funciona correctamente.
 
 ## Conceptos clave del Atlas
 
@@ -32,17 +35,11 @@ El Atlas ayuda a responder tres preguntas sobre cada municipio:
 2. **¿Qué accesibilidad tiene?** → Tiempo de viaje a centros de referencia.
 3. **¿Qué entorno natural ofrece?** → Cobertura forestal, agua, naturalidad y acceso a ríos.
 
-El **score mixto** combina estas tres dimensiones en un único valor comparativo. Aun así, conviene revisar los bloques por separado para entender por qué un municipio queda arriba o abajo.
+El **score mixto** (la puntuación que recibe un municipio o celda de la rejilla) combina estas tres dimensiones en un único valor comparativo. Aun así, conviene revisar los bloques por separado para entender por qué un municipio queda arriba o abajo.
 
-### Modo Exploración
+### Experiencia unificada
 
-El Atlas funciona en dos modos. El **Modo Exploración** ("Exploración: filtros y capas") sirve para detectar patrones espaciales con filtros y capas. Es útil cuando la pregunta es "dónde merece la pena mirar primero".
-
-Para cambiar entre modos, usa el toggle que aparece en la barra superior, entre la leyenda y el enlace a documentación. En móvil, el cambio de modo está disponible en el panel inferior.
-
-### Modo Evaluación
-
-El **Modo Evaluación** ("Evaluación: score y ranking") sirve para comparar municipios concretos. Permite ajustar pesos de clima, accesibilidad y naturaleza, y ver cómo cambia el ranking. La métrica de **robustez** muestra cuántos municipios del top-10 se mantienen con cambios de pesos.
+El Atlas funciona con una sola experiencia de análisis. Filtros, ajuste de pesos, ranking y shortlist están disponibles de forma continua, sin cambiar de modo.
 
 > Nota de interpretación: cambiar pesos no descubre una verdad única. Solo muestra cómo cambia la priorización según criterios distintos.
 
@@ -57,3 +54,14 @@ En la práctica, el uso del Atlas siempre sigue el mismo patrón:
 3. **Filtrar** por provincia o rango de score para reducir el ámbito de análisis.
 4. **Seleccionar municipios** individuales para ver el detalle en el inspector.
 5. **Comparar** resultados entre varios municipios.
+
+
+## Diferencias clave entre la vista de móvil y desktop
+
+| Aspecto | Desktop | Mobile |
+|---------|---------|--------|
+| Inspector | Panel lateral fijo | Panel inferior desplazable |
+| Filtros | Sidebar siempre visible | Panel inferior con tabs |
+| Capas | Panel lateral | Panel inferior con tabs |
+| Comparación | Varios paneles abiertos | Un panel a la vez |
+| Navegación | Mouse y teclado | Táctil gestos |

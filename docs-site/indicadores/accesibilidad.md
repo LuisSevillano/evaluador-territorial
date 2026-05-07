@@ -4,13 +4,23 @@ Esta página explica cómo se resume la accesibilidad temporal de cada municipio
 
 Sirve para comparar facilidad de acceso, no para describir todos los problemas reales de movilidad.
 
+## Cómo leer este bloque
+
+La accesibilidad ayuda a entender cuánto pesa la distancia práctica a centros de referencia. Un municipio mejor conectado suele facilitar visitas, gestiones, servicios y desplazamientos cotidianos.
+
+Aun así, una buena accesibilidad no significa que todo esté resuelto. Puede seguir habiendo dependencia del coche, pocas frecuencias de transporte público o servicios locales limitados.
+
+La lectura útil es comparativa: este lugar queda mejor o peor conectado que otros dentro del mismo alcance.
+
 ## Qué se mide
 
 Se usan tres piezas:
 
-- Pertenencia a isocronas de 1h30 a 4h.
-- `travel_bucket` como categoría resumen.
-- `accesibilidad_norm` para combinar este bloque con el resto del modelo.
+- Pertenencia a tramos de tiempo de 1h30 a 4h.
+- Una categoría resumen de accesibilidad.
+- Una puntuación normalizada para combinar este bloque con clima y naturaleza.
+
+En el diccionario de datos aparecen como `travel_bucket` y `accesibilidad_norm`.
 
 En la versión actual, las isocronas del pipeline vienen de TravelTime API (`/v4/time-map/fast`) y se guardan como capas precomputadas para mantener reproducibilidad.
 
@@ -29,22 +39,26 @@ La leyenda usa los mismos tramos temporales que la app (`<=1h30` a `<=4h00`) par
 ![Distribución buckets de accesibilidad](/assets/access_bucket_counts.light.png){.theme-image-light}
 ![Distribución buckets de accesibilidad](/assets/access_bucket_counts.dark.png){.theme-image-dark}
 
-## Cómo interpretarlo
+## Cómo interpretarlo en una comparación
 
 Un bucket bajo sugiere mejor acceso relativo. Aún así, no implica que todos los servicios estén cubiertos dentro del municipio.
 
 Ejemplo: un lugar puede quedar bien en isocrona por carretera, pero depender del coche para casi todo o tener pocas frecuencias de transporte público.
 
+## Conectividad Renfe con Madrid
+
+El Atlas incluye una lectura específica de tren para saber si un municipio tiene conexión Renfe con Madrid o si depende de una estación cercana.
+
+La interpretación visible en el panel es sencilla:
+
+- Verde: el municipio contiene conexión directa con Madrid.
+- Amarillo: hay una estación con conexión a Madrid a 15 km o menos.
+- Rojo: la estación conectada más cercana queda a más de 15 km.
+
+La distancia publicada es en línea recta y no sustituye el tiempo real puerta a puerta. Para ver el criterio completo, consulta [Transporte y tren](/indicadores/transporte-tren).
+
 ## Límites
 
 Este bloque resume tiempos de acceso. No mide por sí solo calidad de carreteras, frecuencia real diaria de servicios ni incidencias puntuales de trayecto.
 
-## Conectividad Renfe con Madrid
-
-El indicador ferroviario complementario se calcula solo con servicios observados en GTFS de Renfe. No usa nodos OSM para puntuar estaciones, porque una estación cartografiada no garantiza servicio activo.
-
-La primera versión mide conexión directa hacia Madrid sobre todo el calendario disponible en el feed GTFS. Para cada parada se comprueba si existen viajes que pasan por esa parada y posteriormente por una parada Madrid. Después se resume cobertura del calendario, salidas medias diarias redondeadas para visualización, servicio en fin de semana y distancia municipal a la parada conectada más cercana.
-
-El score penaliza especialmente la distancia a la estación conectada: una estación con muchas salidas no debe interpretarse como buen acceso municipal si queda lejos del municipio. La distancia publicada es en línea recta y no sustituye el tiempo real puerta a puerta.
-
-No incluye autobús ni transbordos en esta fase.
+Tampoco sustituye la comprobación concreta de cómo se llega desde una vivienda, finca o zona específica del municipio.

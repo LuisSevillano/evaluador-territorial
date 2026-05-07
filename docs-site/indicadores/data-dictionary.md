@@ -3,6 +3,20 @@
 Esta tabla documenta las columnas exportadas en `output/municipios_v2.csv` y `frontend/static/data/municipios_v2.json`.
 Sirve para auditar definiciones y orígenes antes de interpretar resultados.
 
+Si solo quieres entender el Atlas, no hace falta leer esta página completa. Es una referencia para resolver dudas concretas: qué significa un campo, en qué unidad está y de dónde sale.
+
+## Cómo usar este diccionario
+
+Los campos se pueden leer por bloques:
+
+- **Identificación**: nombre, código, provincia y posición del municipio.
+- **Clima**: lluvia y temperaturas.
+- **Accesibilidad**: tramos de tiempo, transporte general y tren.
+- **Naturaleza**: bosque, agua, artificialización, relieve y ríos.
+- **Scores**: puntuaciones normalizadas y score mixto.
+
+Los nombres con guion bajo son nombres internos del dataset. En la interfaz suelen aparecer con etiquetas más legibles.
+
 | Campo | Tipo | Unidad/rango | Descripción | Origen |
 |---|---|---|---|---|
 | `id` | string | código INE | Identificador principal para frontend. | `05_export_frontend_v2.R` |
@@ -37,7 +51,17 @@ Sirve para auditar definiciones y orígenes antes de interpretar resultados.
 | `renfe_madrid_coverage_pct` | number | % | Porcentaje del calendario GTFS con servicio directo hacia Madrid. | `04b_transporte_renfe.R` |
 | `renfe_madrid_departures_avg_day` | number | servicios/día | Salidas medias diarias hacia Madrid sobre todo el calendario GTFS. | `04b_transporte_renfe.R` |
 | `renfe_madrid_weekend_service` | boolean | 0/1 | Existencia de servicio directo sábado o domingo. | `04b_transporte_renfe.R` |
+| `renfe_madrid_stop_id` | string | id GTFS | Identificador de la estación Renfe de referencia. | `04b_transporte_renfe.R` |
+| `renfe_madrid_stop_name` | string | texto | Nombre de la estación Renfe de referencia. | `04b_transporte_renfe.R` |
+| `renfe_madrid_stop_municipality` | string | texto | Municipio de la estación Renfe de referencia. | `04b_transporte_renfe.R` |
+| `renfe_madrid_stop_province` | string | texto | Provincia de la estación Renfe de referencia. | `04b_transporte_renfe.R` |
+| `renfe_madrid_connection_type` | string | categoría | Tipo de conexión detectada con Madrid. | `04b_transporte_renfe.R` |
 | `renfe_madrid_service_norm` | number | [0,1] | Conectividad Renfe directa con Madrid normalizada. | `04b_transporte_renfe.R` |
+| `has_direct_madrid_service` | boolean | 0/1 | Indica si el municipio contiene conexión directa con Madrid. | `04b_transporte_renfe.R` |
+| `has_nearby_station` | boolean | 0/1 | Indica si hay estación conectada con Madrid a 15 km o menos. | `04b_transporte_renfe.R` |
+| `nearest_station_distance_km` | number | km | Distancia a la estación conectada con Madrid más cercana. | `04b_transporte_renfe.R` |
+| `transport_confidence` | string | categoría | Nivel de confianza simplificado para el estado de transporte. | `04b_transporte_renfe.R` |
+| `transport_status` | string | categoría | Estado visible de tren: directo, cercano o lejano. | `04b_transporte_renfe.R` |
 | `precip_norm` | number | [0,1] | Precipitacion normalizada. | `05_export_frontend_v2.R` |
 | `temp_verano_norm` | number | [0,1] | Temperatura estival invertida y normalizada. | `05_export_frontend_v2.R` |
 | `temp_invierno_norm` | number | [0,1] | Temperatura invernal normalizada. | `05_export_frontend_v2.R` |
@@ -68,6 +92,12 @@ Sirve para auditar definiciones y orígenes antes de interpretar resultados.
 ## Notas de interpretación
 
 - `mixed_score` es comparativo multicriterio; no es causal ni prescriptivo.
-- `river_access_score` mide acceso potencial recreativo, no calidad de agua.
+- `river_access_score` mide acceso potencial recreativo, no calidad sanitaria del agua.
 - El valor final depende del alcance territorial activo (`ANALYSIS_SCOPE`).
 - Si un resultado parece raro, conviene revisar primero el desglose por bloques y la fuente de cada indicador.
+
+## Campos legacy
+
+Algunos campos se mantienen por compatibilidad con versiones anteriores del frontend o de los análisis. Por ejemplo, `dist_renfe_km`, `renfe_salidas_dia`, `renfe_tipo_servicio` y `servicio_renfe_norm` son alias de campos más específicos de Renfe a Madrid.
+
+Cuando haya duda, conviene priorizar los campos con prefijo `renfe_madrid_` y los campos de estado `transport_status`, `has_direct_madrid_service` y `has_nearby_station`.

@@ -1,32 +1,36 @@
 # Arquitectura del Atlas
 
-Esta página explica cómo se conecta el trabajo técnico de datos con el resultado que se ve en el mapa.
+Conecta el trabajo de datos con lo que vemos en la aplicación.
 
-Sirve para entender el recorrido completo antes de entrar al detalle de scripts.
+Esta página es una explicación breve de cómo se separan las piezas del proyecto. Sirve para entender por qué un cambio en datos, mapa o documentación puede afectar a lugares distintos.
 
-## Cómo funciona en la práctica
+## Cómo funciona
 
-La arquitectura tiene tres capas:
+Tres capas:
 
-1. **Cálculo**: convierte fuentes distintas en indicadores comparables por municipio.
-2. **Geoespacial**: prepara archivos ligeros para web (sin perder trazabilidad).
-3. **Producto**: muestra resultados en mapa, filtros y fichas municipales.
+* **Cálculo**: transforma fuentes en indicadores comparables (rejilla y municipio).
+* **Geoespacial**: prepara archivos para el mapa.
+* **Producto**: muestra resultados (mapa, filtros y fichas).
 
-## Flujo de extremo a extremo
+## Flujo
 
-El flujo siempre sigue esta secuencia: definir alcance, preparar base municipal, calcular bloques (clima, accesibilidad y naturaleza), validar calidad y publicar.
+Definir alcance → calcular indicadores → validar → exportar → publicar.
 
-Si un municipio sube o baja en ranking, el cambio se puede rastrear hasta una regla concreta o una actualización de datos.
+Los cambios en ranking son trazables a reglas o datos concretos.
 
-## Qué aporta esta separación por capas
+## Visualización
 
-Permite trabajar con orden y evitar cajas negras. El cálculo no depende de la interfaz, y la interfaz no inventa resultados: solo muestra lo que el pipeline genera.
+* Vista municipal (general)
+* Vista de rejilla (detalle)
+* Cambio automático por zoom
+
+## Clave
+
+Separar capas evita cajas negras: el cálculo genera, la interfaz solo muestra.
 
 ![Anillos de isocronas diferenciales](/assets/map_isochrones_diff.light.png){.theme-image-light}
 ![Anillos de isocronas diferenciales](/assets/map_isochrones_diff.dark.png){.theme-image-dark}
 
-> Lectura recomendada: los anillos diferenciales ayudan a comparar mejor que las capas solapadas, porque evitan contar varias veces la misma zona visual.
-
-## Límites a tener en cuenta
+## Límites
 
 Esta arquitectura mejora la consistencia del análisis, pero no elimina incertidumbre. Un resultado sólido en datos sigue necesitando contraste local: visitas, contexto social y comprobación en terreno.

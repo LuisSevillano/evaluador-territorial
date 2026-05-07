@@ -4,11 +4,19 @@ Esta página explica cómo se evalúa el entorno natural y el acceso potencial a
 
 Sirve para comparar municipios con una regla común. No sirve para certificar calidad sanitaria del agua.
 
-## Entorno natural
+## Cómo leer este bloque
+
+El bloque de naturaleza intenta resumir el contexto ambiental de cada municipio sin depender de una sola señal.
+
+Un lugar puede tener mucha cobertura forestal, pero poca agua superficial. Otro puede tener menos bosque, pero más diversidad de coberturas o mejor acceso fluvial potencial. Por eso el Atlas combina varias piezas.
+
+La lectura correcta es: qué municipios ofrecen un entorno natural relativamente más favorable dentro del alcance actual.
+
+## Qué se mide en entorno natural
 
 El bloque combina cobertura forestal, cobertura de agua, superficie artificial y diversidad de usos del suelo. La idea es evitar depender de una sola variable.
 
-En esta ejecución, las métricas se calcularon sobre capas OSM (Geofabrik) como fallback operativo de `04_entorno_corine.R`. Cuando CORINE está disponible y validado, ese mismo script puede usar CORINE como fuente principal.
+También incorpora relieve, porque la variabilidad topográfica puede cambiar mucho la experiencia del territorio.
 
 ## Acceso fluvial recreativo
 
@@ -18,6 +26,8 @@ Para ríos, el Atlas publica:
 - `river_access_class`
 - Tramo de referencia más cercano
 - Metadatos de control (distancia, confianza y candidatos en 10 km)
+
+Esto no significa que el agua sea apta para baño. Significa que, con los datos disponibles, hay mejor o peor acceso potencial a un tramo fluvial de referencia.
 
 ![Acceso fluvial recreativo (score)](/assets/map_river_access.light.png){.theme-image-light}
 ![Acceso fluvial recreativo (score)](/assets/map_river_access.dark.png){.theme-image-dark}
@@ -30,6 +40,10 @@ Para ríos, el Atlas publica:
 `river_access_score = distance_score * river_nearest_confidence / 100`
 
 La distancia se traduce por tramos para evitar saltos bruscos poco intuitivos.
+
+## Fuentes y cálculo técnico
+
+Las métricas de entorno se calculan sobre capas territoriales de coberturas y agua. El acceso fluvial combina cercanía y confianza del tramo candidato.
 
 ## Cómo se decide qué tramo cuenta como "río útil"
 

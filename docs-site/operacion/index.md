@@ -3,10 +3,19 @@
 Esta página resume la secuencia recomendada para generar datos, validar resultados y compilar.
 Sirve como guía rápida para ejecuciones repetibles.
 
+Es una página para mantenimiento del proyecto. Si solo quieres entender o usar el Atlas, empieza por [Empieza aquí](/empieza-aqui).
+
 ## Corrida completa recomendada
 
 ```bash
 ANALYSIS_SCOPE=norte Rscript scripts/run_pipeline_v2.R
+./scripts/05_build_pmtiles.sh
+```
+
+Si el alcance, fuentes o reglas han cambiado, conviene forzar la ejecución para evitar apoyarse en salidas antiguas:
+
+```bash
+ANALYSIS_SCOPE=norte PIPELINE_FORCE=1 PIPELINE_INCLUDE_TRANSPORT=1 Rscript scripts/run_pipeline_v2.R
 ./scripts/05_build_pmtiles.sh
 ```
 
@@ -34,6 +43,8 @@ npm run docs:build
 ## Nota operativa
 
 Si la ejecución termina bien pero aparecen resultados atípicos, conviene revisar QA metodológico antes de desplegar.
+
+Esto es especialmente importante cuando cambian alcance territorial, transporte, indicadores o pesos del score.
 
 ## Qué no asumir
 

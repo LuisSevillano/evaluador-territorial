@@ -18,7 +18,7 @@ Los botones del panel lateral permiten cambiar entre:
 - **Precipitación**: precipitación anual en mm.
 - **Tiempo de desplazamiento**: isocronas de tiempo de viaje.
 - **Transporte OSM**: proximidad a estaciones de transporte público.
-- **Renfe a Madrid**: conectividad ferroviaria directa con Madrid a partir de servicios GTFS activos.
+- **Renfe a Madrid**: conexión ferroviaria con Madrid, distinguiendo si está dentro del municipio o en una estación cercana.
 - **Acceso a baño**: proximidad a ríos potencialmente aptos para uso recreativo.
 
 Al cambiar de métrica, el mapa se recolorea instantáneamente. La leyenda superior se actualiza para reflejar las nuevas clases de color.

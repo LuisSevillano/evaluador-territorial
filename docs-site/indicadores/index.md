@@ -10,13 +10,15 @@ Recorrido sugerido:
 
 1. Clima
 2. Accesibilidad
-3. Naturaleza y ríos
-4. Score compuesto
+3. Transporte y tren
+4. Naturaleza y ríos
+5. Score compuesto
 
 ## Bloques
 
 - [Clima](/indicadores/clima)
 - [Accesibilidad](/indicadores/accesibilidad)
+- [Transporte y tren](/indicadores/transporte-tren)
 - [Naturaleza y ríos](/indicadores/naturaleza-rios)
 - [Score compuesto](/indicadores/score)
 - [Diccionario completo](/indicadores/data-dictionary)

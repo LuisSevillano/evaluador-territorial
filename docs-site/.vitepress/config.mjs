@@ -20,8 +20,20 @@ export default {
 		],
 		['meta', { property: 'og:site_name', content: 'Observatorio Territorial Docs' }],
 		['meta', { property: 'og:locale', content: 'es_ES' }],
-		['meta', { property: 'og:image', content: 'https://observatorio-territorial.netlify.app/docs/og-docs.png' }],
-		['meta', { property: 'og:image:secure_url', content: 'https://observatorio-territorial.netlify.app/docs/og-docs.png' }],
+		[
+			'meta',
+			{
+				property: 'og:image',
+				content: 'https://observatorio-territorial.netlify.app/docs/og-docs.png'
+			}
+		],
+		[
+			'meta',
+			{
+				property: 'og:image:secure_url',
+				content: 'https://observatorio-territorial.netlify.app/docs/og-docs.png'
+			}
+		],
 		['meta', { property: 'og:image:type', content: 'image/png' }],
 		['meta', { property: 'og:image:width', content: '1200' }],
 		['meta', { property: 'og:image:height', content: '630' }],
@@ -36,52 +48,69 @@ export default {
 					'Guía técnica y metodológica del Evaluador Territorial: pipeline, indicadores, criterios de análisis y operación del Atlas.'
 			}
 		],
-		['meta', { property: 'twitter:image', content: 'https://observatorio-territorial.netlify.app/docs/og-docs.png' }],
-		['meta', { name: 'twitter:image:src', content: 'https://observatorio-territorial.netlify.app/docs/og-docs.png' }]
+		[
+			'meta',
+			{
+				property: 'twitter:image',
+				content: 'https://observatorio-territorial.netlify.app/docs/og-docs.png'
+			}
+		],
+		[
+			'meta',
+			{
+				name: 'twitter:image:src',
+				content: 'https://observatorio-territorial.netlify.app/docs/og-docs.png'
+			}
+		]
 	],
-	themeConfig: {
-		nav: [{ text: 'Atlas', link: 'https://observatorio-territorial.netlify.app/' }],
-		sidebar: [
+		themeConfig: {
+			nav: [{ text: 'Atlas', link: 'https://observatorio-territorial.netlify.app/' }],
+			sidebar: [
+				{
+					text: 'Empezar',
+					items: [
+						{ text: 'Qué es este Atlas', link: '/' },
+						{ text: 'Empieza aquí', link: '/empieza-aqui' },
+						{ text: 'Cómo usarlo', link: '/uso-atlas/' },
+						{ text: 'Cómo leer un municipio', link: '/uso-atlas/leer-un-municipio' },
+						{ text: 'Cómo comparar municipios', link: '/uso-atlas/comparar-municipios' },
+						{ text: 'Guía de Escritorio', link: '/uso-atlas/desktop' },
+						{ text: 'Guía de Móvil', link: '/uso-atlas/mobile' },
+						{ text: 'Preguntas frecuentes', link: '/faq' },
+						{ text: 'Glosario', link: '/glosario' }
+					]
+				},
 			{
-				text: 'Entender el Atlas',
+				text: 'Interpretar resultados',
 				items: [
-					{ text: 'Qué es este Atlas', link: '/' },
-					{ text: 'Arquitectura del Atlas', link: '/arquitectura' },
 					{ text: 'Cómo leer resultados con criterio', link: '/analisis-objetividad' },
-					{ text: 'Cómo se comparan los lugares', link: '/metodologia' }
-				]
-			},
-			{
-				text: 'Cómo usar el Atlas',
-				items: [
-					{ text: 'Visión general de uso', link: '/uso-atlas/' },
-					{ text: 'Guía de Escritorio', link: '/uso-atlas/desktop' },
-					{ text: 'Guía de Móvil', link: '/uso-atlas/mobile' },
-					{ text: 'Comportamientos esperados', link: '/uso-atlas/comportamientos' }
-				]
-			},
-			{
-				text: 'Pipeline de datos',
-				items: [
-					{ text: 'Visión general del pipeline', link: '/pipeline/' },
-					{ text: 'Trazabilidad', link: '/pipeline/trazabilidad' },
-					{ text: 'Fuentes de datos', link: '/pipeline/fuentes' },
-					{ text: 'Scripts detallados', link: '/pipeline/scripts-detalle' }
-				]
-			},
-			{
-				text: 'Indicadores',
-				items: [
+					{ text: 'Cómo se comparan los lugares', link: '/metodologia' },
 					{ text: 'Qué se analiza', link: '/indicadores/' },
-					{ text: 'Diccionario completo', link: '/indicadores/data-dictionary' },
-					{ text: 'Clima', link: '/indicadores/clima' },
-					{ text: 'Accesibilidad', link: '/indicadores/accesibilidad' },
-					{ text: 'Naturaleza y ríos', link: '/indicadores/naturaleza-rios' },
 					{ text: 'Score compuesto', link: '/indicadores/score' }
 				]
 			},
-			{
-				text: 'Anexo técnico',
+				{
+					text: 'Indicadores',
+					items: [
+						{ text: 'Clima', link: '/indicadores/clima' },
+						{ text: 'Accesibilidad', link: '/indicadores/accesibilidad' },
+						{ text: 'Transporte y tren', link: '/indicadores/transporte-tren' },
+						{ text: 'Naturaleza y ríos', link: '/indicadores/naturaleza-rios' },
+						{ text: 'Diccionario completo', link: '/indicadores/data-dictionary' }
+					]
+			},
+				{
+					text: 'Auditar y entender datos',
+					items: [
+						{ text: 'Arquitectura del Atlas', link: '/arquitectura' },
+						{ text: 'Pipeline de datos', link: '/pipeline/' },
+						{ text: 'Trazabilidad', link: '/pipeline/trazabilidad' },
+						{ text: 'Fuentes de datos', link: '/pipeline/fuentes' },
+						{ text: 'Scripts detallados', link: '/pipeline/scripts-detalle' }
+					]
+				},
+				{
+					text: 'Mantenimiento técnico',
 				items: [
 					{ text: 'Getting Started', link: '/getting-started' },
 					{ text: 'Runbook', link: '/operacion/' },

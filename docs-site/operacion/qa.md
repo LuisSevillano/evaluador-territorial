@@ -4,18 +4,24 @@ Esta página agrupa controles técnicos y metodológicos para revisar una ejecuc
 
 Sirve para evitar errores silenciosos y lecturas apresuradas del ranking.
 
+La idea es sencilla: no basta con que el pipeline acabe. Hay que comprobar que los resultados tienen sentido antes de mostrarlos como una nueva versión del Atlas.
+
 ## Checklist técnico
 
 - Validar que `output/municipios_v2.csv` existe y tiene filas > 0.
 - Validar que `frontend/static/data/municipios_v2.json` se actualizó.
 - Validar PMTiles en `frontend/static/tiles/`.
 - Ejecutar `npm run check` en frontend.
+- Confirmar que el metadata declara el alcance esperado.
 
 ## Validaciones metodológicas
 
 - Revisar distribución de `mixed_score` por percentiles.
-- Comprobar que `river_access_score` no se interpreta como calidad de agua.
+- Comprobar que `river_access_score` no se interpreta como calidad sanitaria del agua.
 - Verificar cobertura espacial razonable por provincias.
+- Revisar municipios conocidos como casos de control.
+- Comprobar que Madrid aparece si forma parte del alcance activo.
+- Verificar que transporte/tren sigue las reglas de verde, amarillo y rojo documentadas.
 
 ## Evidencia visual
 
