@@ -25,6 +25,7 @@
 		activeFiltersSummary?: string[];
 		onQueryChange?: (value: string) => void;
 		onSelectMunicipio?: (municipio: Municipio) => void;
+		onCoordinateSearch?: (payload: { lat: number; lon: number; label: string }) => void;
 		onProvinceFilterChange?: (value: string) => void;
 		onMaxTravelBucketChange?: (value: TravelBucketFilter) => void;
 		onMinPrecipAnnualChange?: (value: number) => void;
@@ -51,6 +52,7 @@
 		activeFiltersSummary = [],
 		onQueryChange = () => undefined,
 		onSelectMunicipio = () => undefined,
+		onCoordinateSearch = () => undefined,
 		onProvinceFilterChange = () => undefined,
 		onMaxTravelBucketChange = () => undefined,
 		onMinPrecipAnnualChange = () => undefined,
@@ -76,6 +78,7 @@
 			inputId="search"
 			{onQueryChange}
 			{onSelectMunicipio}
+			{onCoordinateSearch}
 		/>
 	</div>
 	<div class="control">

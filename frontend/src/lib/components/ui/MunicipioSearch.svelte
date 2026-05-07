@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { Municipio } from '$lib/types/municipio';
+	import { parseCoordinateQuery, type CoordinateMatch } from '$lib/utils/coordinateSearch';
 
 	type Props = {
 		query?: string;
@@ -10,6 +11,7 @@
 		variant?: 'default' | 'sheet';
 		onQueryChange?: (value: string) => void;
 		onSelectMunicipio?: (municipio: Municipio) => void;
+		onCoordinateSearch?: (payload: { lat: number; lon: number; label: string }) => void;
 	};
 
 	let {
@@ -17,10 +19,11 @@
 		municipios = [],
 		searchMunicipios = [],
 		inputId = 'municipio-search',
-		placeholder = 'Ej. Soria…',
+		placeholder = 'Ej. Soria o 41.68, -3.69',
 		variant = 'default',
 		onQueryChange = () => undefined,
-		onSelectMunicipio = () => undefined
+		onSelectMunicipio = () => undefined,
+		onCoordinateSearch = () => undefined
 	}: Props = $props();
 
 	let isSearchFocused = $state(false);
@@ -29,14 +32,24 @@
 
 	const suggestionsId = $derived(`${inputId}-suggestions`);
 
-	const searchSuggestions = $derived.by(() => {
+	type SearchSuggestion =
+		| { kind: 'municipio'; municipio: Municipio; starts: boolean }
+		| { kind: 'coords'; coords: CoordinateMatch };
+
+	const searchSuggestions = $derived.by((): SearchSuggestion[] => {
 		const source = searchMunicipios.length > 0 ? searchMunicipios : municipios;
 		const normalized = draftQuery.trim().toLowerCase();
+		const coords = parseCoordinateQuery(draftQuery);
+
+		if (coords) {
+			return [{ kind: 'coords', coords }];
+		}
 
 		if (!normalized) {
 			return [...source]
 				.sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'))
-				.slice(0, 10);
+				.slice(0, 10)
+				.map((municipio) => ({ kind: 'municipio', municipio, starts: true }));
 		}
 
 		return source
@@ -53,7 +66,13 @@
 				if (a.starts !== b.starts) return a.starts ? -1 : 1;
 				return a.municipio.nombre.localeCompare(b.municipio.nombre, 'es');
 			})
-			.map((item) => item.municipio)
+			.map(
+				(item): SearchSuggestion => ({
+					kind: 'municipio',
+					municipio: item.municipio,
+					starts: item.starts
+				})
+			)
 			.slice(0, 10);
 	});
 
@@ -70,11 +89,19 @@
 		}, 90);
 	};
 
-	const handleSelectSuggestion = (municipio: Municipio) => {
+	const handleSelectMunicipioSuggestion = (municipio: Municipio) => {
 		selectedDuringFocus = true;
 		onSelectMunicipio(municipio);
 		onQueryChange(municipio.nombre);
 		draftQuery = municipio.nombre;
+		isSearchFocused = false;
+	};
+
+	const handleSelectCoordinateSuggestion = (coords: CoordinateMatch) => {
+		selectedDuringFocus = true;
+		onCoordinateSearch(coords);
+		onQueryChange(coords.label);
+		draftQuery = coords.label;
 		isSearchFocused = false;
 	};
 
@@ -89,17 +116,31 @@
 
 		if (event.key === 'Enter' && searchSuggestions.length > 0) {
 			event.preventDefault();
-			handleSelectSuggestion(searchSuggestions[0]);
+			const first = searchSuggestions[0];
+			if (first.kind === 'coords') {
+				handleSelectCoordinateSuggestion(first.coords);
+				return;
+			}
+			handleSelectMunicipioSuggestion(first.municipio);
 		}
 	};
 
-	const handleSuggestionPointerDown = (event: PointerEvent, municipio: Municipio) => {
+	const handleSuggestionPointerDown = (event: PointerEvent, suggestion: SearchSuggestion) => {
 		event.preventDefault();
-		handleSelectSuggestion(municipio);
+		if (suggestion.kind === 'coords') {
+			handleSelectCoordinateSuggestion(suggestion.coords);
+			return;
+		}
+		handleSelectMunicipioSuggestion(suggestion.municipio);
 	};
 
-	const handleSuggestionClick = (event: MouseEvent, municipio: Municipio) => {
-		if (event.detail === 0) handleSelectSuggestion(municipio);
+	const handleSuggestionClick = (event: MouseEvent, suggestion: SearchSuggestion) => {
+		if (event.detail !== 0) return;
+		if (suggestion.kind === 'coords') {
+			handleSelectCoordinateSuggestion(suggestion.coords);
+			return;
+		}
+		handleSelectMunicipioSuggestion(suggestion.municipio);
 	};
 
 	$effect(() => {
@@ -136,15 +177,19 @@
 	{#if showSearchSuggestions}
 		<div class="search-dropdown">
 			<ul class="search-suggestions" id={suggestionsId} role="listbox">
-				{#each searchSuggestions as municipio (municipio.id)}
+			{#each searchSuggestions as suggestion (suggestion.kind === 'coords' ? `coords-${suggestion.coords.label}` : suggestion.municipio.id)}
 					<li>
 						<button
 							class="suggestion-btn"
-							onpointerdown={(event) => handleSuggestionPointerDown(event, municipio)}
-							onclick={(event) => handleSuggestionClick(event, municipio)}
+							onpointerdown={(event) => handleSuggestionPointerDown(event, suggestion)}
+							onclick={(event) => handleSuggestionClick(event, suggestion)}
 						>
-							<span>{municipio.nombre}</span>
-							<small>{municipio.provincia}</small>
+							{#if suggestion.kind === 'coords'}
+								<span>{suggestion.coords.label}</span>
+							{:else}
+								<span>{suggestion.municipio.nombre}</span>
+								<small>{suggestion.municipio.provincia}</small>
+							{/if}
 						</button>
 					</li>
 				{/each}

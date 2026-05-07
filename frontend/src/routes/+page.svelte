@@ -15,6 +15,7 @@ import MobileSheetTabs from '$lib/components/mobile/MobileSheetTabs.svelte';
 	import { getLegendConfig } from '$lib/components/map/coloring';
 	import { classifyMixedScore, labelForScoreBand } from '$lib/components/map/scoreClassification';
 	import { formatScorePercent, formatSmartNumber } from '$lib/utils/numberFormat';
+	import { parseCoordinateQuery } from '$lib/utils/coordinateSearch';
 	import { applyUrlToState, buildUrlFromState } from '$lib/state/urlSync';
 	import { normalizeProvinceName } from '$lib/state/provinces';
 
@@ -138,6 +139,8 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 	let isWelcomeOpen = $state(false);
 	let dontShowWelcomeAgain = $state(false);
 	let welcomeHydrated = $state(false);
+	let coordinateSearchRequest = $state<{ id: number; lat: number; lon: number } | null>(null);
+	let coordinateSearchRequestId = $state(0);
 	const welcomeStorageKey = 'ebv-welcome-dismissed-v1';
 	const tableRowHeight = 38;
 	const tableOverscan = 24;
@@ -350,6 +353,16 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 		});
 	};
 
+	const handleCoordinateSearch = (payload: { lat: number; lon: number; label: string }) => {
+		filtersStore.state.query = payload.label;
+		coordinateSearchRequestId += 1;
+		coordinateSearchRequest = {
+			id: coordinateSearchRequestId,
+			lat: payload.lat,
+			lon: payload.lon
+		};
+	};
+
 	const handleClearSelectedMunicipio = () => {
 		selectionStore.clearSelection();
 		const panel = panelStateOnClearSelection(activeSheetTab, isMobileView);
@@ -528,6 +541,16 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 			natureWeight: next.natureWeight ?? filtersStore.state.natureWeight
 		});
 		selectionStore.state.pendingSelectedMunicipioId = pendingSelectedMunicipioId;
+
+		const coordinateCandidate = parseCoordinateQuery(next.query ?? filtersStore.state.query);
+		if (coordinateCandidate) {
+			coordinateSearchRequestId += 1;
+			coordinateSearchRequest = {
+				id: coordinateSearchRequestId,
+				lat: coordinateCandidate.lat,
+				lon: coordinateCandidate.lon
+			};
+		}
 
 		urlStateReady = true;
 	});
@@ -776,6 +799,7 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 				climateSeries={selectedClimateSeries}
 				onQueryChange={(value) => (filtersStore.state.query = value)}
 				onSelectMunicipio={handleSelectMunicipio}
+				onCoordinateSearch={handleCoordinateSearch}
 				onToggleMunicipioPolygons={(value) => (layersStore.state.showMunicipioPolygons = value)}
 				onToggleIsochronesLayer={(value) => (layersStore.state.showIsochronesLayer = value)}
 				onToggleIgnWmsBase={(value) => (layersStore.state.showIgnWmsBase = value)}
@@ -830,6 +854,7 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 					{isBottomSheetOpen}
 					pmtilesUrl={municipiosPmtilesUrl}
 					onMapSelection={handleSelectMunicipio}
+					{coordinateSearchRequest}
 					viewMode={uiStore.state.mapViewMode}
 					onViewModeChange={(mode) => (uiStore.state.mapViewMode = mode)}
 				/>
@@ -943,9 +968,10 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 								{natureWeight}
 								{sensitivityOverlap}
 								{activePreset}
-								onQueryChange={(value) => (filtersStore.state.query = value)}
-								onSelectMunicipio={handleSelectMunicipio}
-								onProvinceFilterChange={(value) => (filtersStore.state.provinceFilter = value)}
+							onQueryChange={(value) => (filtersStore.state.query = value)}
+							onSelectMunicipio={handleSelectMunicipio}
+							onCoordinateSearch={handleCoordinateSearch}
+							onProvinceFilterChange={(value) => (filtersStore.state.provinceFilter = value)}
 								onMaxTravelBucketChange={(value) => (filtersStore.state.maxTravelBucket = value)}
 								onMinPrecipAnnualChange={(value) => (filtersStore.state.minPrecipAnnual = value)}
 								onMinWinterTempChange={(value) => (filtersStore.state.minWinterTemp = value)}

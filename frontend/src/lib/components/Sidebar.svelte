@@ -47,6 +47,7 @@
 		climateSeries?: MunicipioClimateMonthly[];
 		onQueryChange?: (value: string) => void;
 		onSelectMunicipio?: (municipio: Municipio) => void;
+		onCoordinateSearch?: (payload: { lat: number; lon: number; label: string }) => void;
 		onToggleMunicipioPolygons?: (value: boolean) => void;
 		onToggleIsochronesLayer?: (value: boolean) => void;
 		onToggleIgnWmsBase?: (value: boolean) => void;
@@ -110,6 +111,7 @@
 		climateSeries = [],
 		onQueryChange = () => undefined,
 		onSelectMunicipio = () => undefined,
+		onCoordinateSearch = () => undefined,
 		onToggleMunicipioPolygons = () => undefined,
 		onToggleIsochronesLayer = () => undefined,
 		onToggleIgnWmsBase = () => undefined,
@@ -231,6 +233,7 @@
 		{activeFiltersSummary}
 		onQueryChange={onQueryChange}
 		onSelectMunicipio={onSelectMunicipio}
+		onCoordinateSearch={onCoordinateSearch}
 		onProvinceFilterChange={onProvinceFilterChange}
 		onMaxTravelBucketChange={onMaxTravelBucketChange}
 		onMinPrecipAnnualChange={onMinPrecipAnnualChange}
