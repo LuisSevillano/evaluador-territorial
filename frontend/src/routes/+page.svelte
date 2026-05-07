@@ -14,6 +14,7 @@ import MobileSheetTabs from '$lib/components/mobile/MobileSheetTabs.svelte';
 	import MobileSheetLayers from '$lib/components/mobile/MobileSheetLayers.svelte';
 	import { getLegendConfig } from '$lib/components/map/coloring';
 	import { classifyMixedScore, labelForScoreBand } from '$lib/components/map/scoreClassification';
+	import { formatScorePercent, formatSmartNumber } from '$lib/utils/numberFormat';
 	import { applyUrlToState, buildUrlFromState } from '$lib/state/urlSync';
 	import { normalizeProvinceName } from '$lib/state/provinces';
 
@@ -244,8 +245,8 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 			minPrecipAnnual !== 0 ? `ppt>=${minPrecipAnnual}` : null,
 			minWinterTemp !== -10 ? `t_inv>=${minWinterTemp}` : null,
 			maxSummerTemp !== 40 ? `t_ver<=${maxSummerTemp}` : null,
-			maxThermalAmplitude < maxThermalAmplitudeLimit ? `amp<=${maxThermalAmplitude.toFixed(1)}` : null,
-			minCompositeScore > 0 ? `score>=${minCompositeScore.toFixed(2)}` : null
+			maxThermalAmplitude < maxThermalAmplitudeLimit ? `amp<=${formatSmartNumber(maxThermalAmplitude)}` : null,
+			minCompositeScore > 0 ? `score>=${formatScorePercent(minCompositeScore)}%` : null
 		].filter(Boolean) as string[]
 	);
 
@@ -311,7 +312,7 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 	const formatMixedScore = (score?: number) => {
 		if (!Number.isFinite(score)) return '-';
 		const band = classifyMixedScore(score as number, mixedScoreThresholds);
-		return `${labelForScoreBand(band)} (${(score as number).toFixed(3)})`;
+		return `${labelForScoreBand(band)} (${formatScorePercent(score as number)}%)`;
 	};
 	const topbarLegendTitle = $derived(isMobileView ? 'Puntuación' : topbarLegendConfig.title);
 

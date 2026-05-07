@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { Municipio } from '$lib/types/municipio';
 	import { classifyMixedScore, labelForScoreBand, normalizeScoreThresholds } from '$lib/components/map/scoreClassification';
+	import { formatScorePercent } from '$lib/utils/numberFormat';
 
 	type Props = {
 		rows?: Municipio[];
@@ -15,7 +16,7 @@
 	const scoreBadge = (score?: number) => {
 		if (!Number.isFinite(score)) return '-';
 		const band = classifyMixedScore(score as number, normalizedThresholds);
-		return `${labelForScoreBand(band)} (${(score as number).toFixed(3)})`;
+		return `${labelForScoreBand(band)} (${formatScorePercent(score as number)}%)`;
 	};
 </script>
 

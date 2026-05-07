@@ -1,6 +1,7 @@
 <script lang="ts">
 	import RangeControl from '$lib/components/ui/RangeControl.svelte';
 	import { FILTER_HELP } from '$lib/state/filterHelp';
+	import { formatScorePercent, formatSmartNumber } from '$lib/utils/numberFormat';
 
 	type Props = {
 		variant?: 'desktop' | 'sheet';
@@ -51,7 +52,7 @@
 
 	<RangeControl
 		id={`${idPrefix}-min-winter`}
-		label={`Temp. invierno mínima: ${minWinterTemp} C`}
+		label={`Temp. invierno mínima: ${minWinterTemp} °C`}
 		value={minWinterTemp}
 		min={-15}
 		max={15}
@@ -63,7 +64,7 @@
 
 	<RangeControl
 		id={`${idPrefix}-max-summer`}
-		label={`Temp. verano máxima: ${maxSummerTemp} C`}
+		label={`Temp. verano máxima: ${maxSummerTemp} °C`}
 		value={maxSummerTemp}
 		min={15}
 		max={40}
@@ -75,7 +76,7 @@
 
 	<RangeControl
 		id={`${idPrefix}-max-amplitude`}
-		label={`Amplitud térmica máxima: ${maxThermalAmplitude.toFixed(1)} C`}
+		label={`Amplitud térmica máxima: ${formatSmartNumber(maxThermalAmplitude)} °C`}
 		value={maxThermalAmplitude}
 		min={12}
 		max={maxThermalAmplitudeLimit}
@@ -87,7 +88,7 @@
 
 	<RangeControl
 		id={`${idPrefix}-min-score`}
-		label={`Score mínimo visible: ${minCompositeScore.toFixed(2)}`}
+		label={`Score mínimo visible: ${formatScorePercent(minCompositeScore)}%`}
 		value={minCompositeScore}
 		min={0}
 		max={1}

@@ -6,6 +6,7 @@
 		normalizeScoreThresholds
 	} from '$lib/components/map/scoreClassification';
 	import ReliefIndicator from '$lib/components/inspector/ReliefIndicator.svelte';
+	import { formatScorePercent } from '$lib/utils/numberFormat';
 
 	type Props = {
 		context?: MunicipioContext | null;
@@ -37,7 +38,7 @@
 		<div class="score-hero {scoreTone(context.selectedScore)}">
 			<div>
 				<span class="hero-label">Score global</span>
-				<strong>{context.selectedScore.toFixed(3)}</strong>
+				<strong>{formatScorePercent(context.selectedScore)}%</strong>
 			</div>
 			<div class="hero-meta">
 				<span>{scoreLabel(context.selectedScore)}</span>
@@ -75,7 +76,7 @@
 						<div class="bar-fill" class:positive={pctAbove >= 0} class:negative={pctAbove < 0} style="width: {barWidth}%"></div>
 					</div>
 					<em class={pctAbove >= 0 ? 'up' : 'down'}>
-					{pctAbove >= 0 ? '↑' : '↓'} {Math.abs(pctAbove).toFixed(0)}% vs mediana global
+						{pctAbove >= 0 ? '↑' : '↓'} {Math.abs(pctAbove).toFixed(0)}% vs mediana del bloque
 					</em>
 				</div>
 			{/each}

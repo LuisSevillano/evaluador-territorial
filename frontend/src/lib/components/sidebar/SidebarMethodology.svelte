@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { DatasetMetadata } from '$lib/types/municipio';
+	import { formatScorePercent } from '$lib/utils/numberFormat';
 
 	type Props = {
 		datasetMetadata?: DatasetMetadata | null;
@@ -26,7 +27,7 @@
 				<p><strong>Scoring base dataset:</strong> {datasetMetadata.scoring_method ?? 'No definido'}</p>
 				<p><strong>Scoring activo:</strong> {scoringActiveText}</p>
 				{#if typeof datasetMetadata.accessibility_normalization_floor === 'number'}
-					<p><strong>Suelo accesibilidad:</strong> {(datasetMetadata.accessibility_normalization_floor * 100).toFixed(0)}%</p>
+					<p><strong>Suelo accesibilidad:</strong> {formatScorePercent(datasetMetadata.accessibility_normalization_floor)}%</p>
 				{/if}
 			{:else}
 				<p class="muted">Sin metadata disponible en este build.</p>
@@ -42,12 +43,7 @@
 		padding: 0.8rem;
 		background: rgba(255, 255, 255, 0.62);
 	}
-	h2 {
-		font-family: 'Fraunces', serif;
-		font-size: 1rem;
-		margin: 0 0 0.5rem 0;
-	}
-	h2, p {
+	p {
 		margin: 0;
 	}
 	.methodology details {

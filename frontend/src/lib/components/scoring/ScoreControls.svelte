@@ -1,6 +1,7 @@
 <script lang="ts">
 	import ChipButton from '$lib/components/ui/ChipButton.svelte';
  	import RangeControl from '$lib/components/ui/RangeControl.svelte';
+	import { formatScorePercent } from '$lib/utils/numberFormat';
 
 	type Preset = 'equilibrado' | 'naturaleza' | 'accesibilidad' | 'clima' | 'clima_estricto';
 	type Layout = 'stack' | 'grid';
@@ -86,7 +87,7 @@
 			variant={layout === 'stack' ? 'sheet' : 'desktop'}
 		/>
 	</div>
-	<p class="muted">Normalizados: clima {(weights.climate * 100).toFixed(0)}% · accesibilidad {(weights.access * 100).toFixed(0)}% · naturaleza {(weights.nature * 100).toFixed(0)}%</p>
+	<p class="muted">Normalizados: clima {formatScorePercent(weights.climate)}% · accesibilidad {formatScorePercent(weights.access)}% · naturaleza {formatScorePercent(weights.nature)}%</p>
 </svelte:element>
 
 <style>

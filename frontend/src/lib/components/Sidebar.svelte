@@ -8,6 +8,7 @@
 	import type { MapColorMetric } from '$lib/components/map/coloring';
 	import type { TravelBucketFilter } from '$lib/state/filters';
 	import { travelBuckets } from '$lib/state/filters';
+	import { formatScorePercent } from '$lib/utils/numberFormat';
 
 		type Props = {
 		query?: string;
@@ -136,7 +137,7 @@
 	}: Props = $props();
 
 	const scoringActiveText = $derived(
-		`clima ${(weights.climate * 100).toFixed(0)}% · accesibilidad ${(weights.access * 100).toFixed(0)}% · naturaleza ${(weights.nature * 100).toFixed(0)}%`
+		`clima ${formatScorePercent(weights.climate)}% · accesibilidad ${formatScorePercent(weights.access)}% · naturaleza ${formatScorePercent(weights.nature)}%`
 	);
 
 	const totalMunicipios = $derived(municipios.length);

@@ -9,6 +9,7 @@
 	import { accessToneFromBucket, climateToneFromBlockScore, renfeMadridToneFromScore } from '$lib/state/metricSemantics';
 	import ReliefIndicator from '$lib/components/inspector/ReliefIndicator.svelte';
 	import { DEFAULT_WEIGHTS_NORMALIZED, DEFAULT_WEIGHTS_RAW } from '$lib/state/scoring';
+	import { formatScorePercent, formatSmartNumber } from '$lib/utils/numberFormat';
 
 	type Props = {
 		selectedMunicipio?: Municipio | null;
@@ -69,22 +70,44 @@
 		return null;
 	});
 
-	const renfeMadridDistance = $derived(selectedMunicipio?.dist_renfe_madrid_km ?? selectedMunicipio?.dist_renfe_km);
-	const renfeMadridDepartures = $derived(selectedMunicipio?.renfe_madrid_departures_avg_day ?? selectedMunicipio?.renfe_salidas_dia);
-	const renfeMadridScore = $derived(selectedMunicipio?.renfe_madrid_service_norm ?? selectedMunicipio?.servicio_renfe_norm);
-	const renfeMadridTone = $derived(renfeMadridToneFromScore(renfeMadridScore));
-	const transportRows = $derived([
-		{
-			label: 'Estación Renfe-Madrid más cercana',
-			value: selectedMunicipio?.renfe_madrid_stop_name
-				? `${selectedMunicipio.renfe_madrid_stop_name} (${Number.isFinite(renfeMadridDistance) ? (renfeMadridDistance as number).toFixed(1) : '-'} km en línea recta)`
-				: '-'
-		},
-		{
-			label: 'Número de salidas desde esta estación',
-			value: `${Number.isFinite(renfeMadridDepartures) ? Math.round(renfeMadridDepartures as number) : 0}/día`
-		}
-	]);
+	const renfeIsDirect = $derived(
+		selectedMunicipio?.has_direct_madrid_service ?? selectedMunicipio?.renfe_tipo_servicio === 'direct'
+	);
+	const renfeDist = $derived(selectedMunicipio?.dist_renfe_madrid_km ?? selectedMunicipio?.dist_renfe_km);
+	const renfeDepartures = $derived(selectedMunicipio?.renfe_madrid_departures_avg_day ?? selectedMunicipio?.renfe_salidas_dia);
+	const renfeScore = $derived(selectedMunicipio?.renfe_madrid_service_norm ?? selectedMunicipio?.servicio_renfe_norm);
+	const renfeStatus = $derived.by(() => {
+		if (selectedMunicipio?.transport_status) return selectedMunicipio.transport_status;
+		if (renfeIsDirect) return 'direct_madrid';
+		if (renfeDist !== undefined && renfeDist !== null && renfeDist <= 15) return 'station_nearby';
+		return 'no_station';
+	});
+	const renfeTone = $derived(
+		renfeStatus === 'direct_madrid' ? 'good' :
+		renfeStatus === 'station_nearby' ? 'mid' : 'bad'
+	);
+	const renfeStatusText = $derived(
+		renfeStatus === 'direct_madrid' ? 'Tren directo a Madrid' :
+		renfeStatus === 'station_nearby' ? 'Estación de tren cercana' :
+		`Estación a ${formatSmartNumber(renfeDist ?? 0)} km`
+	);
+	const renfeDistLabel = $derived(
+		Number.isFinite(renfeDist) ? formatSmartNumber(renfeDist as number) : '-'
+	);
+	const renfeDeparturesLabel = $derived(
+		Number.isFinite(renfeDepartures) ? Math.round(renfeDepartures as number).toLocaleString('es-ES') : '-'
+	);
+	const renfeStationName = $derived(
+		selectedMunicipio?.renfe_madrid_stop_name ?? '-'
+	);
+	const renfeStationLoc = $derived.by(() => {
+		if (!selectedMunicipio?.renfe_madrid_stop_municipality) return '';
+		const stopMuni = selectedMunicipio.renfe_madrid_stop_municipality;
+		const stopProv = selectedMunicipio.renfe_madrid_stop_province;
+		const muniProv = selectedMunicipio.provincia_nombre_geo ?? selectedMunicipio.provincia;
+		if (stopProv && stopProv !== muniProv) return `, ${stopProv}`;
+		return '';
+	});
 
 	const context = $derived.by(() => {
 		return buildMunicipioContext({
@@ -102,8 +125,12 @@
 		if (!selectedMunicipio || !Number.isFinite(selectedMunicipio.mixed_score)) return '-';
 		const score = selectedMunicipio.mixed_score as number;
 		const band = classifyMixedScore(score, mixedLegendThresholds);
-		return `${labelForScoreBand(band)} (${score.toFixed(3)})`;
+		return `${labelForScoreBand(band)} (${formatScorePercent(score)}%)`;
 	});
+	const formatMetricValue = (value: number | null | undefined) =>
+		Number.isFinite(value) ? formatSmartNumber(value as number) : '-';
+	const formatPercentMetric = (value: number | null | undefined) =>
+		Number.isFinite(value) ? `${formatSmartNumber(value as number)}%` : '-';
 </script>
 
 <aside class="inspector">
@@ -142,48 +169,59 @@
 				<div
 					class={`metric ${climateToneFromBlockScore(selectedMunicipio.climate_block_score, selectedMunicipio.precip_norm)}`}
 				>
-					<span>Precipitación</span><strong>{selectedMunicipio.precip_annual_mm} mm</strong>
+					<span>Precipitación</span><strong>{formatMetricValue(selectedMunicipio.precip_annual_mm)} mm</strong>
 				</div>
 				<div class="metric">
 					<span>Invierno / Verano</span><strong
-						>{selectedMunicipio.temp_winter_mean_c} / {selectedMunicipio.temp_summer_mean_c} C</strong
+						>{formatMetricValue(selectedMunicipio.temp_winter_mean_c)} / {formatMetricValue(selectedMunicipio.temp_summer_mean_c)} °C</strong
 					>
 				</div>
 				<div class="metric">
 					<span>Enero / Julio</span><strong
-						>{selectedMunicipio.temp_jan_mean_c} / {selectedMunicipio.temp_jul_mean_c} C</strong
+						>{formatMetricValue(selectedMunicipio.temp_jan_mean_c)} / {formatMetricValue(selectedMunicipio.temp_jul_mean_c)} °C</strong
 					>
 				</div>
 				<div class="metric">
 					<span>% forestal / agua</span><strong
-						>{selectedMunicipio.forest_pct ?? '-'} / {selectedMunicipio.water_pct ?? '-'}</strong
+						>{formatPercentMetric(selectedMunicipio.forest_pct)} / {formatPercentMetric(selectedMunicipio.water_pct)}</strong
 					>
 				</div>
 				<div class="metric">
 					<span>Acceso a baño</span><strong
-						>{selectedMunicipio.river_access_class ?? '-'} ({selectedMunicipio.river_access_score ??
+						>{selectedMunicipio.river_access_class ?? '-'} ({formatMetricValue(selectedMunicipio.river_access_score) ??
 							'-'} )</strong
 					>
 				</div>
 				<div class="metric">
 					<span>Río más cercano</span><strong
-						>{selectedMunicipio.river_nearest_name ?? '-'} ({selectedMunicipio.river_nearest_distance_km ??
+						>{selectedMunicipio.river_nearest_name ?? '-'} ({formatMetricValue(selectedMunicipio.river_nearest_distance_km) ??
 							'-'} km)</strong
 					>
 				</div>
 			</div>
-			<div class={`transport-mini ${renfeMadridTone}`}>
-				<strong>Transporte de referencia</strong>
-				<table>
-					<tbody>
-						{#each transportRows as row}
-							<tr>
-								<td>{row.label}</td>
-								<td>{row.value}</td>
-							</tr>
-						{/each}
-					</tbody>
-				</table>
+			<div class="transport-block">
+				<div class="transport-header">TRANSPORTE</div>
+				<div class={`transport-content ${renfeTone}`}>
+					<div class="transport-row">
+						<span class="transport-type">Tren</span>
+						<span class={`transport-indicator ${renfeTone}`}></span>
+						<span class="transport-status">{renfeStatusText}</span>
+						{#if renfeStatus === 'direct_madrid'}
+							<span class="transport-score">{formatScorePercent(renfeScore ?? 0)}%</span>
+						{/if}
+					</div>
+		{#if renfeStationName !== '-'}
+						<div class="transport-info">
+							<span class="transport-station">{renfeStationName}{renfeStationLoc}</span>
+							<span class="transport-dist">
+								{renfeDistLabel} km (línea recta)
+								{#if renfeStatus === 'direct_madrid' && renfeDeparturesLabel !== '-'}
+									<span class="transport-sep">·</span>{renfeDeparturesLabel}/día
+								{/if}
+							</span>
+						</div>
+					{/if}
+				</div>
 			</div>
 			<div class="charts">
 				<div class="chart-card">
@@ -195,7 +233,7 @@
 					/>
 					{#if context?.tempAmplitude !== null}
 						<small
-							>Amplitud anual: {context?.tempAmplitude?.toFixed(1)} C (más alto = estacionalidad más marcada).</small
+							>Amplitud anual: {formatMetricValue(context?.tempAmplitude)} °C (más alto = estacionalidad más marcada).</small
 						>
 					{/if}
 				</div>
@@ -204,8 +242,8 @@
 					<ClimatePrecipBarsChart data={climateSeries} />
 					{#if context?.wettest && context?.driest}
 						<small
-							>Pico humedo mes {context.wettest.month} ({context.wettest.precip_mm.toFixed(0)} mm) · valle
-							seco mes {context.driest.month} ({context.driest.precip_mm.toFixed(0)} mm).</small
+							>Pico humedo mes {context.wettest.month} ({formatMetricValue(context.wettest.precip_mm)} mm) · valle
+							seco mes {context.driest.month} ({formatMetricValue(context.driest.precip_mm)} mm).</small
 						>
 					{/if}
 				</div>
@@ -387,43 +425,91 @@
 		outline: 2px solid #2f7d85;
 		outline-offset: 2px;
 	}
-	.transport-mini {
-		margin-top: 0.45rem;
-		padding: 0.45rem 0.55rem;
+	.transport-block {
+		margin-top: 0.35rem;
+	}
+	.transport-header {
+		font-size: 0.58rem;
+		font-weight: 700;
+		letter-spacing: 0.1em;
+		text-transform: uppercase;
+		color: #6b7280;
+		margin-bottom: 0.2rem;
+	}
+	.transport-content {
+		padding: 0.35rem 0.45rem;
 		border: 1px solid rgba(21, 32, 33, 0.12);
-		border-radius: 9px;
-		background: rgba(255, 255, 255, 0.66);
+		border-radius: 8px;
+		background: rgba(255, 255, 255, 0.58);
 	}
-	.transport-mini.good {
-		border-color: rgba(15, 118, 110, 0.36);
-		background: rgba(220, 248, 241, 0.68);
+	.transport-content.good {
+		border-color: rgba(15, 118, 110, 0.24);
+		background: rgba(220, 248, 241, 0.44);
 	}
-	.transport-mini.mid {
-		border-color: rgba(180, 111, 36, 0.34);
-		background: rgba(252, 242, 222, 0.72);
+	.transport-content.mid {
+		border-color: rgba(180, 111, 36, 0.22);
+		background: rgba(254, 243, 199, 0.42);
 	}
-	.transport-mini.bad {
-		border-color: rgba(170, 45, 45, 0.34);
-		background: rgba(252, 234, 234, 0.72);
+	.transport-content.bad {
+		border-color: rgba(170, 45, 45, 0.22);
+		background: rgba(254, 226, 226, 0.42);
 	}
-	.transport-mini strong {
+	.transport-row {
+		display: flex;
+		align-items: center;
+		gap: 0.35rem;
+	}
+	.transport-type {
+		font-size: 0.78rem;
+		font-weight: 700;
+		color: #1f2937;
+	}
+	.transport-indicator {
+		width: 8px;
+		height: 8px;
+		border-radius: 50%;
+		flex-shrink: 0;
+	}
+	.transport-indicator.good {
+		background: #059669;
+	}
+	.transport-indicator.mid {
+		background: #d97706;
+	}
+	.transport-indicator.bad {
+		background: #dc2626;
+	}
+	.transport-status {
+		flex: 1;
+		font-size: 0.72rem;
+		font-weight: 500;
+		color: #374151;
+	}
+	.transport-score {
+		flex: 0 0 auto;
+		border-radius: 999px;
+		padding: 0.06rem 0.3rem;
+		background: rgba(255, 255, 255, 0.7);
+		font-size: 0.62rem;
+		font-weight: 700;
+		color: #065f46;
+	}
+	.transport-info {
+		margin-top: 0.22rem;
+		font-size: 0.66rem;
+		color: #4b5563;
+	}
+	.transport-station {
+		font-weight: 600;
+		color: #1f2937;
+	}
+	.transport-dist {
 		display: block;
-		font-size: 0.72rem;
-		margin-bottom: 0.3rem;
-		color: #3c5652;
+		margin-top: 0.05rem;
+		color: #6b7280;
 	}
-	.transport-mini table {
-		width: 100%;
-		border-collapse: collapse;
-		font-size: 0.72rem;
-	}
-	.transport-mini td {
-		padding: 0.14rem 0;
-		vertical-align: top;
-	}
-	.transport-mini td:last-child {
-		text-align: right;
-		color: #3d5552;
+	.transport-sep {
+		margin: 0 0.2rem;
 	}
 	.muted {
 		color: #48615d;
@@ -479,6 +565,15 @@
 		.shortlist-btn {
 			padding: 0.35rem 0.5rem;
 			font-size: 0.72rem;
+		}
+		.transport-content {
+			padding: 0.28rem 0.35rem;
+		}
+		.transport-type {
+			font-size: 0.72rem;
+		}
+		.transport-info {
+			font-size: 0.62rem;
 		}
 	}
 </style>

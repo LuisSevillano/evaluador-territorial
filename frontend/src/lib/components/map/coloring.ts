@@ -1,4 +1,5 @@
 import type { Municipio } from '$lib/types/municipio';
+import { formatScorePercent } from '$lib/utils/numberFormat';
 
 export type MapColorMetric =
 	| 'mixed_score'
@@ -157,7 +158,7 @@ export const getLegendConfig = (
 				title: 'Puntuación territorial',
 				thresholds: deriveScoreThresholds(municipios),
 				colors: [...scoreColors],
-				formatLabel: (value: number) => value.toFixed(2),
+				formatLabel: (value: number) => `${formatScorePercent(value)}%`,
 				labels: ['Muy baja', 'Baja', 'Media', 'Alta', 'Muy alta']
 		  }
 		: mapColorMetric === 'transporte_norm'
