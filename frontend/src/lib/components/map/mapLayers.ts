@@ -61,7 +61,7 @@ export const addCcaaBoundaries = (map: maplibregl.Map) => {
 
 export const addGridPmtiles = (map: maplibregl.Map, activeGridPmtilesPath: string, gridFillColorExpression: any) => {
 	if (map.getSource(gridPmtilesSourceId)) return;
-	map.addSource(gridPmtilesSourceId, { type: 'vector', url: `pmtiles://${activeGridPmtilesPath}`, promoteId: 'cell_id', minzoom: GRID_FORCE_MIN_ZOOM, maxzoom: 14 });
+	map.addSource(gridPmtilesSourceId, { type: 'vector', url: `pmtiles://${activeGridPmtilesPath}`, promoteId: 'cell_id', minzoom: GRID_FORCE_MIN_ZOOM });
 	map.addLayer({ id: gridLineLayerId, type: 'line', source: gridPmtilesSourceId, 'source-layer': 'grid', paint: { 'line-color': '#a1a1aa', 'line-width': ['interpolate', ['linear'], ['zoom'], 7, 0.18, 14, 1.2], 'line-opacity': ['interpolate', ['linear'], ['zoom'], 7, 0.06, 12, 0.42] } });
 	map.addLayer({ id: gridFillLayerId, type: 'fill', source: gridPmtilesSourceId, 'source-layer': 'grid', paint: { 'fill-color': gridFillColorExpression, 'fill-opacity': 0.62 } });
 	map.addLayer({ id: gridHoverLineLayerId, type: 'line', source: gridPmtilesSourceId, 'source-layer': 'grid', paint: { 'line-color': '#ffffff', 'line-width': ['interpolate', ['linear'], ['zoom'], 4, 2.2, 8, 4.2, 10, 5.4], 'line-opacity': ['case', ['boolean', ['feature-state', 'hover'], false], 1, 0] } });
