@@ -28,7 +28,7 @@
 		<ChipButton label="Precipitacion" active={props.mapColorMetric === 'precip_annual_mm'} onclick={() => props.onMapColorMetricChange('precip_annual_mm')} />
 		<ChipButton label="Tiempo de desplazamiento" active={props.mapColorMetric === 'travel_bucket'} onclick={() => props.onMapColorMetricChange('travel_bucket')} />
 		<ChipButton label="Transporte OSM" active={props.mapColorMetric === 'transporte_norm'} onclick={() => props.onMapColorMetricChange('transporte_norm')} />
-		<ChipButton label="Servicio Renfe" active={props.mapColorMetric === 'servicio_renfe_norm'} onclick={() => props.onMapColorMetricChange('servicio_renfe_norm')} />
+		<ChipButton label="Renfe a Madrid" active={props.mapColorMetric === 'servicio_renfe_norm'} onclick={() => props.onMapColorMetricChange('servicio_renfe_norm')} />
 		<ChipButton label="Acceso a bano" active={props.mapColorMetric === 'river_access_score'} onclick={() => props.onMapColorMetricChange('river_access_score')} />
 	</div>
 	<LayerOrderList items={props.layerItems} onToggle={props.onToggleLayer} onReorder={props.onLayerOrderChange} />
@@ -68,6 +68,8 @@
 		}
 	}
 	.chips-row {
+		display: flex;
+		flex-wrap: wrap;
 		column-gap: 0.25rem;
 		row-gap: 0.25rem;
 	}

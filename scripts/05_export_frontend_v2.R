@@ -16,25 +16,37 @@ if (!file.exists(paths$output_climate_monthly_csv)) {
   stop("No existe output/municipios_climate_monthly.csv")
 }
 
+if (!file.exists(paths$output_feature_grid_agg_rds)) {
+  stop("No existe feature_grid_agg.rds. Ejecuta primero scripts/04j_grid_2km.R")
+}
+
 mun <- st_read(paths$output_final_geojson, quiet = TRUE)
 mun_base <- st_read(paths$output_base_geojson, quiet = TRUE) |>
   st_transform(4326)
 
-if (file.exists(paths$output_feature_grid_agg_rds)) {
-  grid_agg <- readRDS(paths$output_feature_grid_agg_rds) |>
-    select(
-      codigo,
-      grid_climate_block_median,
-      grid_access_block_median,
-      grid_nature_block_median,
-      grid_mixed_score_median,
-      grid_mixed_score_p75,
-      grid_pct_cells_mixed_top
-    )
+grid_agg <- readRDS(paths$output_feature_grid_agg_rds) |>
+  select(any_of(c(
+    "codigo",
+    "grid_cell_count",
+    "grid_precip_annual_median",
+    "grid_temp_winter_median",
+    "grid_temp_summer_median",
+    "grid_river_access_median",
+    "grid_natural_cover_median",
+    "grid_iso_majority_bucket",
+    "grid_climate_block_median",
+    "grid_access_block_median",
+    "grid_nature_block_median",
+    "grid_mixed_score_median",
+    "grid_mixed_score_p75",
+    "grid_pct_cells_mixed_top",
+    "grid_pct_cells_bathing_20km",
+    "grid_river_method_version",
+    "score_source"
+  )))
 
-  mun <- mun |>
-    left_join(grid_agg, by = "codigo")
-}
+mun <- mun |>
+  left_join(grid_agg, by = "codigo")
 
 if (file.exists(paths$output_provincias_geojson)) {
   provincias_bounds <- st_read(paths$output_provincias_geojson, quiet = TRUE) |>
@@ -223,14 +235,37 @@ for (col_name in c(
   "naturality_index", "landcover_diversity", "river_access_score",
   "relieve_norm", "relieve_score_raw", "dist_estacion_tren_km",
   "dist_parada_bus_km", "transporte_norm", "dist_renfe_km",
-  "renfe_salidas_dia", "servicio_renfe_norm"
+  "renfe_salidas_dia", "servicio_renfe_norm", "dist_renfe_madrid_km",
+  "renfe_madrid_active_days", "renfe_madrid_coverage_pct",
+  "renfe_madrid_departures_total", "renfe_madrid_departures_avg_day",
+  "renfe_madrid_departures_active_day", "renfe_madrid_departures_p25",
+  "renfe_madrid_routes_count", "renfe_madrid_service_norm"
 )) {
   mun <- ensure_num_col(mun, col_name)
 }
 
-for (col_name in c("renfe_tipo_servicio", "travel_bucket")) {
+if (!"renfe_madrid_weekend_service" %in% names(mun)) mun$renfe_madrid_weekend_service <- rep(FALSE, nrow(mun))
+
+for (col_name in c("renfe_tipo_servicio", "renfe_madrid_connection_type", "travel_bucket")) {
   mun <- ensure_chr_col(mun, col_name)
 }
+
+for (col_name in c(
+  "grid_precip_annual_median",
+  "grid_temp_winter_median",
+  "grid_temp_summer_median",
+  "grid_river_access_median",
+  "grid_natural_cover_median",
+  "grid_climate_block_median",
+  "grid_access_block_median",
+  "grid_nature_block_median",
+  "grid_mixed_score_median"
+)) {
+  mun <- ensure_num_col(mun, col_name)
+}
+mun <- ensure_chr_col(mun, "grid_iso_majority_bucket")
+mun <- ensure_chr_col(mun, "grid_river_method_version")
+mun <- ensure_chr_col(mun, "score_source")
 
 for (col_name in c("provincia_id_geo", "provincia_nombre_geo")) {
   mun <- ensure_chr_col(mun, col_name, default = as.character(mun$provincia))
@@ -296,15 +331,21 @@ mun$mixed_score <- round_idx(
     w_nature * mun$nature_block_score
 )
 
-if ("grid_mixed_score_median" %in% names(mun)) {
-  mun <- mun |>
-    mutate(
-      climate_block_score = ifelse(is.finite(grid_climate_block_median), grid_climate_block_median, climate_block_score),
-      access_block_score = ifelse(is.finite(grid_access_block_median), grid_access_block_median, access_block_score),
-      nature_block_score = ifelse(is.finite(grid_nature_block_median), grid_nature_block_median, nature_block_score),
-      mixed_score = ifelse(is.finite(grid_mixed_score_median), grid_mixed_score_median, mixed_score)
-    )
-}
+mun <- mun |>
+  mutate(
+    precip_annual_mm = ifelse(is.finite(grid_precip_annual_median), grid_precip_annual_median, precip_annual_mm),
+    temp_winter_mean_c = ifelse(is.finite(grid_temp_winter_median), grid_temp_winter_median, temp_winter_mean_c),
+    temp_summer_mean_c = ifelse(is.finite(grid_temp_summer_median), grid_temp_summer_median, temp_summer_mean_c),
+    river_access_score = ifelse(is.finite(grid_river_access_median), grid_river_access_median, river_access_score),
+    forest_nature_quality = ifelse(is.finite(grid_natural_cover_median), pmin(1, pmax(0, grid_natural_cover_median / 100)), forest_nature_quality),
+    travel_bucket = ifelse(!is.na(grid_iso_majority_bucket) & grid_iso_majority_bucket != "", grid_iso_majority_bucket, travel_bucket),
+    climate_block_score = ifelse(is.finite(grid_climate_block_median), grid_climate_block_median, climate_block_score),
+    access_block_score = ifelse(is.finite(grid_access_block_median), grid_access_block_median, access_block_score),
+    nature_block_score = ifelse(is.finite(grid_nature_block_median), grid_nature_block_median, nature_block_score),
+    mixed_score = ifelse(is.finite(grid_mixed_score_median), grid_mixed_score_median, mixed_score),
+    river_method_version = ifelse(!is.na(grid_river_method_version) & grid_river_method_version != "", grid_river_method_version, river_method_version),
+    score_source = ifelse(!is.na(score_source) & score_source != "", score_source, "municipal_fallback")
+  )
 
 population <- if ("population" %in% names(mun)) mun$population else rep(NA_real_, nrow(mun))
 population_men <- if ("population_men" %in% names(mun)) mun$population_men else rep(NA_real_, nrow(mun))
@@ -341,6 +382,17 @@ mun_v2 <- mun |>
     renfe_salidas_dia,
     renfe_tipo_servicio,
     servicio_renfe_norm,
+    dist_renfe_madrid_km,
+    renfe_madrid_active_days,
+    renfe_madrid_coverage_pct,
+    renfe_madrid_departures_total,
+    renfe_madrid_departures_avg_day,
+    renfe_madrid_departures_active_day,
+    renfe_madrid_departures_p25,
+    renfe_madrid_weekend_service,
+    renfe_madrid_routes_count,
+    renfe_madrid_connection_type,
+    renfe_madrid_service_norm,
     precip_norm,
     temp_verano_norm,
     temp_invierno_norm,
@@ -357,6 +409,7 @@ mun_v2 <- mun |>
     river_nearest_confidence,
     river_candidate_count_10km,
     river_method_version,
+    grid_pct_cells_bathing_20km,
     forest_norm,
     forest_nature_quality_norm,
     water_norm,
@@ -370,7 +423,8 @@ mun_v2 <- mun |>
     climate_block_score,
     access_block_score,
     nature_block_score,
-    mixed_score
+    mixed_score,
+    score_source
   )
 
 mun_tab <- mun_v2 |>

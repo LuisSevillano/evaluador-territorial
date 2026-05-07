@@ -54,6 +54,17 @@ export type Municipio = {
 	renfe_salidas_dia?: number;
 	renfe_tipo_servicio?: string;
 	servicio_renfe_norm?: number;
+	dist_renfe_madrid_km?: number;
+	renfe_madrid_active_days?: number;
+	renfe_madrid_coverage_pct?: number;
+	renfe_madrid_departures_total?: number;
+	renfe_madrid_departures_avg_day?: number;
+	renfe_madrid_departures_active_day?: number;
+	renfe_madrid_departures_p25?: number;
+	renfe_madrid_weekend_service?: boolean;
+	renfe_madrid_routes_count?: number;
+	renfe_madrid_connection_type?: string;
+	renfe_madrid_service_norm?: number;
 	relieve_norm?: number;
 	relieve_score_raw?: number;
 	// Grid aggregation (from 2km cells)

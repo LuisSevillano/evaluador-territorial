@@ -38,3 +38,11 @@ Ejemplo: un lugar puede quedar bien en isocrona por carretera, pero depender del
 ## Límites
 
 Este bloque resume tiempos de acceso. No mide por sí solo calidad de carreteras, frecuencia real diaria de servicios ni incidencias puntuales de trayecto.
+
+## Conectividad Renfe con Madrid
+
+El indicador ferroviario complementario se calcula solo con servicios observados en GTFS de Renfe. No usa nodos OSM para puntuar estaciones, porque una estación cartografiada no garantiza servicio activo.
+
+La primera versión mide conexión directa hacia Madrid sobre todo el calendario disponible en el feed GTFS. Para cada parada se comprueba si existen viajes que pasan por esa parada y posteriormente por una parada Madrid. Después se resume cobertura del calendario, salidas medias diarias, servicio en fin de semana y distancia municipal a la parada conectada más cercana.
+
+No incluye autobús ni transbordos en esta fase.

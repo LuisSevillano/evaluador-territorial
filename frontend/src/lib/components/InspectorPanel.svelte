@@ -6,8 +6,7 @@
 	import { buildMunicipioContext } from '$lib/components/inspector/context';
 	import { getLegendConfig } from '$lib/components/map/coloring';
 	import { classifyMixedScore, labelForScoreBand } from '$lib/components/map/scoreClassification';
-	import { accessToneFromBucket, climateToneFromPrecip } from '$lib/state/metricSemantics';
-	import ChipButton from '$lib/components/ui/ChipButton.svelte';
+	import { accessToneFromBucket, climateToneFromBlockScore } from '$lib/state/metricSemantics';
 	import ReliefIndicator from '$lib/components/inspector/ReliefIndicator.svelte';
 	import { DEFAULT_WEIGHTS_NORMALIZED, DEFAULT_WEIGHTS_RAW } from '$lib/state/scoring';
 
@@ -53,8 +52,6 @@
 		onClearMunicipio = () => undefined
 	}: Props = $props();
 
-	const toNumber = (event: Event) => Number((event.currentTarget as HTMLInputElement).value);
-
 	const activePreset = $derived.by(() => {
 		const c = weightsRaw.climateWeight;
 		const a = weightsRaw.accessWeight;
@@ -75,10 +72,10 @@
 	const transportRows = $derived([
 		{ label: 'Dist. tren (OSM)', value: `${selectedMunicipio?.dist_estacion_tren_km ?? '-'} km` },
 		{ label: 'Dist. bus (OSM)', value: `${selectedMunicipio?.dist_parada_bus_km ?? '-'} km` },
-		{ label: 'Dist. Renfe', value: `${selectedMunicipio?.dist_renfe_km ?? '-'} km` },
+		{ label: 'Dist. Renfe Madrid', value: `${selectedMunicipio?.dist_renfe_madrid_km ?? selectedMunicipio?.dist_renfe_km ?? '-'} km` },
 		{
-			label: 'Servicio Renfe',
-			value: `${selectedMunicipio?.renfe_tipo_servicio ?? '-'} (${selectedMunicipio?.renfe_salidas_dia ?? 0}/dia)`
+			label: 'Renfe a Madrid',
+			value: `${selectedMunicipio?.renfe_madrid_connection_type ?? selectedMunicipio?.renfe_tipo_servicio ?? '-'} (${selectedMunicipio?.renfe_madrid_departures_avg_day ?? selectedMunicipio?.renfe_salidas_dia ?? 0}/dia)`
 		}
 	]);
 
@@ -134,7 +131,7 @@
 				<div class={`metric ${accessToneFromBucket(selectedMunicipio.travel_bucket)}`}>
 					<span>Accesibilidad</span><strong>{selectedMunicipio.travel_bucket}</strong>
 				</div>
-				<div class={`metric ${climateToneFromPrecip(selectedMunicipio.precip_annual_mm)}`}>
+				<div class={`metric ${climateToneFromBlockScore(selectedMunicipio.climate_block_score, selectedMunicipio.precip_norm)}`}>
 					<span>Precipitación</span><strong>{selectedMunicipio.precip_annual_mm} mm</strong>
 				</div>
 				<div class="metric">
@@ -213,85 +210,6 @@
 		{/if}
 	</section>
 
-	<section class="panel score-panel">
-			<h2>Ajuste del score</h2>
-			<p class="muted">
-				Estos pesos cambian el score y el ranking; el filtro de score mínimo del panel izquierdo
-				decide qué municipios se muestran en mapa y tabla.
-			</p>
-			<div class="chips-wrap compact preset-wrap">
-				<ChipButton
-					label="Equilibrado"
-					active={activePreset === 'equilibrado'}
-					onclick={() => onPresetWeights('equilibrado')}
-				/>
-				<ChipButton
-					label="Priorizar naturaleza"
-					active={activePreset === 'naturaleza'}
-					onclick={() => onPresetWeights('naturaleza')}
-				/>
-				<ChipButton
-					label="Priorizar accesibilidad"
-					active={activePreset === 'accesibilidad'}
-					onclick={() => onPresetWeights('accesibilidad')}
-				/>
-				<ChipButton
-					label="Priorizar clima"
-					active={activePreset === 'clima'}
-					onclick={() => onPresetWeights('clima')}
-				/>
-				<ChipButton
-					label="Clima estricto"
-					active={activePreset === 'clima_estricto'}
-					onclick={() => onPresetWeights('clima_estricto')}
-				/>
-			</div>
-			<div class="control score-control">
-				<label for="rw-climate">Peso clima: {weightsRaw.climateWeight}</label>
-				<input
-					id="rw-climate"
-					name="rw-climate"
-					type="range"
-					min="0"
-					max="100"
-					step="1"
-					value={weightsRaw.climateWeight}
-					oninput={(e) => onClimateWeightChange(toNumber(e))}
-				/>
-			</div>
-			<div class="control score-control">
-				<label for="rw-access">Peso accesibilidad: {weightsRaw.accessWeight}</label>
-				<input
-					id="rw-access"
-					name="rw-access"
-					type="range"
-					min="0"
-					max="100"
-					step="1"
-					value={weightsRaw.accessWeight}
-					oninput={(e) => onAccessWeightChange(toNumber(e))}
-				/>
-			</div>
-			<div class="control score-control">
-				<label for="rw-nature">Peso naturaleza: {weightsRaw.natureWeight}</label>
-				<input
-					id="rw-nature"
-					name="rw-nature"
-					type="range"
-					min="0"
-					max="100"
-					step="1"
-					value={weightsRaw.natureWeight}
-					oninput={(e) => onNatureWeightChange(toNumber(e))}
-				/>
-			</div>
-			<p class="muted">
-				Normalizados: clima {(weights.climate * 100).toFixed(0)}% · accesibilidad {(
-					weights.access * 100
-				).toFixed(0)}% · naturaleza {(weights.nature * 100).toFixed(0)}%
-			</p>
-			<p class="muted">Robustez top-10 vs base equilibrada: {sensitivityOverlap}/10</p>
-		</section>
 </aside>
 
 <style>
@@ -314,15 +232,9 @@
 		padding: 0.95rem;
 		background: rgba(255, 255, 255, 0.72);
 	}
-	h2,
 	h3,
 	p {
 		margin: 0;
-	}
-	h2 {
-		font-family: 'Fraunces', serif;
-		font-size: 1rem;
-		margin-bottom: 0.5rem;
 	}
 	h3 {
 		font-family: 'Fraunces', serif;
@@ -466,32 +378,6 @@
 		outline: 2px solid #2f7d85;
 		outline-offset: 2px;
 	}
-	.chips-wrap {
-		display: grid;
-		gap: 0.35rem;
-	}
-	.preset-wrap {
-		margin-top: 0.35rem;
-	}
-	.inspector :global(.chips-wrap .chip-btn) {
-		width: auto;
-	}
-	.control {
-		display: grid;
-		gap: 0.3rem;
-		margin-top: 0.55rem;
-	}
-	.control label {
-		font-size: 0.76rem;
-		letter-spacing: 0.02em;
-		color: #3f5853;
-	}
-	.score-control {
-		max-width: 230px;
-	}
-	.score-control input[type='range'] {
-		height: 10px;
-	}
 	.transport-mini {
 		margin-top: 0.45rem;
 		padding: 0.45rem 0.55rem;
@@ -535,10 +421,6 @@
 			padding: 0.5rem;
 			gap: 0.5rem;
 		}
-		h2 {
-			font-size: 0.9rem;
-			margin-bottom: 0.35rem;
-		}
 		h3 {
 			font-size: 1rem;
 		}
@@ -576,9 +458,6 @@
 		.shortlist-btn {
 			padding: 0.35rem 0.5rem;
 			font-size: 0.72rem;
-		}
-		.score-panel {
-			display: none;
 		}
 	}
 </style>

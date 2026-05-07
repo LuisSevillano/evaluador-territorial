@@ -301,7 +301,7 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 		if (mapColorMetric === 'precip_annual_mm') return 'Precipitación anual';
 		if (mapColorMetric === 'travel_bucket') return 'Tiempo de desplazamiento';
 		if (mapColorMetric === 'transporte_norm') return 'Transporte OSM';
-		if (mapColorMetric === 'servicio_renfe_norm') return 'Servicio Renfe';
+		if (mapColorMetric === 'servicio_renfe_norm') return 'Renfe a Madrid';
 		if (mapColorMetric === 'river_access_score') return 'Acceso a baño';
 		return 'Puntuación global';
 	});

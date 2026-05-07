@@ -1,6 +1,6 @@
 # Guía de Escritorio
 
-Esta página muestra cómo usar el Atlas en escritorio para comparar municipios con más contexto. Sirve para revisar mapa, filtros e inspector al mismo tiempo.
+Vamos a mostrar cómo usar el Atlas en escritorio para comparar municipios con más contexto. Sirve para revisar mapa, filtros, ajuste de score e inspector al mismo tiempo.
 
 ![Vista completa del Atlas en desktop](/assets/desktop-full.png)
 
@@ -8,7 +8,7 @@ Esta página muestra cómo usar el Atlas en escritorio para comparar municipios 
 
 ### 1. Mapa interactivo (centro)
 
-El mapa muestra los municipios del ámbito seleccionado. Cada municipio está coloreado según la métrica activa (score mixto, precipitación, transporte, etc.). Al hacer zoom o desplazar el mapa, los datos se actualizan dinámicamente. El fondo del mapa muestra el relieve territorial.
+El mapa muestra municipios y, según el nivel de zoom, también rejilla de análisis. Cada geometría se colorea según la métrica activa (score mixto, precipitación, transporte, etc.). Al hacer zoom o desplazar el mapa, los datos se actualizan dinámicamente. El fondo del mapa muestra el relieve territorial.
 
 ### 2. Selector de métrica (panel lateral)
 
@@ -18,7 +18,7 @@ Los botones del panel lateral permiten cambiar entre:
 - **Precipitación**: precipitación anual en mm.
 - **Tiempo de desplazamiento**: isocronas de tiempo de viaje.
 - **Transporte OSM**: proximidad a estaciones de transporte público.
-- **Servicio Renfe**: calidad del servicio de tren.
+- **Renfe a Madrid**: conectividad ferroviaria directa con Madrid a partir de servicios GTFS activos.
 - **Acceso a baño**: proximidad a ríos potencialmente aptos para uso recreativo.
 
 Al cambiar de métrica, el mapa se recolorea instantáneamente. La leyenda superior se actualiza para reflejar las nuevas clases de color.
@@ -34,7 +34,7 @@ Los filtros están organizados en el panel lateral:
 - **Rango de score**: seleccionar un rango del 0-100 para ver solo municipios dentro de ese intervalo.
 - **Filtros de climatología**: precipitación mínima, temperatura mínima de invierno, temperatura máxima de verano, amplitud térmica.
 
-Los filtros combinan lógica "Y" (AND): si filtras por provincia y rango, solo aparecen municipios que cumplan ambas condiciones.
+Los filtros combinan lógica "Y" (AND): si filtras por provincia y rango, solo aparecen municipios que *cumplan ambas condiciones*.
 
 ![Panel de filtros](/assets/desktop-filtros.png)
 
@@ -45,19 +45,29 @@ Al hacer clic en cualquier municipio del mapa, el inspector muestra:
 - Nombre y provincia del municipio.
 - Población total.
 - Score global (`mixed_score`) y desglose por bloques (clima, accesibilidad, naturaleza).
-- Métricas concretas: precipitación anual, distancia a estación de tren, cobertura forestal, distancia al río más cercano, etc.
+- Métricas concretas: precipitación anual, distancia a estación de tren, cobertura forestal, distancia al río más cercano, tipo de relieve, etc.
 
 El inspector permite comparar visualmente los bloques con barras horizontales que indican la posición relativa dentro del ámbito.
 
 ![Inspector de municipio abierto](/assets/desktop-inspector.png)
 
-### 5. Selector de capas (panel de capas)
+### 5. Ajuste del score (panel lateral)
+
+El bloque **Ajuste del score** está integrado en el sidebar izquierdo:
+
+- Presets de pesos (equilibrado, naturaleza, accesibilidad, clima, clima estricto).
+- Sliders de clima, accesibilidad y naturaleza.
+- Resumen de pesos normalizados y robustez del top-10.
+
+Los sliders usan el mismo patrón visual que el resto de filtros (etiqueta + control) para facilitar lectura rápida.
+
+### 6. Selector de capas (panel de capas)
 
 El Atlas permite superponer capas adicionales al mapa base desde el panel de capas:
 
 - **Municipios**: polígonos municipales.
 - **Isocronas**: anillos de tiempo de viaje desde los centros de referencia.
-- **Uso del suelo**: cobertura de land use.
+- **Uso del suelo** (WIP): cobertura de _land use_.
 - **Vegetación**: capa de vegetación.
 - **Bosques**: cobertura forestal.
 - **Embalses**: embalses y pantanos.
@@ -75,8 +85,9 @@ Las capas se activan/desactivan independientemente y pueden combinarse para cont
 2. **Observar el patrón territorial** en el mapa para identificar zonas con mejor puntuación.
 3. **Aplicar filtros** para reducir el conjunto a provincias o rangos de score de interés.
 4. **Hacer clic en un municipio** para ver el detalle en el inspector.
-5. **Comparar varios municipios** abriendo el inspector de cada uno secuencialmente.
-6. **Usar las capas** para contextualizar resultados geográficamente.
+5. **Ajustar pesos** si quieres probar escenarios de priorización.
+6. **Comparar varios municipios** abriendo el inspector de cada uno secuencialmente.
+7. **Usar las capas** para contextualizar resultados geográficamente.
 
 ## Buenas prácticas
 
@@ -87,6 +98,5 @@ Las capas se activan/desactivan independientemente y pueden combinarse para cont
 
 ## Límites de lectura
 
-- Una buena puntuación no sustituye una visita al municipio.
 - Puede haber factores clave fuera del modelo: vida social, estacionalidad de servicios o encaje personal.
 - Los resultados son comparativos dentro del alcance actual, no una clasificación universal.

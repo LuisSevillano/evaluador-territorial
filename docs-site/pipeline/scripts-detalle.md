@@ -41,18 +41,20 @@ Sirve como referencia rápida para ejecución, depuración y auditoría.
 
 - Genera anillos diferenciales para representación no solapada.
 
-### `scripts/04_entorno_corine.R`
+### `scripts/04_entorno_osm.R`
 
-- Cruza municipios con CORINE (o fallback OSM según disponibilidad).
+- Calcula métricas de entorno natural usando capas OSM Geofabrik (`landuse`, `natural`, `water`).
 - Deriva `forest_pct`, `water_pct`, `artificial_pct`, `naturality_index`, `landcover_diversity`.
 
 ### `scripts/04_transporte_distance.R`
 
 - Calcula distancia a nodos de transporte (OSM) y normalización base.
+- Se conserva como diagnóstico opcional; no valida servicio activo real.
 
 ### `scripts/04b_transporte_renfe.R`
 
-- Calcula distancia y servicio ferroviario (frecuencia y tipo).
+- Calcula conectividad ferroviaria directa con Madrid a partir del calendario GTFS disponible.
+- Valida que las paradas tengan viajes activos hacia paradas Madrid y resume cobertura, frecuencia y disponibilidad de fin de semana.
 
 ### `scripts/04g_banio_score_simple.R`
 

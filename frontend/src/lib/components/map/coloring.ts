@@ -101,8 +101,8 @@ export const buildMunicipioColorExpression = (municipios: Municipio[], mapColorM
 			hasMetricData = Number.isFinite(municipio.transporte_norm);
 			value = municipio.transporte_norm ?? 0;
 		} else if (mapColorMetric === 'servicio_renfe_norm') {
-			hasMetricData = Number.isFinite(municipio.servicio_renfe_norm);
-			value = municipio.servicio_renfe_norm ?? 0;
+			hasMetricData = Number.isFinite(municipio.renfe_madrid_service_norm ?? municipio.servicio_renfe_norm);
+			value = municipio.renfe_madrid_service_norm ?? municipio.servicio_renfe_norm ?? 0;
 		} else if (mapColorMetric === 'river_access_score') {
 			hasMetricData = Number.isFinite(municipio.river_access_score);
 			value = municipio.river_access_score ?? 0;
@@ -170,7 +170,7 @@ export const getLegendConfig = (
 				}
 			: mapColorMetric === 'servicio_renfe_norm'
 				? {
-						title: 'Servicio Renfe',
+						title: 'Renfe a Madrid',
 						thresholds: [...renfeServiceThresholds],
 						colors: [...renfeServiceColors],
 						formatLabel: (value: number) => (value * 100).toFixed(0) + '%',

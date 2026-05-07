@@ -28,18 +28,24 @@ Sirve para auditar definiciones y orígenes antes de interpretar resultados.
 | `dist_estacion_tren_km` | number | km | Distancia a estacion ferroviaria. | `04_transporte_distance.R` |
 | `dist_parada_bus_km` | number | km | Distancia a nodo de bus. | `04_transporte_distance.R` |
 | `transporte_norm` | number | [0,1] | Accesibilidad de transporte general normalizada. | `04_transporte_distance.R` |
-| `dist_renfe_km` | number | km | Distancia a nodo Renfe. | `04b_transporte_renfe.R` |
-| `renfe_salidas_dia` | number | servicios/día | Frecuencia de servicios Renfe. | `04b_transporte_renfe.R` |
-| `renfe_tipo_servicio` | string | categoría | Tipo de servicio ferroviario. | `04b_transporte_renfe.R` |
-| `servicio_renfe_norm` | number | [0,1] | Normalizacion de servicio Renfe. | `04b_transporte_renfe.R` |
+| `dist_renfe_km` | number | km | Alias legacy de distancia a conexión Renfe directa con Madrid. | `04b_transporte_renfe.R` |
+| `renfe_salidas_dia` | number | servicios/día | Alias legacy de salidas medias diarias hacia Madrid. | `04b_transporte_renfe.R` |
+| `renfe_tipo_servicio` | string | categoría | Alias legacy de tipo de conexión Renfe con Madrid. | `04b_transporte_renfe.R` |
+| `servicio_renfe_norm` | number | [0,1] | Alias legacy de conectividad Renfe con Madrid. | `04b_transporte_renfe.R` |
+| `dist_renfe_madrid_km` | number | km | Distancia a parada Renfe con conexión directa hacia Madrid. | `04b_transporte_renfe.R` |
+| `renfe_madrid_active_days` | number | días | Días del calendario GTFS con al menos una salida directa hacia Madrid. | `04b_transporte_renfe.R` |
+| `renfe_madrid_coverage_pct` | number | % | Porcentaje del calendario GTFS con servicio directo hacia Madrid. | `04b_transporte_renfe.R` |
+| `renfe_madrid_departures_avg_day` | number | servicios/día | Salidas medias diarias hacia Madrid sobre todo el calendario GTFS. | `04b_transporte_renfe.R` |
+| `renfe_madrid_weekend_service` | boolean | 0/1 | Existencia de servicio directo sábado o domingo. | `04b_transporte_renfe.R` |
+| `renfe_madrid_service_norm` | number | [0,1] | Conectividad Renfe directa con Madrid normalizada. | `04b_transporte_renfe.R` |
 | `precip_norm` | number | [0,1] | Precipitacion normalizada. | `05_export_frontend_v2.R` |
 | `temp_verano_norm` | number | [0,1] | Temperatura estival invertida y normalizada. | `05_export_frontend_v2.R` |
 | `temp_invierno_norm` | number | [0,1] | Temperatura invernal normalizada. | `05_export_frontend_v2.R` |
-| `forest_pct` | number | % | Cobertura forestal municipal. | `04_entorno_corine.R` |
-| `water_pct` | number | % | Cobertura de agua municipal. | `04_entorno_corine.R` |
-| `artificial_pct` | number | % | Cobertura artificial municipal. | `04_entorno_corine.R` |
-| `naturality_index` | number | 0-100 | Indice de naturalidad. | `04_entorno_corine.R` |
-| `landcover_diversity` | number | 0-100 | Diversidad de coberturas. | `04_entorno_corine.R` |
+| `forest_pct` | number | % | Cobertura forestal municipal. | `04_entorno_osm.R` |
+| `water_pct` | number | % | Cobertura de agua municipal. | `04_entorno_osm.R` |
+| `artificial_pct` | number | % | Cobertura artificial municipal. | `04_entorno_osm.R` |
+| `naturality_index` | number | 0-100 | Indice de naturalidad. | `04_entorno_osm.R` |
+| `landcover_diversity` | number | 0-100 | Diversidad de coberturas. | `04_entorno_osm.R` |
 | `river_access_score` | number | 0-100 | Acceso fluvial recreativo potencial. | `04g_banio_score_simple.R` |
 | `river_access_class` | string | 5 clases | Clase cualitativa de acceso fluvial. | `04g_banio_score_simple.R` |
 | `river_nearest_name` | string | texto | Nombre del tramo candidato más cercano. | `04g_banio_score_simple.R` |
