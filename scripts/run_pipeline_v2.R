@@ -68,6 +68,12 @@ steps <- list(
     ),
     inputs = c(paths$output_final_geojson, paths$isochrones_dir)
   ),
+  list(
+    path = "scripts/05d_build_isochrones_pmtiles.sh",
+    label = "PMTiles isocronas",
+    outputs = c(paths$frontend_isochrones_pmtiles),
+    inputs = c(paths$frontend_isochrones_dir)
+  ),
   if (!use_bathing_sources) list(
     path = "scripts/04c_download_rios.R",
     label = "Rios y cuencas (IGN WFS)",
@@ -171,6 +177,12 @@ if (pipeline_mode == "assemble-only") {
       label = "Ensamblado rapido de features",
       outputs = c(paths$output_final_geojson),
       inputs = assemble_feature_inputs
+    ),
+    list(
+      path = "scripts/05d_build_isochrones_pmtiles.sh",
+      label = "PMTiles isocronas",
+      outputs = c(paths$frontend_isochrones_pmtiles),
+      inputs = c(paths$frontend_isochrones_dir)
     ),
     list(
       path = "scripts/04j_grid_2km.R",

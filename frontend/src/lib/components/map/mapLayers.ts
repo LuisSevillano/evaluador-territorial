@@ -12,6 +12,8 @@ import {
 	ignRiversLayerId,
 	ignRiversSourceId,
 	isochroneLayers,
+	isochronesPmtilesSourceId,
+	isochronesSourceLayerName,
 	landUseFillColorExpression,
 	landUseLayerId,
 	landUsePmtilesSourceId,
@@ -23,14 +25,26 @@ import {
 } from './mapConfig';
 
 export const addIsochroneLayers = (map: maplibregl.Map) => {
+	try {
+		if (!map.getSource(isochronesPmtilesSourceId)) {
+			map.addSource(isochronesPmtilesSourceId, {
+				type: 'vector',
+				url: 'pmtiles:///tiles/isochrones.pmtiles'
+			});
+		}
+	} catch (_error) {
+		return;
+	}
+
 	for (const isochrone of isochroneLayers) {
 		try {
-			if (!map.getSource(isochrone.sourceId)) map.addSource(isochrone.sourceId, { type: 'geojson', data: isochrone.url });
 			if (!map.getLayer(isochrone.layerId)) {
 				map.addLayer({
 					id: isochrone.layerId,
 					type: 'line',
-					source: isochrone.sourceId,
+					source: isochronesPmtilesSourceId,
+					'source-layer': isochronesSourceLayerName,
+					filter: ['==', ['get', 'iso_key'], isochrone.key],
 					paint: { 'line-color': isochrone.color, 'line-width': ['interpolate', ['linear'], ['zoom'], 5, 1.2, 8, 2.4, 10, 3.6], 'line-opacity': 0.9 }
 				});
 			}

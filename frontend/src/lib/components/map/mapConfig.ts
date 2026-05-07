@@ -31,15 +31,17 @@ export const landUseSourceLayerName = 'usos_suelo';
 export const sourceLayerName = 'municipios';
 export const provinciasSourceLayerName = 'provincias';
 export const ccaaSourceLayerName = 'ccaa';
+export const isochronesPmtilesSourceId = 'isochrones-pmtiles-source';
+export const isochronesSourceLayerName = 'isochrones';
 export const municipiosMinVisibleZoom = 5;
 export const GRID_FORCE_MIN_ZOOM = 6;
 
 export const isochroneLayers = [
-	{ key: 'iso_04h00m', sourceId: 'isochrones-04h00m-source', layerId: 'isochrones-04h00m-line', url: '/data/isochrones/iso_diff_03h30m_04h00m.geojson', color: '#7b1f1f' },
-	{ key: 'iso_03h30m', sourceId: 'isochrones-03h30m-source', layerId: 'isochrones-03h30m-line', url: '/data/isochrones/iso_diff_02h30m_03h30m.geojson', color: '#d97706' },
-	{ key: 'iso_02h30m', sourceId: 'isochrones-02h30m-source', layerId: 'isochrones-02h30m-line', url: '/data/isochrones/iso_diff_02h00m_02h30m.geojson', color: '#4d7c0f' },
-	{ key: 'iso_02h00m', sourceId: 'isochrones-02h00m-source', layerId: 'isochrones-02h00m-line', url: '/data/isochrones/iso_diff_01h30m_02h00m.geojson', color: '#1f8a70' },
-	{ key: 'iso_01h30m', sourceId: 'isochrones-01h30m-source', layerId: 'isochrones-01h30m-line', url: '/data/isochrones/iso_diff_01h30m.geojson', color: '#0f4c5c' }
+	{ key: 'iso_04h00m', layerId: 'isochrones-04h00m-line', color: '#7b1f1f' },
+	{ key: 'iso_03h30m', layerId: 'isochrones-03h30m-line', color: '#d97706' },
+	{ key: 'iso_02h30m', layerId: 'isochrones-02h30m-line', color: '#4d7c0f' },
+	{ key: 'iso_02h00m', layerId: 'isochrones-02h00m-line', color: '#1f8a70' },
+	{ key: 'iso_01h30m', layerId: 'isochrones-01h30m-line', color: '#0f4c5c' }
 ] as const;
 
 export const landUsePalette: Array<{ key: string; color: string; label: string }> = [
