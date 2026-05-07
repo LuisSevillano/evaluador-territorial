@@ -6,7 +6,7 @@
 	import { buildMunicipioContext } from '$lib/components/inspector/context';
 	import { getLegendConfig } from '$lib/components/map/coloring';
 	import { classifyMixedScore, labelForScoreBand } from '$lib/components/map/scoreClassification';
-	import { accessToneFromBucket, climateToneFromBlockScore } from '$lib/state/metricSemantics';
+	import { accessToneFromBucket, climateToneFromBlockScore, renfeMadridToneFromScore } from '$lib/state/metricSemantics';
 	import ReliefIndicator from '$lib/components/inspector/ReliefIndicator.svelte';
 	import { DEFAULT_WEIGHTS_NORMALIZED, DEFAULT_WEIGHTS_RAW } from '$lib/state/scoring';
 
@@ -69,13 +69,20 @@
 		return null;
 	});
 
+	const renfeMadridDistance = $derived(selectedMunicipio?.dist_renfe_madrid_km ?? selectedMunicipio?.dist_renfe_km);
+	const renfeMadridDepartures = $derived(selectedMunicipio?.renfe_madrid_departures_avg_day ?? selectedMunicipio?.renfe_salidas_dia);
+	const renfeMadridScore = $derived(selectedMunicipio?.renfe_madrid_service_norm ?? selectedMunicipio?.servicio_renfe_norm);
+	const renfeMadridTone = $derived(renfeMadridToneFromScore(renfeMadridScore));
 	const transportRows = $derived([
-		{ label: 'Dist. tren (OSM)', value: `${selectedMunicipio?.dist_estacion_tren_km ?? '-'} km` },
-		{ label: 'Dist. bus (OSM)', value: `${selectedMunicipio?.dist_parada_bus_km ?? '-'} km` },
-		{ label: 'Dist. Renfe Madrid', value: `${selectedMunicipio?.dist_renfe_madrid_km ?? selectedMunicipio?.dist_renfe_km ?? '-'} km` },
 		{
-			label: 'Renfe a Madrid',
-			value: `${selectedMunicipio?.renfe_madrid_connection_type ?? selectedMunicipio?.renfe_tipo_servicio ?? '-'} (${selectedMunicipio?.renfe_madrid_departures_avg_day ?? selectedMunicipio?.renfe_salidas_dia ?? 0}/dia)`
+			label: 'Estación Renfe-Madrid más cercana',
+			value: selectedMunicipio?.renfe_madrid_stop_name
+				? `${selectedMunicipio.renfe_madrid_stop_name} (${Number.isFinite(renfeMadridDistance) ? (renfeMadridDistance as number).toFixed(1) : '-'} km en línea recta)`
+				: '-'
+		},
+		{
+			label: 'Número de salidas desde esta estación',
+			value: `${Number.isFinite(renfeMadridDepartures) ? Math.round(renfeMadridDepartures as number) : 0}/día`
 		}
 	]);
 
@@ -116,7 +123,8 @@
 			{#if isGridCell}
 				<p class="grid-notice">
 					<span class="grid-notice-dot" aria-hidden="true"></span>Viendo estadísticas de esta celda,
-					no del municipio completo.{#if gridClimateLoading} <span class="grid-loading">(cargando datos climáticos...)</span>{/if}
+					no del municipio completo.{#if gridClimateLoading}
+						<span class="grid-loading">(cargando datos climáticos...)</span>{/if}
 				</p>
 			{/if}
 			<MunicipioContextCard
@@ -131,7 +139,9 @@
 				<div class={`metric ${accessToneFromBucket(selectedMunicipio.travel_bucket)}`}>
 					<span>Accesibilidad</span><strong>{selectedMunicipio.travel_bucket}</strong>
 				</div>
-				<div class={`metric ${climateToneFromBlockScore(selectedMunicipio.climate_block_score, selectedMunicipio.precip_norm)}`}>
+				<div
+					class={`metric ${climateToneFromBlockScore(selectedMunicipio.climate_block_score, selectedMunicipio.precip_norm)}`}
+				>
 					<span>Precipitación</span><strong>{selectedMunicipio.precip_annual_mm} mm</strong>
 				</div>
 				<div class="metric">
@@ -162,7 +172,7 @@
 					>
 				</div>
 			</div>
-			<div class="transport-mini">
+			<div class={`transport-mini ${renfeMadridTone}`}>
 				<strong>Transporte de referencia</strong>
 				<table>
 					<tbody>
@@ -209,7 +219,6 @@
 			<p class="muted">Selecciona un municipio para ver detalle avanzado.</p>
 		{/if}
 	</section>
-
 </aside>
 
 <style>
@@ -384,6 +393,18 @@
 		border: 1px solid rgba(21, 32, 33, 0.12);
 		border-radius: 9px;
 		background: rgba(255, 255, 255, 0.66);
+	}
+	.transport-mini.good {
+		border-color: rgba(15, 118, 110, 0.36);
+		background: rgba(220, 248, 241, 0.68);
+	}
+	.transport-mini.mid {
+		border-color: rgba(180, 111, 36, 0.34);
+		background: rgba(252, 242, 222, 0.72);
+	}
+	.transport-mini.bad {
+		border-color: rgba(170, 45, 45, 0.34);
+		background: rgba(252, 234, 234, 0.72);
 	}
 	.transport-mini strong {
 		display: block;

@@ -59,6 +59,7 @@ mun <- mun |>
     "renfe_madrid_departures_total", "renfe_madrid_departures_avg_day",
     "renfe_madrid_departures_active_day", "renfe_madrid_departures_p25",
     "renfe_madrid_weekend_service", "renfe_madrid_routes_count",
+    "renfe_madrid_stop_id", "renfe_madrid_stop_name",
     "renfe_madrid_connection_type", "renfe_madrid_service_norm"
   ))
 

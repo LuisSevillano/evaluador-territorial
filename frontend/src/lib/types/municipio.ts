@@ -63,6 +63,8 @@ export type Municipio = {
 	renfe_madrid_departures_p25?: number;
 	renfe_madrid_weekend_service?: boolean;
 	renfe_madrid_routes_count?: number;
+	renfe_madrid_stop_id?: string;
+	renfe_madrid_stop_name?: string;
 	renfe_madrid_connection_type?: string;
 	renfe_madrid_service_norm?: number;
 	relieve_norm?: number;

@@ -43,6 +43,8 @@ Este bloque resume tiempos de acceso. No mide por sí solo calidad de carreteras
 
 El indicador ferroviario complementario se calcula solo con servicios observados en GTFS de Renfe. No usa nodos OSM para puntuar estaciones, porque una estación cartografiada no garantiza servicio activo.
 
-La primera versión mide conexión directa hacia Madrid sobre todo el calendario disponible en el feed GTFS. Para cada parada se comprueba si existen viajes que pasan por esa parada y posteriormente por una parada Madrid. Después se resume cobertura del calendario, salidas medias diarias, servicio en fin de semana y distancia municipal a la parada conectada más cercana.
+La primera versión mide conexión directa hacia Madrid sobre todo el calendario disponible en el feed GTFS. Para cada parada se comprueba si existen viajes que pasan por esa parada y posteriormente por una parada Madrid. Después se resume cobertura del calendario, salidas medias diarias redondeadas para visualización, servicio en fin de semana y distancia municipal a la parada conectada más cercana.
+
+El score penaliza especialmente la distancia a la estación conectada: una estación con muchas salidas no debe interpretarse como buen acceso municipal si queda lejos del municipio. La distancia publicada es en línea recta y no sustituye el tiempo real puerta a puerta.
 
 No incluye autobús ni transbordos en esta fase.

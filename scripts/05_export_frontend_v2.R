@@ -246,7 +246,7 @@ for (col_name in c(
 
 if (!"renfe_madrid_weekend_service" %in% names(mun)) mun$renfe_madrid_weekend_service <- rep(FALSE, nrow(mun))
 
-for (col_name in c("renfe_tipo_servicio", "renfe_madrid_connection_type", "travel_bucket")) {
+for (col_name in c("renfe_tipo_servicio", "renfe_madrid_connection_type", "renfe_madrid_stop_id", "renfe_madrid_stop_name", "travel_bucket")) {
   mun <- ensure_chr_col(mun, col_name)
 }
 
@@ -391,6 +391,8 @@ mun_v2 <- mun |>
     renfe_madrid_departures_p25,
     renfe_madrid_weekend_service,
     renfe_madrid_routes_count,
+    renfe_madrid_stop_id,
+    renfe_madrid_stop_name,
     renfe_madrid_connection_type,
     renfe_madrid_service_norm,
     precip_norm,

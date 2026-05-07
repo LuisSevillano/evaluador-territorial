@@ -264,6 +264,8 @@ calc_renfe_service <- function(mun_sf, renfe_data) {
       renfe_madrid_departures_p25 = rep(0, nrow(mun_sf)),
       renfe_madrid_weekend_service = rep(FALSE, nrow(mun_sf)),
       renfe_madrid_routes_count = rep(0, nrow(mun_sf)),
+      renfe_madrid_stop_id = rep(NA_character_, nrow(mun_sf)),
+      renfe_madrid_stop_name = rep(NA_character_, nrow(mun_sf)),
       renfe_madrid_connection_type = rep("none", nrow(mun_sf)),
       renfe_madrid_service_norm = rep(NA_real_, nrow(mun_sf))
     ))
@@ -295,19 +297,26 @@ calc_renfe_service <- function(mun_sf, renfe_data) {
   for (col_name in copy_cols) {
     result[[col_name]] <- stops_df[[col_name]][nearest_idx]
   }
+  result$renfe_madrid_stop_id <- stops_df$stop_id[nearest_idx]
+  result$renfe_madrid_stop_name <- stops_df$stop_name[nearest_idx]
   result$renfe_madrid_connection_type <- ifelse(result$renfe_madrid_active_days > 0, "direct", "none")
 
   floor_val <- 0.2
 
-  q95_dist <- quantile(result$dist_renfe_madrid_km, 0.95, na.rm = TRUE)
   q95_avg_departures <- quantile(result$renfe_madrid_departures_avg_day, 0.95, na.rm = TRUE)
 
-  norm_dist <- pmin(pmax(1 - (result$dist_renfe_madrid_km / q95_dist), 0), 1)
+  norm_dist <- case_when(
+    !is.finite(result$dist_renfe_madrid_km) ~ 0,
+    result$dist_renfe_madrid_km <= 15 ~ 1,
+    result$dist_renfe_madrid_km <= 40 ~ 0.7,
+    result$dist_renfe_madrid_km <= 80 ~ 0.35,
+    TRUE ~ 0.1
+  )
   norm_coverage <- pmin(pmax(result$renfe_madrid_coverage_pct / 100, 0), 1)
   norm_frequency <- pmin(pmax(result$renfe_madrid_departures_avg_day / max(q95_avg_departures, 1), 0), 1)
   norm_weekend <- ifelse(result$renfe_madrid_weekend_service, 1, 0)
 
-  raw_score <- 0.4 * norm_coverage + 0.3 * norm_frequency + 0.2 * norm_dist + 0.1 * norm_weekend
+  raw_score <- 0.45 * norm_dist + 0.25 * norm_coverage + 0.2 * norm_frequency + 0.1 * norm_weekend
   result$renfe_madrid_service_norm <- round(floor_val + (1 - floor_val) * raw_score, 3)
   result$renfe_madrid_service_norm <- pmin(pmax(result$renfe_madrid_service_norm, floor_val), 1)
 
@@ -341,6 +350,8 @@ if (is.null(renfe_processed)) {
   mun$renfe_madrid_departures_p25 <- 0
   mun$renfe_madrid_weekend_service <- FALSE
   mun$renfe_madrid_routes_count <- 0
+  mun$renfe_madrid_stop_id <- NA_character_
+  mun$renfe_madrid_stop_name <- NA_character_
   mun$renfe_madrid_connection_type <- "none"
   mun$renfe_madrid_service_norm <- NA_real_
 } else {
@@ -372,6 +383,8 @@ feature_renfe <- mun |>
     renfe_madrid_departures_p25,
     renfe_madrid_weekend_service,
     renfe_madrid_routes_count,
+    renfe_madrid_stop_id,
+    renfe_madrid_stop_name,
     renfe_madrid_connection_type,
     renfe_madrid_service_norm
   )
