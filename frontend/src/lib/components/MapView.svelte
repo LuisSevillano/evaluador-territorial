@@ -82,6 +82,8 @@
 
 	import { type TravelBucketFilter } from '$lib/state/filters';
 
+	type CoordinateSearchRequest = { id: number; lat: number; lon: number } | null;
+
 	type Props = {
 		municipios?: Municipio[];
 		allMunicipios?: Municipio[];
@@ -109,6 +111,7 @@
 		isBottomSheetOpen?: boolean;
 		viewMode?: MapViewMode;
 		onViewModeChange?: (mode: MapViewMode) => void;
+		coordinateSearchRequest?: CoordinateSearchRequest;
 	};
 
 	let {
@@ -137,7 +140,8 @@
 		isMobileView = false,
 		isBottomSheetOpen = false,
 		viewMode: viewModeProp = 'auto',
-		onViewModeChange = () => undefined
+		onViewModeChange = () => undefined,
+		coordinateSearchRequest = null
 	}: Props = $props();
 
 	let mapContainer: HTMLDivElement;
@@ -163,6 +167,9 @@
 	const getGridMinZoom = () => (isMobileView ? 8.5 : 6);
 	let currentZoom = $state(0);
 	let activeGridPmtilesPath = $state('/tiles/grid/grid_norte.pmtiles');
+	const municipiosQueryLayerId = 'municipios-polygons-query-layer';
+	let lastProcessedCoordinateSearchRequestId = $state<number | null>(null);
+	let skipNextSelectedMunicipioFlyTo = $state(false);
 
 	$effect(() => {
 		if (provinceFilter === 'Todas' && viewMode === 'grid' && currentZoom < getGridMinZoom()) {
@@ -265,6 +272,17 @@
 					Number.parseInt(m.id, 10) === numericId || Number.parseInt(m.codigo, 10) === numericId
 			) ?? null
 		);
+	};
+
+	const findMunicipioAtCoordinates = (lon: number, lat: number): Municipio | null => {
+		if (!map || !mapReady || !map.getLayer(municipiosQueryLayerId)) return null;
+		setLayerVisibility(map, municipiosQueryLayerId, true);
+		const point = map.project([lon, lat]);
+		const hits = map.queryRenderedFeatures(point, { layers: [municipiosQueryLayerId] });
+		setLayerVisibility(map, municipiosQueryLayerId, false);
+		const feature = hits[0];
+		if (!feature) return null;
+		return findMunicipioByFeatureId(feature.id ?? feature.properties?.id ?? feature.properties?.codigo);
 	};
 
 	const syncHighlightFilters = () => {
@@ -473,6 +491,16 @@
 					'line-width': ['interpolate', ['linear'], ['zoom'], 4, 0.28, 9, 0.95],
 					'line-opacity': 0.56
 				}
+			});
+
+			map.addLayer({
+				id: municipiosQueryLayerId,
+				type: 'fill',
+				source: municipiosPmtilesSourceId,
+				'source-layer': sourceLayerName,
+				minzoom: municipiosMinVisibleZoom,
+				layout: { visibility: 'none' },
+				paint: { 'fill-opacity': 0 }
 			});
 
 			addHighlightLayers(municipiosPmtilesSourceId, sourceLayerName);
@@ -814,6 +842,10 @@
 
 	$effect(() => {
 		if (!map || !selectedMunicipio) return;
+		if (skipNextSelectedMunicipioFlyTo) {
+			skipNextSelectedMunicipioFlyTo = false;
+			return;
+		}
 		if (!Number.isFinite(selectedMunicipio.lon) || !Number.isFinite(selectedMunicipio.lat)) return;
 		const zoom = isMobileView ? 7 : 9;
 		map.flyTo({ center: [selectedMunicipio.lon, selectedMunicipio.lat], zoom, speed: 0.8 });
@@ -828,6 +860,34 @@
 			return;
 		}
 		autoFitToWorkingMunicipios();
+	});
+
+	$effect(() => {
+		if (!coordinateSearchRequest || !map || !mapReady) return;
+		if (lastProcessedCoordinateSearchRequestId === coordinateSearchRequest.id) return;
+		lastProcessedCoordinateSearchRequestId = coordinateSearchRequest.id;
+		const { lon, lat } = coordinateSearchRequest;
+		if (!Number.isFinite(lon) || !Number.isFinite(lat)) return;
+		const targetZoom = Math.max(map.getZoom(), 8.4);
+		map.jumpTo({ center: [lon, lat], zoom: targetZoom });
+		let resolved = false;
+
+		const resolveFromMap = () => {
+			if (resolved) return;
+			const found = findMunicipioAtCoordinates(lon, lat);
+			if (!found) return;
+			resolved = true;
+			skipNextSelectedMunicipioFlyTo = true;
+			onMapSelection(found);
+		};
+
+		map.once('idle', resolveFromMap);
+		const fallbackTimer = setTimeout(resolveFromMap, 400);
+
+		return () => {
+			clearTimeout(fallbackTimer);
+			setLayerVisibility(map, municipiosQueryLayerId, false);
+		};
 	});
 </script>
 

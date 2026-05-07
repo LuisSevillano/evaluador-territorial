@@ -30,6 +30,7 @@
 		activePreset: Preset | null;
 		onQueryChange: (value: string) => void;
 		onSelectMunicipio: (municipio: Municipio | null) => void;
+		onCoordinateSearch: (payload: { lat: number; lon: number; label: string }) => void;
 		onProvinceFilterChange: (value: string) => void;
 		onMaxTravelBucketChange: (value: TravelBucket | null) => void;
 		onMinPrecipAnnualChange: (value: number) => void;
@@ -74,6 +75,7 @@
 				variant="sheet"
 				onQueryChange={props.onQueryChange}
 				onSelectMunicipio={props.onSelectMunicipio}
+				onCoordinateSearch={props.onCoordinateSearch}
 			/>
 		</div>
 		<div class="sheet-label-help-row sheet-label-help-row-nowrap">
