@@ -119,9 +119,9 @@ g1d <- gg_treemap(global_weights, "Ponderacion global del score mixto", TRUE)
 ggsave(file.path(assets_dir, "score_weights_global_treemap.dark.png"), g1d, width = 8, height = 7, dpi = 150, bg = "#1a1a1a")
 
 nature_weights <- data.frame(
-  componente = c("Forestal (30%)", "Naturalidad (25%)", "Agua (20%)", "Diversidad (15%)", "Acceso fluvial (10%)"),
-  peso = c(0.30, 0.25, 0.20, 0.15, 0.10),
-  color = c("#22543d", "#276749", "#2f855a", "#38a169", "#48bb78")
+  componente = c("Calidad natural forestal (52%)", "Agua superficial (20%)", "Diversidad de coberturas (10%)", "Acceso fluvial recreativo (6%)", "Relieve (12%)"),
+  peso = c(0.52, 0.20, 0.10, 0.06, 0.12),
+  color = c("#22543d", "#2f855a", "#38a169", "#48bb78", "#276749")
 )
 
 g2 <- gg_treemap(nature_weights, "Ponderacion interna del bloque naturaleza", FALSE)
@@ -131,11 +131,11 @@ g2d <- gg_treemap(nature_weights, "Ponderacion interna del bloque naturaleza", T
 ggsave(file.path(assets_dir, "score_weights_nature_treemap.dark.png"), g2d, width = 8, height = 7, dpi = 150, bg = "#1a1a1a")
 
 nature_contrib <- d |> summarise(
-  Forestal = mean(forest_norm, na.rm = TRUE),
-  Naturalidad = mean(naturality_norm, na.rm = TRUE),
-  Agua = mean(water_norm, na.rm = TRUE),
-  Diversidad = mean(diversity_norm, na.rm = TRUE),
-  "Acceso fluvial" = mean(river_access_norm, na.rm = TRUE)
+  "Calidad natural forestal" = mean(forest_nature_quality_norm, na.rm = TRUE),
+  "Agua superficial" = mean(water_norm, na.rm = TRUE),
+  "Diversidad de coberturas" = mean(diversity_norm, na.rm = TRUE),
+  "Acceso fluvial recreativo" = mean(river_access_norm, na.rm = TRUE),
+  "Relieve" = mean(relieve_norm, na.rm = TRUE)
 ) |> tidyr::pivot_longer(everything(), names_to = "Componente", values_to = "Media")
 
 g_nature <- ggplot(nature_contrib, aes(x = reorder(Componente, -Media), y = Media, fill = Componente)) +
@@ -160,34 +160,52 @@ g_nature_dark <- ggplot(nature_contrib, aes(x = reorder(Componente, -Media), y =
         plot.caption = element_text(color = "#a0a0a0", hjust = 0))
 ggsave(file.path(assets_dir, "nature_component_mean_contribution.dark.png"), g_nature_dark, width = 8, height = 4, dpi = 150, bg = "#1a1a1a")
 
-top10 <- d |> arrange(-mixed_score) |> head(10) |> 
+top10 <- d |>
+  arrange(-mixed_score) |>
+  head(10) |>
   select(nombre, climate_block_score, access_block_score, nature_block_score, mixed_score) |>
+  mutate(
+    nombre_wrapped = vapply(nombre, function(x) paste(strwrap(x, width = 22), collapse = "\n"), FUN.VALUE = character(1)),
+    nombre_wrapped = factor(nombre_wrapped, levels = nombre_wrapped)
+  ) |>
   tidyr::pivot_longer(c(climate_block_score, access_block_score, nature_block_score), names_to = "Bloque", values_to = "Score")
 top10$Bloque <- gsub("_block_score", "", top10$Bloque)
 
-g_tornado <- ggplot(top10, aes(x = reorder(nombre, -mixed_score), y = Score, fill = Bloque)) +
+g_tornado <- ggplot(top10, aes(y = nombre_wrapped, x = Score, fill = Bloque)) +
   geom_bar(stat = "identity", position = "stack") +
+  coord_flip() +
   scale_fill_brewer(palette = "Set2") +
-  labs(title = "Descomposicion score mixto: Top 10 municipios", x = "Municipio", y = "Score", caption = source_note) +
+  labs(title = "Descomposicion score mixto: Top 10 municipios", x = "Score", y = "Municipio", caption = source_note) +
   theme_docs_chart() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
-ggsave(file.path(assets_dir, "score_rank_tornado_top10.light.png"), g_tornado, width = 10, height = 5, dpi = 150, bg = "transparent")
+  theme(
+    panel.grid.major.x = element_line(color = "#d0d0d0", linewidth = 0.6),
+    panel.grid.minor.x = element_blank(),
+    panel.grid.major.y = element_blank(),
+    axis.text.y = element_text(hjust = 1, lineheight = 0.95, size = 9),
+    legend.position = "top"
+  )
+ggsave(file.path(assets_dir, "score_rank_tornado_top10.light.png"), g_tornado, width = 10, height = 7, dpi = 150, bg = "transparent")
 
-g_tornado_dark <- ggplot(top10, aes(x = reorder(nombre, -mixed_score), y = Score, fill = Bloque)) +
+g_tornado_dark <- ggplot(top10, aes(y = nombre_wrapped, x = Score, fill = Bloque)) +
   geom_bar(stat = "identity", position = "stack") +
+  coord_flip() +
   scale_fill_brewer(palette = "Set2") +
-  labs(title = "Descomposicion score mixto: Top 10 municipios", x = "Municipio", y = "Score", caption = source_note) +
+  labs(title = "Descomposicion score mixto: Top 10 municipios", x = "Score", y = "Municipio", caption = source_note) +
   theme_docs_chart() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1, color = "#ffffff"), 
-        axis.text.y = element_text(color = "#ffffff"),
+  theme(panel.grid.major.x = element_line(color = "#b0b0b0", linewidth = 0.7),
+        panel.grid.minor.x = element_blank(),
+        panel.grid.major.y = element_blank(),
+        axis.text.y = element_text(color = "#ffffff", hjust = 1, lineheight = 0.95, size = 9),
+        axis.text.x = element_text(color = "#ffffff"),
         axis.title = element_text(color = "#ffffff"),
         plot.title = element_text(color = "#ffffff", hjust = 0),
         plot.caption = element_text(color = "#a0a0a0", hjust = 0),
         legend.text = element_text(color = "#ffffff"),
         legend.title = element_text(color = "#ffffff"),
+        legend.position = "top",
         plot.background = element_rect(fill = "#1a1a1a", color = NA), 
         text = element_text(color = "#ffffff"))
-ggsave(file.path(assets_dir, "score_rank_tornado_top10.dark.png"), g_tornado_dark, width = 10, height = 5, dpi = 150, bg = "#1a1a1a")
+ggsave(file.path(assets_dir, "score_rank_tornado_top10.dark.png"), g_tornado_dark, width = 10, height = 7, dpi = 150, bg = "#1a1a1a")
 
 g_climate <- ggplot(d, aes(x = precip_annual_mm, y = temp_summer_mean_c, color = climate_block_score)) +
   geom_point(alpha = 0.6) +

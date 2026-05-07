@@ -23,6 +23,7 @@ provincias_cyl <- c(
   "01" = "Araba/Alava",
   "20" = "Gipuzkoa",
   "26" = "La Rioja",
+  "28" = "Madrid",
   "48" = "Bizkaia",
   "47" = "Valladolid",
   "49" = "Zamora"

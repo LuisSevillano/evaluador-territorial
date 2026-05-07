@@ -8,7 +8,7 @@ analysis_scope <- tolower(trimws(Sys.getenv("ANALYSIS_SCOPE", unset = "norte")))
 prov_labels <- c(
   "05" = "Avila", "09" = "Burgos", "24" = "Leon", "34" = "Palencia", "37" = "Salamanca",
   "39" = "Cantabria", "40" = "Segovia", "42" = "Soria", "47" = "Valladolid", "48" = "Bizkaia",
-  "49" = "Zamora", "01" = "Araba/Alava", "20" = "Gipuzkoa", "26" = "La Rioja"
+  "49" = "Zamora", "01" = "Araba/Alava", "20" = "Gipuzkoa", "26" = "La Rioja", "28" = "Madrid"
 )
 
 scope_config <- switch(analysis_scope,
@@ -16,10 +16,10 @@ scope_config <- switch(analysis_scope,
   "norte" = list(
     mode = "custom_scope",
     codnut2 = c("ES41", "ES23", "ES21", "ES13", "ES12"),
-    codprov_include = c("27", "32", "19"),
-    prov_names_include = c("Lugo", "Ourense", "Guadalajara"),
-    label = "Castilla y Leon + La Rioja + Pais Vasco + Cantabria + Asturias + Lugo + Ourense + Guadalajara",
-    n_provinces = 18
+    codprov_include = c("27", "32", "19", "28"),
+    prov_names_include = c("Lugo", "Ourense", "Guadalajara", "Madrid"),
+    label = "Castilla y Leon + La Rioja + Pais Vasco + Cantabria + Asturias + Lugo + Ourense + Guadalajara + Madrid",
+    n_provinces = 20
   ),
   "cyl" = list(mode = "nut2", codnut2 = "ES41", label = "Castilla y Leon", n_provinces = 9),
   "castilla_y_leon" = list(mode = "nut2", codnut2 = "ES41", label = "Castilla y Leon", n_provinces = 9),
@@ -74,10 +74,15 @@ paths <- list(
   output_feature_grid_agg_rds = path(project_root, "output", "features", "feature_grid_agg.rds"),
   relieve_raw_dir = path(project_root, "data", "raw", "relieve", "copdem"),
   relieve_processed_dir = path(project_root, "data", "processed", "relieve"),
-  corine_geojson = path(project_root, "data", "raw", "corine", "corine_cyl.geojson"),
   output_rivers_geojson = path(project_root, "output", "rios_watercourse_scope.geojson"),
   output_river_basins_geojson = path(project_root, "output", "cuencas_scope.geojson"),
   output_hydro_sources_report_csv = path(project_root, "output", "hydro_sources_report.csv"),
+  output_bathing_areas_unified_geojson = path(project_root, "output", "bathing_areas_unified.geojson"),
+  output_bathing_areas_unified_csv = path(project_root, "output", "bathing_areas_unified.csv"),
+  output_bathing_areas_unified_parquet = path(project_root, "output", "bathing_areas_unified.parquet"),
+  output_bathing_areas_quality_csv = path(project_root, "output", "bathing_areas_quality.csv"),
+  output_feature_bathing_areas_rds = path(project_root, "output", "features", "feature_bathing_areas.rds"),
+  output_feature_bathing_areas_parquet = path(project_root, "output", "features", "feature_bathing_areas.parquet"),
   output_river_indicators_geojson = path(project_root, "output", "municipios_rios.geojson"),
   output_river_indicators_csv = path(project_root, "output", "municipios_rios.csv"),
   output_cantabria_river_pilot_geojson = path(project_root, "output", "cantabria_rios_pilot.geojson"),

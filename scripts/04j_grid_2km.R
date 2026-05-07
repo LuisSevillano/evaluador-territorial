@@ -12,6 +12,8 @@ ts_now <- function() format(Sys.time(), "%H:%M:%S")
 log_step <- function(msg) message("[", ts_now(), "] [grid] ", msg)
 
 sf_use_s2(FALSE)
+use_bathing_sources <- identical(Sys.getenv("PIPELINE_USE_BATHING_SOURCES", unset = "1"), "1")
+grid_fast_mode <- identical(Sys.getenv("PIPELINE_GRID_FAST", unset = "1"), "1")
 
 if (!file.exists(paths$output_final_geojson)) {
   stop("No existe municipios_final.geojson. Ejecuta primero el pipeline hasta ensamblado.")
@@ -70,7 +72,22 @@ minmax_norm <- function(x, invert = FALSE) {
 }
 
 log_step("Cargando municipios")
-mun_sf <- st_read(paths$output_final_geojson, quiet = TRUE) |>
+mun_sf <- st_read(paths$output_final_geojson, quiet = TRUE)
+
+if (!"river_access_score" %in% names(mun_sf)) {
+  mun_sf$river_access_score <- NA_real_
+}
+if (!"river_method_version" %in% names(mun_sf)) {
+  mun_sf$river_method_version <- NA_character_
+}
+if (!"forest_nature_quality" %in% names(mun_sf)) {
+  mun_sf$forest_nature_quality <- NA_real_
+}
+if (!"travel_bucket" %in% names(mun_sf)) {
+  mun_sf$travel_bucket <- NA_character_
+}
+
+mun_sf <- mun_sf |>
   st_transform(25830) |>
   select(
     codigo,
@@ -80,20 +97,10 @@ mun_sf <- st_read(paths$output_final_geojson, quiet = TRUE) |>
     temp_winter_mean_c,
     temp_summer_mean_c,
     river_access_score,
+    river_method_version,
     forest_nature_quality,
     travel_bucket
   )
-
-if (!"mixed_score" %in% names(mun_sf) && file.exists(paths$output_v2_geojson)) {
-  log_step("Uniendo mixed_score desde municipios_v2.geojson")
-  mixed_tbl <- st_read(paths$output_v2_geojson, quiet = TRUE) |>
-    st_drop_geometry() |>
-    transmute(codigo = as.character(codigo), mixed_score = suppressWarnings(as.numeric(mixed_score)))
-
-  mun_sf <- mun_sf |>
-    mutate(codigo = as.character(codigo)) |>
-    left_join(mixed_tbl, by = "codigo")
-}
 
 log_step("Creando rejilla de 2km x 2km")
 mun_union <- st_union(mun_sf)
@@ -110,41 +117,32 @@ log_step(paste0("Generadas ", length(grid_cells), " celdas iniciales"))
 log_step("Asignando celdas a municipio y variables base")
 grid_base <- st_sf(cell_idx = seq_along(grid_cells), geometry = grid_cells)
 
-suppressWarnings({
-  cell_mun_inter <- tryCatch(
-    st_intersection(
-      grid_base,
-      mun_sf |>
-        select(
-          codigo,
-          nombre,
-          provincia,
-          precip_annual_mm,
-          temp_winter_mean_c,
-          temp_summer_mean_c,
-          river_access_score,
-          forest_nature_quality,
-          travel_bucket,
-          geometry
-        ) |>
-        st_make_valid()
-    ),
-    error = function(e) NULL
+grid_centroids_base <- st_centroid(grid_base)
+grid_assign_sf <- suppressWarnings(
+  st_join(
+    grid_centroids_base,
+    mun_sf |>
+      select(
+        codigo,
+        nombre,
+        provincia,
+        precip_annual_mm,
+        temp_winter_mean_c,
+        temp_summer_mean_c,
+        river_access_score,
+        river_method_version,
+        forest_nature_quality,
+        travel_bucket,
+        geometry
+      ) |>
+      st_make_valid(),
+    left = TRUE,
+    largest = TRUE
   )
-})
+)
 
-if (is.null(cell_mun_inter) || nrow(cell_mun_inter) == 0) {
-  stop("No se pudo asignar la rejilla a municipios por solape.")
-}
-
-grid_assign <- cell_mun_inter |>
-  mutate(overlap_area = as.numeric(st_area(geometry))) |>
-  st_drop_geometry() |>
-  arrange(cell_idx, desc(overlap_area), codigo) |>
-  group_by(cell_idx) |>
-  slice(1) |>
-  ungroup() |>
-  select(-overlap_area)
+grid_assign <- grid_assign_sf |>
+  st_drop_geometry()
 
 grid_sf <- grid_base |>
   left_join(grid_assign, by = "cell_idx") |>
@@ -213,6 +211,48 @@ if (file.exists(paths$output_ccaa_geojson) && file.exists(paths$output_provincia
 grid_centroids_utm <- st_centroid(grid_sf)
 
 log_step("Calculando acceso hidrico por candidatos de baño (rios IGN con persistencia + embalses)")
+
+if (use_bathing_sources && file.exists(paths$output_bathing_areas_unified_geojson)) {
+  log_step("Usando zonas de bano unificadas (PIPELINE_USE_BATHING_SOURCES=1)")
+  bathing_sf <- st_read(paths$output_bathing_areas_unified_geojson, quiet = TRUE) |>
+    st_make_valid() |>
+    st_transform(st_crs(grid_sf))
+
+  bathing_primary <- bathing_sf
+  if ("is_primary_record" %in% names(bathing_primary)) {
+    bathing_primary <- bathing_primary |>
+      filter(is_primary_record)
+  }
+
+  if (nrow(bathing_primary) > 0) {
+    nearest_idx <- st_nearest_feature(grid_centroids_utm, bathing_primary)
+    nearest_dist <- as.numeric(st_distance(grid_centroids_utm, bathing_primary[nearest_idx, ], by_element = TRUE)) / 1000
+
+    inside_20km <- nearest_dist <= 20
+    inside_10km <- nearest_dist <= 10
+    inside_5km <- nearest_dist <= 5
+
+    river_buffer_class <- case_when(
+      inside_5km ~ "<=5km",
+      inside_10km ~ "5-10km",
+      inside_20km ~ "10-20km",
+      TRUE ~ ">20km"
+    )
+
+    grid_sf <- grid_sf |>
+      mutate(
+        river_buffer_class = river_buffer_class,
+        river_distance_km = round(nearest_dist, 2),
+        river_rank = "zona_bano",
+        river_access_score = case_when(
+          inside_5km ~ 100,
+          inside_10km ~ 80,
+          inside_20km ~ 60,
+          TRUE ~ 5
+        )
+      )
+  }
+} else {
 
 clean_code <- function(x) {
   y <- as.character(x)
@@ -422,6 +462,7 @@ if (length(hydro_layers) > 0) {
       )
   }
 }
+}
 
 if (!"river_access_score" %in% names(grid_sf)) {
   grid_sf <- grid_sf |>
@@ -432,8 +473,9 @@ if (!"river_access_score" %in% names(grid_sf)) {
     )
 }
 
+
 log_step("Calculando cobertura natural por celda")
-if (file.exists(paths$output_forest_geojson)) {
+if (!grid_fast_mode && file.exists(paths$output_forest_geojson)) {
   forest_utm <- st_read(paths$output_forest_geojson, quiet = TRUE) |>
     st_transform(st_crs(grid_sf))
   if (nrow(forest_utm) > 0) {
@@ -466,6 +508,11 @@ if (file.exists(paths$output_forest_geojson)) {
         select(-natural_area_m2, -cell_area_m2)
     }
   }
+}
+if (grid_fast_mode) {
+  log_step("Modo rapido grid: usando proxy municipal para cobertura natural")
+  grid_sf <- grid_sf |>
+    mutate(natural_cover_pct = pmax(0, pmin(100, coalesce(forest_nature_quality, 0) * 100)))
 }
 
 log_step("Asignando bucket de isocrona por celda")
@@ -545,6 +592,7 @@ grid_sf <- grid_sf |>
     river_buffer_class,
     river_rank,
     river_access_score,
+    river_method_version,
     natural_cover_pct,
     precip_norm,
     temp_verano_norm,
@@ -573,11 +621,14 @@ grid_agg <- grid_sf |>
     grid_temp_summer_mean = mean(temp_summer, na.rm = TRUE),
     grid_temp_summer_median = median(temp_summer, na.rm = TRUE),
     grid_river_access_mean = mean(river_access_score, na.rm = TRUE),
+    grid_river_access_median = median(river_access_score, na.rm = TRUE),
     grid_river_access_p75 = as.numeric(quantile(river_access_score, probs = 0.75, na.rm = TRUE, type = 7)),
     grid_river_access_max = max(river_access_score, na.rm = TRUE),
     grid_pct_cells_river_access_high = mean(river_access_score >= 70, na.rm = TRUE) * 100,
+    grid_pct_cells_bathing_20km = mean(river_buffer_class != ">20km", na.rm = TRUE) * 100,
     grid_nearest_good_river_distance = suppressWarnings(min(ifelse(river_access_score >= 70, river_distance_km, NA_real_), na.rm = TRUE)),
     grid_natural_cover_mean = mean(natural_cover_pct, na.rm = TRUE),
+    grid_natural_cover_median = median(natural_cover_pct, na.rm = TRUE),
     grid_natural_cover_high_pct = mean(natural_cover_pct >= 60, na.rm = TRUE) * 100,
     grid_climate_block_median = median(climate_block_score, na.rm = TRUE),
     grid_access_block_median = median(access_block_score, na.rm = TRUE),
@@ -585,6 +636,7 @@ grid_agg <- grid_sf |>
     grid_mixed_score_median = median(mixed_score, na.rm = TRUE),
     grid_mixed_score_p75 = as.numeric(quantile(mixed_score, probs = 0.75, na.rm = TRUE, type = 7)),
     grid_pct_cells_mixed_top = mean(mixed_score >= 0.4283, na.rm = TRUE) * 100,
+    grid_river_method_version = dplyr::first(river_method_version[!is.na(river_method_version) & river_method_version != ""], default = NA_character_),
     grid_iso_best_rank = min(isochrone_rank, na.rm = TRUE),
     grid_iso_majority_rank = mode_int(isochrone_rank),
     grid_pct_area_inside_2h30 = mean(isochrone_rank <= 3, na.rm = TRUE) * 100,
@@ -592,7 +644,8 @@ grid_agg <- grid_sf |>
   ) |>
   mutate(
     grid_iso_best_bucket = rank_to_bucket(grid_iso_best_rank),
-    grid_iso_majority_bucket = rank_to_bucket(grid_iso_majority_rank)
+    grid_iso_majority_bucket = rank_to_bucket(grid_iso_majority_rank),
+    score_source = "cell_agg"
   ) |>
   select(-grid_iso_best_rank, -grid_iso_majority_rank)
 

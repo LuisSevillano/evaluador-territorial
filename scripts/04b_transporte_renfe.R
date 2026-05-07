@@ -21,8 +21,10 @@ mun <- sf::st_read(output_final_geojson, quiet = TRUE)
 
 download_renfe_data <- function() {
   est_file <- path(intermediate_dir, "renfe_estaciones.csv")
-  gtfs_file <- path(intermediate_dir, "renfe_gtfs.zip")
-  gtfs_dir <- path(intermediate_dir, "renfe_gtfs")
+  gtfs_cercanias_file <- path(intermediate_dir, "renfe_cercanias.zip")
+  gtfs_cercanias_dir <- path(intermediate_dir, "renfe_cercanias")
+  gtfs_md_file <- path(intermediate_dir, "renfe_md.zip")
+  gtfs_md_dir <- path(intermediate_dir, "renfe_md")
   required_gtfs_files <- c("agency.txt", "calendar.txt", "routes.txt", "stops.txt", "stop_times.txt", "trips.txt")
   
   if (!file.exists(est_file)) {
@@ -36,35 +38,53 @@ download_renfe_data <- function() {
     })
   }
   
-  if (!file.exists(gtfs_file)) {
+  if (!file.exists(gtfs_cercanias_file)) {
     message("[renfe] Descargando GTFS cercanias...")
     gtfs_url <- "https://ssl.renfe.com/ftransit/Fichero_CER_FOMENTO/fomento_transit.zip"
     tryCatch({
-      download.file(gtfs_url, gtfs_file, quiet = TRUE, method = "curl")
-      message("[renfe] GTFS guardado: ", gtfs_file)
+      download.file(gtfs_url, gtfs_cercanias_file, quiet = TRUE, method = "curl")
+      message("[renfe] GTFS cercanias guardado: ", gtfs_cercanias_file)
     }, error = function(e) {
-      message("[renfe] Error descargando GTFS: ", e$message)
+      message("[renfe] Error descargando GTFS cercanias: ", e$message)
+    })
+  }
+
+  if (!file.exists(gtfs_md_file)) {
+    message("[renfe] Descargando GTFS media/larga distancia...")
+    gtfs_md_url <- "https://ssl.renfe.com/gtransit/Fichero_AV_LD/google_transit.zip"
+    tryCatch({
+      download.file(gtfs_md_url, gtfs_md_file, quiet = TRUE, method = "curl")
+      message("[renfe] GTFS media/larga guardado: ", gtfs_md_file)
+    }, error = function(e) {
+      message("[renfe] Error descargando GTFS media/larga: ", e$message)
     })
   }
   
-  gtfs_file_exists <- function(filename) {
+  gtfs_file_exists <- function(gtfs_dir, filename) {
     length(list.files(gtfs_dir, pattern = paste0("^", filename, "$"), recursive = TRUE, full.names = TRUE)) > 0
   }
 
-  gtfs_complete <- dir.exists(gtfs_dir) && all(vapply(required_gtfs_files, gtfs_file_exists, logical(1)))
-
-  if (file.exists(gtfs_file) && !gtfs_complete) {
-    if (dir.exists(gtfs_dir)) {
-      message("[renfe] GTFS extraido incompleto; reextrayendo ZIP...")
-      unlink(gtfs_dir, recursive = TRUE, force = TRUE)
-    } else {
-      message("[renfe] Extrayendo GTFS...")
+  ensure_extracted <- function(zip_file, dir_path, label) {
+    complete <- dir.exists(dir_path) && all(vapply(required_gtfs_files, function(f) gtfs_file_exists(dir_path, f), logical(1)))
+    if (file.exists(zip_file) && !complete) {
+      if (dir.exists(dir_path)) {
+        message("[renfe] GTFS ", label, " incompleto; reextrayendo ZIP...")
+        unlink(dir_path, recursive = TRUE, force = TRUE)
+      } else {
+        message("[renfe] Extrayendo GTFS ", label, "...")
+      }
+      dir_create(dir_path)
+      unzip(zip_file, exdir = dir_path)
     }
-    dir_create(gtfs_dir)
-    unzip(gtfs_file, exdir = gtfs_dir)
   }
+
+  ensure_extracted(gtfs_cercanias_file, gtfs_cercanias_dir, "cercanias")
+  ensure_extracted(gtfs_md_file, gtfs_md_dir, "media/larga")
   
-  list(estaciones = est_file, gtfs_dir = gtfs_dir)
+  list(
+    estaciones = est_file,
+    gtfs_dirs = list(cercanias = gtfs_cercanias_dir, md = gtfs_md_dir)
+  )
 }
 
 parse_gtfs_date <- function(x) {
@@ -131,11 +151,9 @@ expand_gtfs_service_dates <- function(gtfs_dir) {
     filter(!is.na(service_id), !is.na(service_date))
 }
 
-process_renfe <- function(data, mun_sf) {
-  gtfs_dir <- data$gtfs_dir
-
+process_single_gtfs <- function(gtfs_dir, label) {
   if (!dir.exists(gtfs_dir)) {
-    message("[renfe] GTFS no disponible")
+    message("[renfe] GTFS ", label, " no disponible")
     return(NULL)
   }
 
@@ -150,7 +168,7 @@ process_renfe <- function(data, mun_sf) {
   stop_times_file <- locate_gtfs_file("stop_times.txt")
 
   if (!all(file.exists(c(stops_file, trips_file, stop_times_file)))) {
-    message("[renfe] GTFS incompleto: faltan stops/trips/stop_times")
+    message("[renfe] GTFS ", label, " incompleto: faltan stops/trips/stop_times")
     return(NULL)
   }
 
@@ -160,14 +178,14 @@ process_renfe <- function(data, mun_sf) {
   service_dates <- expand_gtfs_service_dates(gtfs_dir)
 
   if (nrow(service_dates) == 0) {
-    message("[renfe] Sin calendario GTFS activo")
+    message("[renfe] GTFS ", label, " sin calendario activo")
     return(NULL)
   }
 
   required_stops <- c("stop_id", "stop_name", "stop_lat", "stop_lon")
   if (!all(required_stops %in% names(stops)) || !all(c("trip_id", "service_id", "route_id") %in% names(trips)) ||
       !all(c("trip_id", "stop_id", "stop_sequence") %in% names(stop_times))) {
-    message("[renfe] GTFS sin columnas obligatorias")
+    message("[renfe] GTFS ", label, " sin columnas obligatorias")
     return(NULL)
   }
 
@@ -181,7 +199,7 @@ process_renfe <- function(data, mun_sf) {
     pull(stop_id) |>
     unique()
 
-  message("[renfe] Paradas destino Madrid detectadas: ", length(madrid_stop_ids))
+  message("[renfe] [", label, "] Paradas destino Madrid detectadas: ", length(madrid_stop_ids))
   if (length(madrid_stop_ids) == 0) return(NULL)
 
   stop_times_base <- stop_times |>
@@ -200,7 +218,7 @@ process_renfe <- function(data, mun_sf) {
     distinct(stop_id, trip_id, service_id, route_id)
 
   if (nrow(origin_candidates) == 0) {
-    message("[renfe] No se han encontrado conexiones directas hacia Madrid")
+    message("[renfe] [", label, "] No se han encontrado conexiones directas hacia Madrid")
     return(NULL)
   }
 
@@ -238,10 +256,44 @@ process_renfe <- function(data, mun_sf) {
     ) |>
     inner_join(stop_metrics, by = "stop_id") |>
     filter(!is.na(lat), !is.na(lon), lat > 35, lat < 50, lon > -10, lon < 5) |>
-    sf::st_as_sf(coords = c("lon", "lat"), crs = 4326)
+    sf::st_as_sf(coords = c("lon", "lat"), crs = 4326) |>
+    mutate(feed_type = label)
 
-  message("[renfe] Paradas con conexión directa a Madrid: ", nrow(stops_connected))
+  message("[renfe] [", label, "] Paradas con conexión directa a Madrid: ", nrow(stops_connected))
   list(stops = stops_connected, total_days = total_days)
+}
+
+process_renfe <- function(data, mun_sf) {
+  gtfs_dirs <- data$gtfs_dirs
+  parts <- list()
+  for (nm in names(gtfs_dirs)) {
+    p <- process_single_gtfs(gtfs_dirs[[nm]], nm)
+    if (!is.null(p)) parts[[nm]] <- p
+  }
+  if (length(parts) == 0) return(NULL)
+
+  merged_stops <- bind_rows(lapply(parts, function(x) x$stops))
+  merged_stops <- merged_stops |>
+    mutate(.key = toupper(trimws(stop_name))) |>
+    group_by(.key) |>
+    summarise(
+      stop_id = dplyr::first(stop_id),
+      stop_name = dplyr::first(stop_name),
+      renfe_madrid_active_days = max(renfe_madrid_active_days, na.rm = TRUE),
+      renfe_madrid_coverage_pct = max(renfe_madrid_coverage_pct, na.rm = TRUE),
+      renfe_madrid_departures_total = max(renfe_madrid_departures_total, na.rm = TRUE),
+      renfe_madrid_departures_avg_day = max(renfe_madrid_departures_avg_day, na.rm = TRUE),
+      renfe_madrid_departures_active_day = max(renfe_madrid_departures_active_day, na.rm = TRUE),
+      renfe_madrid_departures_p25 = max(renfe_madrid_departures_p25, na.rm = TRUE),
+      renfe_madrid_weekend_service = any(renfe_madrid_weekend_service),
+      renfe_madrid_routes_count = max(renfe_madrid_routes_count, na.rm = TRUE),
+      geometry = dplyr::first(geometry),
+      .groups = "drop"
+    ) |>
+    st_as_sf(crs = 4326)
+
+  message("[renfe] Paradas con conexión directa a Madrid (fusionadas): ", nrow(merged_stops))
+  list(stops = merged_stops)
 }
 
 calc_renfe_service <- function(mun_sf, renfe_data) {
@@ -299,7 +351,27 @@ calc_renfe_service <- function(mun_sf, renfe_data) {
   }
   result$renfe_madrid_stop_id <- stops_df$stop_id[nearest_idx]
   result$renfe_madrid_stop_name <- stops_df$stop_name[nearest_idx]
-  result$renfe_madrid_connection_type <- ifelse(result$renfe_madrid_active_days > 0, "direct", "none")
+  result$renfe_madrid_stop_municipality <- stops_df$stop_municipality[nearest_idx]
+  result$renfe_madrid_stop_province <- stops_df$stop_province[nearest_idx]
+
+  intersects_list <- sf::st_intersects(sf::st_geometry(mun_sf), sf::st_geometry(stops_df))
+  result$has_direct_madrid_service <- lengths(intersects_list) > 0
+  result$nearest_station_distance_km <- result$dist_renfe_madrid_km
+  result$has_nearby_station <- is.finite(result$nearest_station_distance_km) & result$nearest_station_distance_km <= 15
+
+  result$transport_status <- dplyr::case_when(
+    result$has_direct_madrid_service ~ "direct_madrid",
+    result$has_nearby_station ~ "station_nearby",
+    TRUE ~ "no_station"
+  )
+
+  result$transport_confidence <- dplyr::case_when(
+    result$transport_status == "direct_madrid" ~ "high",
+    result$transport_status == "station_nearby" ~ "medium",
+    TRUE ~ "low"
+  )
+
+  result$renfe_madrid_connection_type <- ifelse(result$has_direct_madrid_service, "direct", "none")
 
   floor_val <- 0.2
 
@@ -385,8 +457,15 @@ feature_renfe <- mun |>
     renfe_madrid_routes_count,
     renfe_madrid_stop_id,
     renfe_madrid_stop_name,
+    renfe_madrid_stop_municipality,
+    renfe_madrid_stop_province,
     renfe_madrid_connection_type,
-    renfe_madrid_service_norm
+    renfe_madrid_service_norm,
+    has_direct_madrid_service,
+    has_nearby_station,
+    nearest_station_distance_km,
+    transport_confidence,
+    transport_status
   )
 saveRDS(feature_renfe, paths$output_feature_transport_renfe_rds)
 try(write_parquet(feature_renfe, paths$output_feature_transport_renfe_parquet), silent = TRUE)

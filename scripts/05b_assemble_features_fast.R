@@ -60,7 +60,10 @@ mun <- mun |>
     "renfe_madrid_departures_active_day", "renfe_madrid_departures_p25",
     "renfe_madrid_weekend_service", "renfe_madrid_routes_count",
     "renfe_madrid_stop_id", "renfe_madrid_stop_name",
-    "renfe_madrid_connection_type", "renfe_madrid_service_norm"
+    "renfe_madrid_stop_municipality", "renfe_madrid_stop_province",
+    "renfe_madrid_connection_type", "renfe_madrid_service_norm",
+    "has_direct_madrid_service", "has_nearby_station", "nearest_station_distance_km",
+    "transport_confidence", "transport_status"
   ))
 
 resolve_join_suffixes <- function(df) {

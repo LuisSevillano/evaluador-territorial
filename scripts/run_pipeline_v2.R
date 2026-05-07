@@ -7,9 +7,23 @@ suppressPackageStartupMessages({
 
 pipeline_mode <- tolower(trimws(Sys.getenv("PIPELINE_MODE", unset = "full")))
 include_transport <- identical(Sys.getenv("PIPELINE_INCLUDE_TRANSPORT", unset = "0"), "1")
+use_bathing_sources <- identical(Sys.getenv("PIPELINE_USE_BATHING_SOURCES", unset = "1"), "1")
 force_rebuild <- identical(Sys.getenv("PIPELINE_FORCE", unset = "0"), "1")
 trust_existing_outputs <- identical(Sys.getenv("PIPELINE_TRUST_OUTPUTS", unset = "1"), "1")
 state_file <- path(paths$output_dir, "pipeline_step_hashes.json")
+
+assemble_feature_inputs <- c(
+  paths$output_feature_climate_rds,
+  paths$output_feature_isochrones_rds,
+  paths$output_feature_mfe_rds,
+  paths$output_feature_relief_rds,
+  paths$output_feature_transport_osm_rds,
+  paths$output_feature_transport_renfe_rds
+)
+
+if (!use_bathing_sources) {
+  assemble_feature_inputs <- c(assemble_feature_inputs, paths$output_feature_river_rds)
+}
 
 steps <- list(
   list(
@@ -25,7 +39,7 @@ steps <- list(
     inputs = c(paths$output_base_geojson)
   ),
   list(
-    path = "scripts/04_entorno_mfe_pilot.R",
+    path = "scripts/04_entorno_mfe.R",
     label = "Entorno MFE",
     outputs = c(paths$output_entorno_geojson, paths$output_feature_mfe_rds),
     inputs = c(paths$output_clima_geojson, path(project_root, "data", "raw", "mfe"))
@@ -54,22 +68,38 @@ steps <- list(
     ),
     inputs = c(paths$output_final_geojson, paths$isochrones_dir)
   ),
-  list(
+  if (!use_bathing_sources) list(
     path = "scripts/04c_download_rios.R",
     label = "Rios y cuencas (IGN WFS)",
     outputs = c(paths$output_rivers_geojson, paths$output_river_basins_geojson)
-  ),
-  list(
+  ) else NULL,
+  if (!use_bathing_sources) list(
     path = "scripts/04d_buffers_rios.R",
     label = "Buffers rios 10/20km",
     outputs = c(paths$output_river_indicators_csv),
     inputs = c(paths$output_rivers_geojson)
-  ),
-  list(
+  ) else NULL,
+  if (!use_bathing_sources) list(
     path = "scripts/04g_banio_score_simple.R",
     label = "Acceso fluvial recreativo",
     outputs = c(paths$output_feature_river_rds),
     inputs = c(paths$output_base_geojson, path(project_root, "data", "raw", "hydrography"), paths$rivers_raw_dir)
+  ) else NULL,
+  if (use_bathing_sources) list(
+    path = "scripts/04y_bathing_sources_unified.R",
+    label = "Zonas de bano unificadas",
+    outputs = c(
+      paths$output_bathing_areas_unified_geojson,
+      paths$output_bathing_areas_unified_csv,
+      paths$output_feature_bathing_areas_rds
+    ),
+    inputs = c(path(project_root, "data", "raw", "bathing_areas"))
+  ) else NULL,
+  list(
+    path = "scripts/05b_assemble_features_fast.R",
+    label = "Ensamblado rapido de features",
+    outputs = c(paths$output_final_geojson),
+    inputs = assemble_feature_inputs
   ),
   list(
     path = "scripts/04j_grid_2km.R",
@@ -78,19 +108,10 @@ steps <- list(
     inputs = c(paths$output_final_geojson)
   ),
   list(
-    path = "scripts/05b_assemble_features_fast.R",
-    label = "Ensamblado rapido de features",
-    outputs = c(paths$output_final_geojson),
-    inputs = c(
-      paths$output_feature_climate_rds,
-      paths$output_feature_isochrones_rds,
-      paths$output_feature_mfe_rds,
-      paths$output_feature_relief_rds,
-      paths$output_feature_river_rds,
-      paths$output_feature_grid_agg_rds,
-      paths$output_feature_transport_osm_rds,
-      paths$output_feature_transport_renfe_rds
-    )
+    path = "scripts/05c_build_grid_pmtiles.sh",
+    label = "PMTiles grid",
+    outputs = c(path(paths$frontend_grid_pmtiles, "grid_norte.pmtiles")),
+    inputs = c(paths$frontend_grid_geojson)
   ),
   list(
     path = "scripts/04_quality_checks.R",
@@ -123,6 +144,7 @@ steps <- list(
     inputs = c(paths$provinces_shapefile)
   )
 )
+steps <- Filter(Negate(is.null), steps)
 
 if (include_transport) {
   transport_steps <- list(
@@ -148,16 +170,19 @@ if (pipeline_mode == "assemble-only") {
       path = "scripts/05b_assemble_features_fast.R",
       label = "Ensamblado rapido de features",
       outputs = c(paths$output_final_geojson),
-      inputs = c(
-        paths$output_feature_climate_rds,
-        paths$output_feature_isochrones_rds,
-        paths$output_feature_mfe_rds,
-        paths$output_feature_relief_rds,
-        paths$output_feature_river_rds,
-        paths$output_feature_grid_agg_rds,
-        paths$output_feature_transport_osm_rds,
-        paths$output_feature_transport_renfe_rds
-      )
+      inputs = assemble_feature_inputs
+    ),
+    list(
+      path = "scripts/04j_grid_2km.R",
+      label = "Grid 2km y agregados",
+      outputs = c(paths$output_grid_geojson, paths$frontend_grid_geojson, paths$output_feature_grid_agg_rds, paths$output_feature_grid_agg_parquet),
+      inputs = c(paths$output_final_geojson)
+    ),
+    list(
+      path = "scripts/05c_build_grid_pmtiles.sh",
+      label = "PMTiles grid",
+      outputs = c(path(paths$frontend_grid_pmtiles, "grid_norte.pmtiles")),
+      inputs = c(paths$frontend_grid_geojson)
     ),
     list(
       path = "scripts/04_quality_checks.R",
@@ -276,7 +301,12 @@ for (i in seq_along(steps)) {
     next
   }
 
-  source(step$path, local = new.env(parent = globalenv()))
+  if (grepl("\\.sh$", step$path, ignore.case = TRUE)) {
+    status <- system2("bash", c(step$path), stdout = "", stderr = "")
+    if (!identical(status, 0L)) stop("Fallo ejecutando script shell: ", step$path)
+  } else {
+    source(step$path, local = new.env(parent = globalenv()))
+  }
 
   state[[step$path]] <- list(hash = step_hash(step), updated_at = as.character(Sys.time()))
   save_state(state)
