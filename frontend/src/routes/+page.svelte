@@ -2,7 +2,6 @@
 	import MapView from '$lib/components/MapView.svelte';
 	import type { MapColorMetric } from '$lib/components/map/coloring';
 	import Sidebar from '$lib/components/Sidebar.svelte';
-	import InspectorPanel from '$lib/components/InspectorPanel.svelte';
 	import BottomSheet from '$lib/components/ui/BottomSheet.svelte';
 	import RankingList from '$lib/components/RankingList.svelte';
 	import ColorLegend from '$lib/components/ColorLegend.svelte';
@@ -87,6 +86,8 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 	const filtersStore = createFiltersStore();
 	const layersStore = createLayersStore();
 	const rankingStore = createRankingStore();
+	let InspectorPanel: typeof import('$lib/components/InspectorPanel.svelte').default | null = $state(null);
+	let inspectorPanelLoading = $state(false);
 	const isBottomSheetOpen = $derived(uiStore.state.isBottomSheetOpen);
 	const mapColorMetric = $derived(uiStore.state.mapColorMetric);
 	const activeSheetTab = $derived(uiStore.state.activeSheetTab);
@@ -450,6 +451,18 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 	$effect(() => {
 		municipios = data.municipios ?? [];
 		climateMonthly = data.climateMonthly ?? [];
+	});
+
+	$effect(() => {
+		if (selectedMunicipio && !InspectorPanel && !inspectorPanelLoading) {
+			inspectorPanelLoading = true;
+			import('$lib/components/InspectorPanel.svelte').then((module) => {
+				InspectorPanel = module.default;
+				inspectorPanelLoading = false;
+			}).catch(() => {
+				inspectorPanelLoading = false;
+			});
+		}
 	});
 
 	const loadGridClimate = async (provincia: string) => {
@@ -920,26 +933,30 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 					<div class="sheet-content">
 						{#if activeSheetTab === 'sel'}
 							{#if selectedMunicipio}
-								<InspectorPanel
-									{selectedMunicipio}
-									municipios={municipiosScoredForView}
-									shortlistedIds={shortlistedIds}
-									weights={normalizedWeights}
-									weightsRaw={{ climateWeight, accessWeight, natureWeight }}
-									sensitivityOverlap={sensitivityOverlap}
+								{#if InspectorPanel}
+									<InspectorPanel
+										{selectedMunicipio}
+										municipios={municipiosScoredForView}
+										shortlistedIds={shortlistedIds}
+										weights={normalizedWeights}
+										weightsRaw={{ climateWeight, accessWeight, natureWeight }}
+										sensitivityOverlap={sensitivityOverlap}
 
-									climateSeries={selectedClimateSeries}
-									provinceClimateSeries={selectedProvinceClimateSeries}
-									ccaaClimateSeries={selectedCcaaClimateSeries}
-									isGridCell={selectedMunicipio?.id?.startsWith('cell_') ?? false}
-									gridClimateLoading={gridClimateLoading}
-									onToggleShortlist={handleToggleShortlist}
-									onClimateWeightChange={handleClimateWeightChange}
-									onAccessWeightChange={handleAccessWeightChange}
-									onNatureWeightChange={handleNatureWeightChange}
-									onPresetWeights={handlePresetWeights}
-									onClearMunicipio={handleClearSelectedMunicipio}
-								/>
+										climateSeries={selectedClimateSeries}
+										provinceClimateSeries={selectedProvinceClimateSeries}
+										ccaaClimateSeries={selectedCcaaClimateSeries}
+										isGridCell={selectedMunicipio?.id?.startsWith('cell_') ?? false}
+										gridClimateLoading={gridClimateLoading}
+										onToggleShortlist={handleToggleShortlist}
+										onClimateWeightChange={handleClimateWeightChange}
+										onAccessWeightChange={handleAccessWeightChange}
+										onNatureWeightChange={handleNatureWeightChange}
+										onPresetWeights={handlePresetWeights}
+										onClearMunicipio={handleClearSelectedMunicipio}
+									/>
+								{:else}
+									<p class="sheet-empty">Cargando ficha...</p>
+								{/if}
 							{:else}
 								<p class="sheet-empty">Selecciona un municipio en el mapa para ver su ficha.</p>
 								<button
@@ -1046,26 +1063,30 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 					{/if}
 				</section>
 			{:else}
-				<InspectorPanel
-					{selectedMunicipio}
-					municipios={municipiosScoredForView}
-					shortlistedIds={shortlistedIds}
-					weights={normalizedWeights}
-					weightsRaw={{ climateWeight, accessWeight, natureWeight }}
-					sensitivityOverlap={sensitivityOverlap}
+				{#if InspectorPanel}
+					<InspectorPanel
+						{selectedMunicipio}
+						municipios={municipiosScoredForView}
+						shortlistedIds={shortlistedIds}
+						weights={normalizedWeights}
+						weightsRaw={{ climateWeight, accessWeight, natureWeight }}
+						sensitivityOverlap={sensitivityOverlap}
 
-					climateSeries={selectedClimateSeries}
-					provinceClimateSeries={selectedProvinceClimateSeries}
-					ccaaClimateSeries={selectedCcaaClimateSeries}
-					isGridCell={selectedMunicipio?.id?.startsWith('cell_') ?? false}
-					gridClimateLoading={gridClimateLoading}
-					onToggleShortlist={handleToggleShortlist}
-					onClimateWeightChange={handleClimateWeightChange}
-					onAccessWeightChange={handleAccessWeightChange}
-					onNatureWeightChange={handleNatureWeightChange}
-					onPresetWeights={handlePresetWeights}
-					onClearMunicipio={handleClearSelectedMunicipio}
-				/>
+						climateSeries={selectedClimateSeries}
+						provinceClimateSeries={selectedProvinceClimateSeries}
+						ccaaClimateSeries={selectedCcaaClimateSeries}
+						isGridCell={selectedMunicipio?.id?.startsWith('cell_') ?? false}
+						gridClimateLoading={gridClimateLoading}
+						onToggleShortlist={handleToggleShortlist}
+						onClimateWeightChange={handleClimateWeightChange}
+						onAccessWeightChange={handleAccessWeightChange}
+						onNatureWeightChange={handleNatureWeightChange}
+						onPresetWeights={handlePresetWeights}
+						onClearMunicipio={handleClearSelectedMunicipio}
+					/>
+				{:else}
+					<p class="muted">Cargando...</p>
+				{/if}
 			{/if}
 		</div>
 	</main>

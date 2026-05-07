@@ -53,10 +53,18 @@ export const addIsochroneLayers = (map: maplibregl.Map) => {
 };
 
 export const addIgnHydroWmsLayers = (map: maplibregl.Map) => {
-	map.addSource(ignRiversSourceId, { type: 'raster', tiles: ['https://servicios.idee.es/wms-inspire/hidrografia?service=WMS&request=GetMap&layers=HY.Network&styles=&format=image/png&transparent=true&version=1.3.0&crs=EPSG:3857&width=256&height=256&bbox={bbox-epsg-3857}'], tileSize: 256 });
-	map.addSource(ignReservoirsSourceId, { type: 'raster', tiles: ['https://servicios.idee.es/wms-inspire/hidrografia?service=WMS&request=GetMap&layers=HY.PhysicalWaters.Waterbodies&styles=&format=image/png&transparent=true&version=1.3.0&crs=EPSG:3857&width=256&height=256&bbox={bbox-epsg-3857}'], tileSize: 256 });
-	map.addLayer({ id: ignReservoirsLayerId, type: 'raster', source: ignReservoirsSourceId, paint: { 'raster-opacity': 0.78 } });
-	map.addLayer({ id: ignRiversLayerId, type: 'raster', source: ignRiversSourceId, paint: { 'raster-opacity': 0.82 } });
+	if (!map.getSource(ignRiversSourceId)) {
+		map.addSource(ignRiversSourceId, { type: 'raster', tiles: ['https://servicios.idee.es/wms-inspire/hidrografia?service=WMS&request=GetMap&layers=HY.Network&styles=&format=image/png&transparent=true&version=1.3.0&crs=EPSG:3857&width=256&height=256&bbox={bbox-epsg-3857}'], tileSize: 256 });
+	}
+	if (!map.getSource(ignReservoirsSourceId)) {
+		map.addSource(ignReservoirsSourceId, { type: 'raster', tiles: ['https://servicios.idee.es/wms-inspire/hidrografia?service=WMS&request=GetMap&layers=HY.PhysicalWaters.Waterbodies&styles=&format=image/png&transparent=true&version=1.3.0&crs=EPSG:3857&width=256&height=256&bbox={bbox-epsg-3857}'], tileSize: 256 });
+	}
+	if (!map.getLayer(ignReservoirsLayerId)) {
+		map.addLayer({ id: ignReservoirsLayerId, type: 'raster', source: ignReservoirsSourceId, paint: { 'raster-opacity': 0.78 } });
+	}
+	if (!map.getLayer(ignRiversLayerId)) {
+		map.addLayer({ id: ignRiversLayerId, type: 'raster', source: ignRiversSourceId, paint: { 'raster-opacity': 0.82 } });
+	}
 };
 
 export const addProvinciasBoundaries = (map: maplibregl.Map) => {

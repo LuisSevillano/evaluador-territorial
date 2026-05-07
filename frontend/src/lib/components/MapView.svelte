@@ -526,6 +526,48 @@
 		addIsochroneLayersLayer(map);
 	};
 
+	const ensureIgnSatelliteLayer = () => {
+		if (!map) return;
+		if (!map.getSource(ignSatelliteSourceId)) {
+			map.addSource(ignSatelliteSourceId, {
+				type: 'raster',
+				tiles: [
+					'https://www.ign.es/wms-inspire/pnoa-ma?service=WMS&request=GetMap&layers=OI.OrthoimageCoverage&styles=&format=image/jpeg&transparent=false&version=1.3.0&crs=EPSG:3857&width=256&height=256&bbox={bbox-epsg-3857}'
+				],
+				tileSize: 256
+			});
+		}
+		if (!map.getLayer(ignSatelliteLayerId)) {
+			map.addLayer({
+				id: ignSatelliteLayerId,
+				type: 'raster',
+				source: ignSatelliteSourceId,
+				paint: { 'raster-opacity': 1 }
+			});
+		}
+	};
+
+	const ensureIgnWmsBaseLayer = () => {
+		if (!map) return;
+		if (!map.getSource(ignWmsSourceId)) {
+			map.addSource(ignWmsSourceId, {
+				type: 'raster',
+				tiles: [
+					'https://www.ign.es/wms-inspire/ign-base?service=WMS&request=GetMap&layers=IGNBaseTodo&styles=&format=image/png&transparent=true&version=1.3.0&crs=EPSG:3857&width=256&height=256&bbox={bbox-epsg-3857}'
+				],
+				tileSize: 256
+			});
+		}
+		if (!map.getLayer(ignWmsLayerId)) {
+			map.addLayer({
+				id: ignWmsLayerId,
+				type: 'raster',
+				source: ignWmsSourceId,
+				paint: { 'raster-opacity': 0.9 }
+			});
+		}
+	};
+
 	const setIsochroneVisibility = (visible: boolean) => {
 		if (!map) return;
 		for (const isochrone of isochroneLayers) {
@@ -644,42 +686,17 @@
 		map.on('load', () => {
 			mapReady = false;
 			isMapLoading = true;
-			map.addSource(ignSatelliteSourceId, {
-				type: 'raster',
-				tiles: [
-					'https://www.ign.es/wms-inspire/pnoa-ma?service=WMS&request=GetMap&layers=OI.OrthoimageCoverage&styles=&format=image/jpeg&transparent=false&version=1.3.0&crs=EPSG:3857&width=256&height=256&bbox={bbox-epsg-3857}'
-				],
-				tileSize: 256
-			});
+			currentZoom = map.getZoom();
 
-			map.addLayer({
-				id: ignSatelliteLayerId,
-				type: 'raster',
-				source: ignSatelliteSourceId,
-				paint: { 'raster-opacity': 1 }
-			});
-
-			map.addSource(ignWmsSourceId, {
-				type: 'raster',
-				tiles: [
-					'https://www.ign.es/wms-inspire/ign-base?service=WMS&request=GetMap&layers=IGNBaseTodo&styles=&format=image/png&transparent=true&version=1.3.0&crs=EPSG:3857&width=256&height=256&bbox={bbox-epsg-3857}'
-				],
-				tileSize: 256
-			});
-
-			map.addLayer({
-				id: ignWmsLayerId,
-				type: 'raster',
-				source: ignWmsSourceId,
-				paint: { 'raster-opacity': 0.9 }
-			});
+			if (showIgnSatellite) ensureIgnSatelliteLayer();
+			if (showIgnWmsBase) ensureIgnWmsBaseLayer();
 
 			addMunicipiosPmtiles();
-			addGridPmtiles();
-			addIgnHydroWmsLayers();
+			if (visibility.gridVisible) addGridPmtiles();
+			if (showIgnRivers || showIgnReservoirs) addIgnHydroWmsLayers();
 			addProvinciasBoundaries();
 			addCcaaBoundaries();
-			addIsochroneLayers();
+			if (showIsochronesLayer) addIsochroneLayers();
 
 			map.addSource(municipiosSourceId, {
 				type: 'geojson',
@@ -780,6 +797,15 @@
 
 	$effect(() => {
 		applyPolygonFilter();
+	});
+
+	$effect(() => {
+		if (!map || !mapReady) return;
+		if (showIgnSatellite) ensureIgnSatelliteLayer();
+		if (showIgnWmsBase) ensureIgnWmsBaseLayer();
+		if (showIgnRivers || showIgnReservoirs) addIgnHydroWmsLayers();
+		if (showIsochronesLayer) addIsochroneLayers();
+		if (visibility.gridVisible && !map.getSource(gridPmtilesSourceId)) addGridPmtiles();
 	});
 
 	$effect(() => {
