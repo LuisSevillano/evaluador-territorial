@@ -540,9 +540,8 @@
 
 
 	const resolveGridPmtilesPath = () => {
-		const fromSelected = selectedMunicipio?.provincia?.trim();
 		const fromFilter = provinceFilter && provinceFilter !== 'Todas' ? provinceFilter.trim() : null;
-		const province = fromSelected || fromFilter;
+		const province = fromFilter;
 		if (!province) return '/tiles/grid/grid_norte.pmtiles';
 		return `/tiles/grid/provincias/grid_${slugifyProvinceName(province)}.pmtiles`;
 	};
@@ -809,7 +808,6 @@
 
 	$effect(() => {
 		if (!map || !mapReady) return;
-		const province = selectedMunicipio?.provincia ?? provinceFilter;
 		refreshGridSource();
 	});
 
