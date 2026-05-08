@@ -27,6 +27,13 @@ const buildCellAsMunicipio = (props: any, sourceMunicipios: Municipio[]): Munici
 	const parentProvince = normalizeProvinceName(
 		((parentMunicipio as any)?.provincia_nombre_geo ?? parentMunicipio?.provincia ?? props.provincia) as string
 	);
+	const gridRelieveNorm = Number(props.relieve_norm);
+	const parentRelieveNorm = Number(parentMunicipio?.relieve_norm);
+	const relieveNorm = Number.isFinite(gridRelieveNorm)
+		? gridRelieveNorm
+		: Number.isFinite(parentRelieveNorm)
+			? parentRelieveNorm
+			: undefined;
 
 	return {
 		id: props.cell_id,
@@ -70,7 +77,7 @@ const buildCellAsMunicipio = (props: any, sourceMunicipios: Municipio[]): Munici
 		renfe_madrid_departures_avg_day: undefined,
 		renfe_madrid_connection_type: undefined,
 		renfe_madrid_service_norm: props.accesibilidad_norm,
-		relieve_norm: 0.5,
+		relieve_norm: relieveNorm,
 		relieve_score_raw: undefined,
 		iso_01h30m: props.isochrone_bucket === '<=1h30',
 		iso_02h00m: props.isochrone_bucket === '<=2h00',
