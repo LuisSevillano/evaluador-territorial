@@ -39,6 +39,10 @@ output/*
 
 # Local Netlify folder
 .netlify
+opencode.json
+frontend/.unlighthouse/
+docs-site/.vitepress/cache/
+test.txt
 
 # Frontend uses PMTiles; avoid committing heavy GeoJSON artifacts
 frontend/static/data/*.geojson
