@@ -7,7 +7,7 @@ suppressPackageStartupMessages({
 
 pipeline_mode <- tolower(trimws(Sys.getenv("PIPELINE_MODE", unset = "full")))
 include_transport <- identical(Sys.getenv("PIPELINE_INCLUDE_TRANSPORT", unset = "0"), "1")
-use_bathing_sources <- identical(Sys.getenv("PIPELINE_USE_BATHING_SOURCES", unset = "1"), "1")
+use_bathing_sources <- identical(Sys.getenv("PIPELINE_USE_BATHING_SOURCES", unset = "0"), "1")
 force_rebuild <- identical(Sys.getenv("PIPELINE_FORCE", unset = "0"), "1")
 trust_existing_outputs <- identical(Sys.getenv("PIPELINE_TRUST_OUTPUTS", unset = "1"), "1")
 state_file <- path(paths$output_dir, "pipeline_step_hashes.json")

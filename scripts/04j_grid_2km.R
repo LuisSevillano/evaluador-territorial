@@ -12,7 +12,7 @@ ts_now <- function() format(Sys.time(), "%H:%M:%S")
 log_step <- function(msg) message("[", ts_now(), "] [grid] ", msg)
 
 sf_use_s2(FALSE)
-use_bathing_sources <- identical(Sys.getenv("PIPELINE_USE_BATHING_SOURCES", unset = "1"), "1")
+use_bathing_sources <- identical(Sys.getenv("PIPELINE_USE_BATHING_SOURCES", unset = "0"), "1")
 grid_fast_mode <- identical(Sys.getenv("PIPELINE_GRID_FAST", unset = "1"), "1")
 
 if (!file.exists(paths$output_final_geojson)) {
@@ -117,32 +117,43 @@ log_step(paste0("Generadas ", length(grid_cells), " celdas iniciales"))
 log_step("Asignando celdas a municipio y variables base")
 grid_base <- st_sf(cell_idx = seq_along(grid_cells), geometry = grid_cells)
 
-grid_centroids_base <- st_centroid(grid_base)
-grid_assign_sf <- suppressWarnings(
-  st_join(
-    grid_centroids_base,
-    mun_sf |>
-      select(
-        codigo,
-        nombre,
-        provincia,
-        precip_annual_mm,
-        temp_winter_mean_c,
-        temp_summer_mean_c,
-        river_access_score,
-        river_method_version,
-        forest_nature_quality,
-        travel_bucket,
-        geometry
-      ) |>
-      st_make_valid(),
-    left = TRUE,
-    largest = TRUE
+log_step("Usando st_intersection para asignar celdas basandose en solape real de area")
+suppressWarnings({
+  cell_mun_inter <- tryCatch(
+    st_intersection(
+      grid_base,
+      mun_sf |>
+        select(
+          codigo,
+          nombre,
+          provincia,
+          precip_annual_mm,
+          temp_winter_mean_c,
+          temp_summer_mean_c,
+          river_access_score,
+          river_method_version,
+          forest_nature_quality,
+          travel_bucket,
+          geometry
+        ) |>
+        st_make_valid()
+    ),
+    error = function(e) NULL
   )
-)
+})
 
-grid_assign <- grid_assign_sf |>
-  st_drop_geometry()
+if (is.null(cell_mun_inter) || nrow(cell_mun_inter) == 0) {
+  stop("No se pudo asignar la rejilla a municipios por solape.")
+}
+
+grid_assign <- cell_mun_inter |>
+  mutate(overlap_area = as.numeric(st_area(geometry))) |>
+  st_drop_geometry() |>
+  arrange(cell_idx, desc(overlap_area), codigo) |>
+  group_by(cell_idx) |>
+  slice(1) |>
+  ungroup() |>
+  select(-overlap_area)
 
 grid_sf <- grid_base |>
   left_join(grid_assign, by = "cell_idx") |>

@@ -5,7 +5,7 @@ library(dplyr)
 library(arrow)
 
 sf_use_s2(FALSE)
-use_bathing_sources <- identical(Sys.getenv("PIPELINE_USE_BATHING_SOURCES", unset = "1"), "1")
+use_bathing_sources <- identical(Sys.getenv("PIPELINE_USE_BATHING_SOURCES", unset = "0"), "1")
 
 if (!file.exists(paths$output_final_geojson)) {
   stop("No existe municipios_final.geojson")
