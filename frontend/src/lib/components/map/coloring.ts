@@ -20,7 +20,7 @@ export type LegendConfig = {
 export const scoreThresholds = [0.319, 0.354, 0.3885, 0.4283] as const;
 export const scoreColors = ['#8c1d18', '#d94841', '#f59f00', '#66c24a', '#15803d'] as const;
 
-export const precipThresholds = [500, 700, 900, 1100] as const;
+export const precipThresholds = [410, 483, 606, 952] as const;
 export const precipColors = ['#f3d7ac', '#d8c5a4', '#a8c1be', '#7cbac0', '#265d7f'] as const;
 
 export const transporteThresholds = [0.2, 0.4, 0.6, 0.8] as const;
