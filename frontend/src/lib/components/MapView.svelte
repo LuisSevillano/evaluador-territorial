@@ -278,11 +278,35 @@
 		if (!map || !mapReady || !map.getLayer(municipiosQueryLayerId)) return null;
 		setLayerVisibility(map, municipiosQueryLayerId, true);
 		const point = map.project([lon, lat]);
-		const hits = map.queryRenderedFeatures(point, { layers: [municipiosQueryLayerId] });
+		const hits = map.queryRenderedFeatures(
+			[
+				[point.x - 8, point.y - 8],
+				[point.x + 8, point.y + 8]
+			],
+			{ layers: [municipiosQueryLayerId] }
+		);
 		setLayerVisibility(map, municipiosQueryLayerId, false);
 		const feature = hits[0];
 		if (!feature) return null;
 		return findMunicipioByFeatureId(feature.id ?? feature.properties?.id ?? feature.properties?.codigo);
+	};
+
+	const findNearestMunicipioCentroid = (lon: number, lat: number): Municipio | null => {
+		let nearest: Municipio | null = null;
+		let nearestDistance = Number.POSITIVE_INFINITY;
+
+		for (const municipio of municipios) {
+			if (!Number.isFinite(municipio.lon) || !Number.isFinite(municipio.lat)) continue;
+			const dLon = (municipio.lon - lon) * Math.cos((lat * Math.PI) / 180);
+			const dLat = municipio.lat - lat;
+			const distanceKm = Math.sqrt(dLon * dLon + dLat * dLat) * 111.32;
+			if (distanceKm < nearestDistance) {
+				nearest = municipio;
+				nearestDistance = distanceKm;
+			}
+		}
+
+		return nearestDistance <= 35 ? nearest : null;
 	};
 
 	const syncHighlightFilters = () => {
@@ -890,18 +914,32 @@
 
 	$effect(() => {
 		if (!coordinateSearchRequest || !map || !mapReady) return;
+		if (municipios.length === 0) return;
 		if (lastProcessedCoordinateSearchRequestId === coordinateSearchRequest.id) return;
 		lastProcessedCoordinateSearchRequestId = coordinateSearchRequest.id;
 		const { lon, lat } = coordinateSearchRequest;
 		if (!Number.isFinite(lon) || !Number.isFinite(lat)) return;
+		lockAutoFitFromHash = true;
 		const targetZoom = Math.max(map.getZoom(), 8.4);
 		map.jumpTo({ center: [lon, lat], zoom: targetZoom });
 		let resolved = false;
+		const retryTimers: ReturnType<typeof setTimeout>[] = [];
 
-		const resolveFromMap = () => {
+		const resolveFromMap = (attempt = 0) => {
 			if (resolved) return;
 			const found = findMunicipioAtCoordinates(lon, lat);
-			if (!found) return;
+			if (!found) {
+				if (attempt < 8) {
+					retryTimers.push(setTimeout(() => resolveFromMap(attempt + 1), 250));
+					return;
+				}
+				const nearest = findNearestMunicipioCentroid(lon, lat);
+				if (!nearest) return;
+				resolved = true;
+				skipNextSelectedMunicipioFlyTo = true;
+				onMapSelection(nearest);
+				return;
+			}
 			resolved = true;
 			skipNextSelectedMunicipioFlyTo = true;
 			onMapSelection(found);
@@ -912,6 +950,7 @@
 
 		return () => {
 			clearTimeout(fallbackTimer);
+			retryTimers.forEach((timer) => clearTimeout(timer));
 			setLayerVisibility(map, municipiosQueryLayerId, false);
 		};
 	});

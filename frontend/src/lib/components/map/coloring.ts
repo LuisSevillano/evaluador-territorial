@@ -77,6 +77,8 @@ const resolveBucketColor = (value: number, thresholds: readonly number[], colors
 };
 
 export const buildMunicipioColorExpression = (municipios: Municipio[], mapColorMetric: MapColorMetric) => {
+	if (municipios.length === 0) return missingDataColor;
+
 	const keyAccessor: any = ['to-string', ['coalesce', ['get', 'id'], ['get', 'codigo']]];
 	const expression: any[] = ['match', keyAccessor];
 	const activeScoreThresholds =
