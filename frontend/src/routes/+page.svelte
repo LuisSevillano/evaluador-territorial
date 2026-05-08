@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
 	import MapView from '$lib/components/MapView.svelte';
 	import type { MapColorMetric } from '$lib/components/map/coloring';
 	import Sidebar from '$lib/components/Sidebar.svelte';
@@ -7,12 +6,11 @@
 	import RankingList from '$lib/components/RankingList.svelte';
 	import ColorLegend from '$lib/components/ColorLegend.svelte';
     import WelcomeModal from '$lib/components/ui/WelcomeModal.svelte';
-	import MobileSheetTabs from '$lib/components/mobile/MobileSheetTabs.svelte';
+import MobileSheetTabs from '$lib/components/mobile/MobileSheetTabs.svelte';
 	import MobileSheetRank from '$lib/components/mobile/MobileSheetRank.svelte';
 	import MobileSheetMeta from '$lib/components/mobile/MobileSheetMeta.svelte';
 	import MobileSheetFilters from '$lib/components/mobile/MobileSheetFilters.svelte';
 	import MobileSheetLayers from '$lib/components/mobile/MobileSheetLayers.svelte';
-
 	import { getLegendConfig } from '$lib/components/map/coloring';
 	import { classifyMixedScore, labelForScoreBand } from '$lib/components/map/scoreClassification';
 	import { formatScorePercent, formatSmartNumber } from '$lib/utils/numberFormat';
@@ -81,8 +79,6 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 
 	let municipios = $state<Municipio[]>([]);
 	let climateMonthly = $state<MunicipioClimateMonthly[]>([]);
-	let datasetMetadata = $state<DatasetMetadata | null>(null);
-	let dataLoaded = $state(false);
 	let gridClimateMonthly = $state<MunicipioClimateMonthly[]>([]);
 	let gridClimateLoading = $state(false);
 	const loadedGridProvinces = $state(new Set<string>());
@@ -452,37 +448,9 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 	};
 
 
-	onMount(() => {
-		if (dataLoaded) return;
-
-		const loadData = async () => {
-			try {
-				const [munResp, metaResp] = await Promise.all([
-					fetch('/data/municipios_v2.json'),
-					fetch('/data/dataset_metadata_v3.json')
-				]);
-
-				const munData = munResp.ok ? await munResp.json() : [];
-				const metaData = metaResp.ok ? await metaResp.json() : null;
-
-				municipios = munData as Municipio[];
-				datasetMetadata = metaData as DatasetMetadata | null;
-				dataLoaded = true;
-			} catch (e) {
-				console.error('Error loading data:', e);
-			}
-		};
-
-		loadData();
-	});
-
 	$effect(() => {
-		if (!dataLoaded && (data.municipios ?? []).length > 0) {
-			municipios = data.municipios;
-			climateMonthly = data.climateMonthly;
-			datasetMetadata = data.datasetMetadata;
-			dataLoaded = true;
-		}
+		municipios = data.municipios ?? [];
+		climateMonthly = data.climateMonthly ?? [];
 	});
 
 	$effect(() => {
@@ -839,7 +807,7 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 				weights={normalizedWeights}
 				weightsRaw={{ climateWeight, accessWeight, natureWeight }}
 				sensitivityOverlap={sensitivityOverlap}
-				datasetMetadata={datasetMetadata}
+				datasetMetadata={data.datasetMetadata}
 				labelAccesibilidad={labelAccesibilidad}
 				climateSeries={selectedClimateSeries}
 				onQueryChange={(value) => (filtersStore.state.query = value)}
@@ -1050,7 +1018,7 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 							<MobileSheetRank rows={tableRows} scoreThresholds={mixedScoreThresholds} onSelect={handleSelectMunicipio} />
 						{:else}
 							<MobileSheetMeta
-								datasetMetadata={datasetMetadata}
+								datasetMetadata={data.datasetMetadata}
 								{shortlistMunicipios}
 								onExportCsv={handleExportShortlistCsv}
 								onExportJson={handleExportShortlistJson}
