@@ -9,6 +9,7 @@
 		"build:with-docs": "rm -rf build && npm run build && npm run docs:build && npm run docs:sync",
 		"preview": "vite preview",
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
+		"data:compact": "node ./scripts/build-municipios-compact.mjs",
 		"docs:build": "npm --prefix ../docs-site run docs:build",
 		"docs:sync": "rm -rf build/docs && mkdir -p build/docs && cp -R ../docs-site/.vitepress/dist/. build/docs/",
 		"deploy": "npm run build:with-docs && netlify deploy --prod"
