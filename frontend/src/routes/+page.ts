@@ -1,24 +1,24 @@
 import type { DatasetMetadata, Municipio, MunicipioClimateMonthly } from '$lib/types/municipio';
+import { loadMunicipiosDataset } from '$lib/utils/municipiosDataset';
 
 export const load = async ({ fetch }: { fetch: typeof globalThis.fetch }) => {
-	const primaryResponse = await fetch('/data/municipios_v2.json');
-	const response = primaryResponse.ok
-		? primaryResponse
-		: await fetch('/data/municipios.sample.json');
-	const municipios = (await response.json()) as Municipio[];
+	const [municipios, climateMonthlyResp, metadataResp] = await Promise.all([
+		loadMunicipiosDataset(fetch),
+		fetch('/data/municipios_climate_monthly.json'),
+		fetch('/data/dataset_metadata_v3.json')
+	]);
 
-	const monthlyResponse = await fetch('/data/municipios_climate_monthly.json');
-	const climateMonthly = monthlyResponse.ok
-		? ((await monthlyResponse.json()) as MunicipioClimateMonthly[])
-		: [];
-
-	const metadataResponse = await fetch('/data/dataset_metadata_v3.json');
-	const datasetMetadata = metadataResponse.ok
-		? ((await metadataResponse.json()) as DatasetMetadata)
-		: null;
+	const [climateMonthly, datasetMetadata] = await Promise.all([
+		climateMonthlyResp.ok
+			? (climateMonthlyResp.json() as Promise<MunicipioClimateMonthly[]>)
+			: Promise.resolve([] as MunicipioClimateMonthly[]),
+		metadataResp.ok
+			? (metadataResp.json() as Promise<DatasetMetadata>)
+			: Promise.resolve(null as DatasetMetadata | null)
+	]);
 
 	return {
-		municipios,
+		municipios: municipios as Municipio[],
 		climateMonthly,
 		datasetMetadata
 	};

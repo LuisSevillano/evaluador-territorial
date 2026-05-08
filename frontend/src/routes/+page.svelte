@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
 	import MapView from '$lib/components/MapView.svelte';
 	import type { MapColorMetric } from '$lib/components/map/coloring';
 	import Sidebar from '$lib/components/Sidebar.svelte';
@@ -69,6 +70,7 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 	} from '$lib/state/ranking';
 
 	import type { DatasetMetadata, Municipio, MunicipioClimateMonthly } from '$lib/types/municipio';
+	import { loadMunicipiosDataset } from '$lib/utils/municipiosDataset';
 
 	type PageData = {
 		municipios: Municipio[];
@@ -79,6 +81,7 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 
 	let municipios = $state<Municipio[]>([]);
 	let climateMonthly = $state<MunicipioClimateMonthly[]>([]);
+	let datasetMetadata = $state<DatasetMetadata | null>(null);
 	let gridClimateMonthly = $state<MunicipioClimateMonthly[]>([]);
 	let gridClimateLoading = $state(false);
 	const loadedGridProvinces = $state(new Set<string>());
@@ -448,9 +451,32 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 	};
 
 
+	onMount(() => {
+		const loadData = async () => {
+			try {
+				const [munData, climateResp, metaResp] = await Promise.all([
+					loadMunicipiosDataset(fetch),
+					fetch('/data/municipios_climate_monthly.json'),
+					fetch('/data/dataset_metadata_v3.json')
+				]);
+				const climateData = climateResp.ok ? await climateResp.json() : [];
+				const metaData = metaResp.ok ? await metaResp.json() : null;
+				municipios = munData;
+				climateMonthly = climateData as MunicipioClimateMonthly[];
+				datasetMetadata = metaData as DatasetMetadata | null;
+			} catch (e) {
+				console.error('Error loading data:', e);
+			}
+		};
+		loadData();
+	});
+
 	$effect(() => {
-		municipios = data.municipios ?? [];
-		climateMonthly = data.climateMonthly ?? [];
+		if ((data.municipios ?? []).length > 0) {
+			municipios = data.municipios;
+			climateMonthly = data.climateMonthly;
+			datasetMetadata = data.datasetMetadata;
+		}
 	});
 
 	$effect(() => {
@@ -807,7 +833,7 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 				weights={normalizedWeights}
 				weightsRaw={{ climateWeight, accessWeight, natureWeight }}
 				sensitivityOverlap={sensitivityOverlap}
-				datasetMetadata={data.datasetMetadata}
+				datasetMetadata={datasetMetadata}
 				labelAccesibilidad={labelAccesibilidad}
 				climateSeries={selectedClimateSeries}
 				onQueryChange={(value) => (filtersStore.state.query = value)}
@@ -1018,7 +1044,7 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 							<MobileSheetRank rows={tableRows} scoreThresholds={mixedScoreThresholds} onSelect={handleSelectMunicipio} />
 						{:else}
 							<MobileSheetMeta
-								datasetMetadata={data.datasetMetadata}
+								datasetMetadata={datasetMetadata}
 								{shortlistMunicipios}
 								onExportCsv={handleExportShortlistCsv}
 								onExportJson={handleExportShortlistJson}
