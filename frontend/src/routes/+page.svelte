@@ -507,7 +507,28 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 		try {
 			const res = await fetch(`/data/grid_climate/grid_climate_${slug}.json`);
 			if (res.ok) {
-				const data = await res.json() as MunicipioClimateMonthly[];
+				const raw = await res.json() as Array<Record<string, unknown>>;
+				const data = raw
+					.map((row) => {
+						const precipCandidate =
+							typeof row.precip_mm === 'number'
+								? row.precip_mm
+								: typeof row.precip === 'number'
+									? row.precip
+									: null;
+						if (typeof row.id !== 'string' || typeof row.provincia !== 'string') return null;
+						if (typeof row.month !== 'number' || typeof row.temp_mean_c !== 'number') return null;
+						if (!Number.isFinite(precipCandidate)) return null;
+						return {
+							id: row.id,
+							nombre: typeof row.nombre === 'string' ? row.nombre : '',
+							provincia: row.provincia,
+							month: row.month,
+							temp_mean_c: row.temp_mean_c,
+							precip_mm: precipCandidate
+						} as MunicipioClimateMonthly;
+					})
+					.filter((row): row is MunicipioClimateMonthly => row !== null);
 				gridClimateMonthly = [...gridClimateMonthly, ...data];
 				loadedGridProvinces.add(provincia);
 			}

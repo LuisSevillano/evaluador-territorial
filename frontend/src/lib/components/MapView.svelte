@@ -11,7 +11,10 @@
 		type MapColorMetric,
 		buildMunicipioColorExpression,
 		getScoreThresholdsForMunicipios,
+		precipColors,
+		precipThresholds,
 		scoreColors,
+		travelBucketColors,
 		missingDataColor
 	} from '$lib/components/map/coloring';
 	import {
@@ -210,29 +213,63 @@
 	);
 
 	const gridFillColorExpression = $derived.by(() => {
-		if (mapColorMetric !== 'mixed_score') {
-			return missingDataColor;
+		if (mapColorMetric === 'mixed_score') {
+			const thresholds = getScoreThresholdsForMunicipios(municipios);
+			return [
+				'case',
+				['!', ['has', 'mixed_score']],
+				missingDataColor,
+				[
+					'step',
+					['to-number', ['get', 'mixed_score']],
+					scoreColors[0],
+					thresholds[0],
+					scoreColors[1],
+					thresholds[1],
+					scoreColors[2],
+					thresholds[2],
+					scoreColors[3],
+					thresholds[3],
+					scoreColors[4]
+				]
+			] as any;
 		}
 
-		const thresholds = getScoreThresholdsForMunicipios(municipios);
-		return [
-			'case',
-			['!', ['has', 'mixed_score']],
-			missingDataColor,
-			[
-				'step',
-				['to-number', ['get', 'mixed_score']],
-				scoreColors[0],
-				thresholds[0],
-				scoreColors[1],
-				thresholds[1],
-				scoreColors[2],
-				thresholds[2],
-				scoreColors[3],
-				thresholds[3],
-				scoreColors[4]
-			]
-		] as any;
+		if (mapColorMetric === 'precip_annual_mm') {
+			return [
+				'case',
+				['!', ['has', 'precip_annual']],
+				missingDataColor,
+				[
+					'step',
+					['to-number', ['get', 'precip_annual']],
+					precipColors[0],
+					precipThresholds[0],
+					precipColors[1],
+					precipThresholds[1],
+					precipColors[2],
+					precipThresholds[2],
+					precipColors[3],
+					precipThresholds[3],
+					precipColors[4]
+				]
+			] as any;
+		}
+
+		if (mapColorMetric === 'travel_bucket') {
+			return [
+				'match',
+				['get', 'isochrone_bucket'],
+				'<=1h30', travelBucketColors[0],
+				'<=2h00', travelBucketColors[1],
+				'<=2h30', travelBucketColors[2],
+				'<=3h30', travelBucketColors[3],
+				'<=4h00', travelBucketColors[4],
+				travelBucketColors[5]
+			] as any;
+		}
+
+		return missingDataColor;
 	});
 
 	const applyGridFillPaint = () => {
