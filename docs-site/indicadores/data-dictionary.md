@@ -94,6 +94,7 @@ Los nombres con guion bajo son nombres internos del dataset. En la interfaz suel
 
 - `mixed_score` es comparativo multicriterio; no es causal ni prescriptivo.
 - `river_access_score` mide acceso recreativo potencial. Si `river_access_source_type = official_bathing`, se apoya en zonas oficiales/inventariadas; si vale `river_summer_proxy`, es un proxy capado de curso fluvial con caudal estival probable y no certifica baño ni calidad sanitaria.
+- En la rejilla de 2 km, `river_access_norm` se usa como bonus contextual dentro del bloque naturaleza, capado y ponderado por cobertura natural para evitar que las bandas de distancia dominen visualmente el `mixed_score`.
 - El valor final depende del alcance territorial activo (`ANALYSIS_SCOPE`).
 - Si un resultado parece raro, conviene revisar primero el desglose por bloques y la fuente de cada indicador.
 

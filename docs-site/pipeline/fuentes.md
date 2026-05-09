@@ -31,6 +31,7 @@ Estas capas ayudan a resumir entorno natural y artificialización, pero pueden t
 - Tramos hidrográficos por demarcación (CNIG/IGR descargado localmente) como proxy de cobertura cuando no hay una zona oficial cercana.
 - El proxy fluvial estima caudal estival probable con persistencia, pertenencia a masa de agua/DMA, orden hidrográfico, anchura disponible, longitud del curso y exclusiones de cauces artificiales o temporales.
 - La asignación territorial se hace sobre rejilla de 2 km mediante bandas de distancia a candidatos por clase, y luego se agrega a municipio. Su contribución queda capada para no equipararla a una zona declarada.
+- En el `mixed_score` de rejilla, el acceso recreativo al agua entra solo como bonus contextualizado por cobertura natural. Esto mantiene la señal local sin convertir las bandas de distancia a zonas de baño en círculos dominantes sobre el mapa.
 
 Se usa para estimar acceso recreativo potencial. Solo las fuentes oficiales/inventariadas aportan máxima confianza; el proxy fluvial no certifica baño ni calidad sanitaria.
 
