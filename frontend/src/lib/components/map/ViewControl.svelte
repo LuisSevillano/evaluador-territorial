@@ -3,18 +3,26 @@
 
 	type Props = {
 		viewMode: MapViewMode;
-		autoResolvedMode?: Exclude<MapViewMode, 'auto'>;
 		gridMinZoom?: number;
 		onChange: (mode: MapViewMode) => void;
 	};
 
-	let { viewMode, autoResolvedMode = 'municipality', gridMinZoom = 6, onChange }: Props = $props();
+	let { viewMode, gridMinZoom = 6, onChange }: Props = $props();
 
-	const modes: { value: MapViewMode; label: string }[] = [
-		{ value: 'auto', label: 'Auto' },
-		{ value: 'municipality', label: 'Municipios' },
-		{ value: 'grid', label: 'Rejilla' }
+	const modes: { value: Exclude<MapViewMode, 'auto'>; label: string; title: string }[] = [
+		{
+			value: 'municipality',
+			label: 'Municipios',
+			title: 'Ver puntuaciones agregadas por municipio'
+		},
+		{
+			value: 'grid',
+			label: 'Detalle 2 km',
+			title: 'Acércate más para ver la variación interna mediante celdas de 2 km'
+		}
 	];
+
+	const activeMode = $derived(viewMode === 'grid' ? 'grid' : 'municipality');
 </script>
 
 <div class="view-control" role="group" aria-label="Modo de vista del mapa">
@@ -22,14 +30,11 @@
 		{@const isGridDisabled = mode.value === 'grid' && gridMinZoom < 6}
 		<button
 			class="mode-btn"
-			class:active={viewMode === mode.value}
-			class:auto-preview={viewMode === 'auto' &&
-				mode.value !== 'auto' &&
-				autoResolvedMode === mode.value}
+			class:active={activeMode === mode.value}
 			class:disabled={isGridDisabled}
 			disabled={isGridDisabled}
 			onclick={() => !isGridDisabled && onChange(mode.value)}
-			title={mode.label}
+			title={mode.title}
 		>
 			{mode.label}
 		</button>
@@ -69,11 +74,6 @@
 	.mode-btn.active {
 		background: #2f7d85;
 		color: #f7f4ec;
-	}
-
-	.mode-btn.auto-preview {
-		background: rgba(47, 125, 133, 0.22);
-		color: #285a60;
 	}
 
 	.mode-btn.disabled {

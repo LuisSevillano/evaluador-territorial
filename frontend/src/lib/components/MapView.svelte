@@ -164,7 +164,7 @@
 	let initialBoundsApplied = $state(false);
 	let lastAutoFitSignature = $state('');
 
-	const getGridMinZoom = () => (isMobileView ? 8.5 : 6);
+	const getGridMinZoom = () => (isMobileView ? 7.2 : 6);
 	let currentZoom = $state(0);
 	let activeGridPmtilesPath = $state('/tiles/grid/grid_norte.pmtiles');
 	const municipiosQueryLayerId = 'municipios-polygons-query-layer';
@@ -172,11 +172,10 @@
 	let skipNextSelectedMunicipioFlyTo = $state(false);
 
 	$effect(() => {
-		if (provinceFilter === 'Todas' && viewMode === 'grid' && currentZoom < getGridMinZoom()) {
-			if (viewModeProp !== 'auto') {
-				onViewModeChange('auto');
-			}
-		}
+		if (!map || !mapReady || viewMode !== 'grid') return;
+		const minZoom = getGridMinZoom();
+		if (currentZoom >= minZoom) return;
+		map.easeTo({ zoom: minZoom, duration: 320 });
 	});
 
 	const visibility = $derived.by(() => {
@@ -192,11 +191,6 @@
 			municipalityLineVisible: true,
 			showBoundaries: true
 		};
-	});
-
-	const controlViewMode = $derived.by(() => {
-		if (viewMode !== 'auto') return viewMode;
-		return visibility.gridVisible ? 'grid' : 'municipality';
 	});
 
 	const applyVisibilityBasedOnMode = () => {
@@ -984,7 +978,6 @@
 			</div>
 			<ViewControl
 				{viewMode}
-				autoResolvedMode={controlViewMode === 'grid' ? 'grid' : 'municipality'}
 				gridMinZoom={currentZoom}
 				onChange={(mode) => {
 					onViewModeChange(mode);
