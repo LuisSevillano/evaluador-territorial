@@ -561,7 +561,11 @@ grid_sf <- grid_sf |>
     temp_verano_norm = round_idx(minmax_norm(temp_summer, invert = TRUE)),
     temp_invierno_norm = round_idx(minmax_norm(temp_winter, invert = FALSE)),
     natural_cover_norm = round_idx(minmax_norm(natural_cover_pct, invert = FALSE)),
-    river_access_norm = round_idx(minmax_norm(river_access_score, invert = FALSE))
+    river_access_norm = round_idx(minmax_norm(river_access_score, invert = FALSE)),
+    river_access_grid_norm = pmin(river_access_norm, 0.65),
+    river_access_contextual_norm = round_idx(
+      river_access_grid_norm * (0.55 + 0.45 * coalesce(natural_cover_norm, 0))
+    )
   )
 
 travel_order <- c("<=1h30", "<=2h00", "<=2h30", "<=3h30", "<=4h00", ">4h00")
@@ -577,7 +581,7 @@ grid_sf <- grid_sf |>
     ),
     access_block_score = round_idx(accesibilidad_norm),
     nature_block_score = round_idx(
-      natural_cover_norm
+      0.82 * natural_cover_norm + 0.18 * river_access_contextual_norm
     ),
     mixed_score = round_idx(
       0.4 * climate_block_score +
@@ -610,6 +614,7 @@ grid_sf <- grid_sf |>
     temp_invierno_norm,
     natural_cover_norm,
     river_access_norm,
+    river_access_contextual_norm,
     accesibilidad_norm,
     climate_block_score,
     access_block_score,
