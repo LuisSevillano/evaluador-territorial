@@ -27,15 +27,17 @@ Estas capas ayudan a resumir entorno natural y artificialización, pero pueden t
 
 ## Hidrología recreativa
 
-- Tramos hidrográficos por demarcación (CNIG/IGR descargado localmente).
-- Filtrado por señales positivas y exclusiones conservadoras.
+- Zonas de baño oficiales/inventariadas: censo MAPA/SINAC, zonas recreativas CHD y registros NÁYADE con coordenadas.
+- Tramos hidrográficos por demarcación (CNIG/IGR descargado localmente) como proxy de cobertura cuando no hay una zona oficial cercana.
+- El proxy fluvial estima caudal estival probable con persistencia, pertenencia a masa de agua/DMA, orden hidrográfico, anchura disponible, longitud del curso y exclusiones de cauces artificiales o temporales.
+- La asignación territorial se hace sobre rejilla de 2 km mediante bandas de distancia a candidatos por clase, y luego se agrega a municipio. Su contribución queda capada para no equipararla a una zona declarada.
 
-Se usa para estimar acceso fluvial recreativo potencial, no para certificar baño ni calidad sanitaria.
+Se usa para estimar acceso recreativo potencial. Solo las fuentes oficiales/inventariadas aportan máxima confianza; el proxy fluvial no certifica baño ni calidad sanitaria.
 
 ## Límites declarados
 
-- El indicador fluvial no representa calidad sanitaria.
-- No identifica zonas oficiales de baño.
+- El indicador no representa calidad sanitaria.
+- Cuando el score procede de `river_summer_proxy`, identifica potencial recreativo por caudal estival probable, no una zona oficial de baño.
 - Puede haber desfases temporales entre fuentes.
 
 ## Criterio de selección de fuentes

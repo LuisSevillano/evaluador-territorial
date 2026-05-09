@@ -7,6 +7,7 @@ library(readr)
 library(fs)
 
 sf_use_s2(FALSE)
+use_bathing_sources <- identical(Sys.getenv("PIPELINE_USE_BATHING_SOURCES", unset = "0"), "1")
 
 if (!file.exists(paths$output_final_geojson)) {
   stop("No existe dataset post-quality. Ejecuta primero scripts/04_quality_checks.R")
@@ -152,6 +153,7 @@ if (!is.na(river_access_csv)) {
         river_nearest_distance_km,
         river_nearest_confidence,
         river_candidate_count_10km,
+        any_of("river_access_source_type"),
         river_method_version
       )
     mun <- mun |>
@@ -165,6 +167,7 @@ if (!is.na(river_access_csv)) {
     mun$river_nearest_distance_km <- NA_real_
     mun$river_nearest_confidence <- NA_real_
     mun$river_candidate_count_10km <- NA_integer_
+    mun$river_access_source_type <- NA_character_
     mun$river_method_version <- NA_character_
   }
 }
@@ -256,6 +259,7 @@ for (col_name in c(
 )) {
   mun <- ensure_chr_col(mun, col_name)
 }
+mun <- ensure_chr_col(mun, "river_access_source_type")
 
 for (col_name in c(
   "grid_precip_annual_median",
@@ -343,7 +347,7 @@ mun <- mun |>
     precip_annual_mm = ifelse(is.finite(grid_precip_annual_median), grid_precip_annual_median, precip_annual_mm),
     temp_winter_mean_c = ifelse(is.finite(grid_temp_winter_median), grid_temp_winter_median, temp_winter_mean_c),
     temp_summer_mean_c = ifelse(is.finite(grid_temp_summer_median), grid_temp_summer_median, temp_summer_mean_c),
-    river_access_score = ifelse(is.finite(grid_river_access_median), grid_river_access_median, river_access_score),
+    river_access_score = ifelse(!use_bathing_sources & is.finite(grid_river_access_median), grid_river_access_median, river_access_score),
     forest_nature_quality = ifelse(is.finite(grid_natural_cover_median), pmin(1, pmax(0, grid_natural_cover_median / 100)), forest_nature_quality),
     travel_bucket = ifelse(!is.na(grid_iso_majority_bucket) & grid_iso_majority_bucket != "", grid_iso_majority_bucket, travel_bucket),
     climate_block_score = ifelse(is.finite(grid_climate_block_median), grid_climate_block_median, climate_block_score),
@@ -422,6 +426,7 @@ mun_v2 <- mun |>
     river_nearest_distance_km,
     river_nearest_confidence,
     river_candidate_count_10km,
+    river_access_source_type,
     river_method_version,
     grid_pct_cells_bathing_20km,
     forest_norm,

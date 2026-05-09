@@ -23,7 +23,7 @@ No hace falta memorizar los nombres de scripts. La tabla sirve como mapa de refe
 | `grid climate monthly` | `scripts/04_extract_monthly_climate_grid.R` | TerraClimate | `frontend/static/data/grid-climate/*.json` |
 | `travel_bucket` | `scripts/03_*` | Isochronas precomputadas | `municipios_v2.*` |
 | `forest_pct`, `water_pct` | `scripts/04_entorno_osm.R` | OSM Geofabrik | `municipios_v2.*` |
-| `river_access_score` | `scripts/04g_banio_score_simple.R` | Red hidro CNIG/IGR | `municipios_river_access.*` |
+| `river_access_score` | `scripts/04z_bathing_access_score.R` + `scripts/04g_build_summer_flow_river_candidates.R` | MAPA/SINAC, CHD, NÁYADE y proxy CNIG/IGR de caudal estival probable | `municipios_bathing_access.*`, `river_summer_flow_candidates.*`, `feature_river_access.*` |
 | `transport_status` | `scripts/04b_transporte_renfe.R` | GTFS Renfe | `municipios_v2.*` |
 | `mixed_score` | `scripts/05_export_frontend_v2.R` | Derivada de bloques | `municipios_v2.*` |
 

@@ -70,13 +70,14 @@ Los nombres con guion bajo son nombres internos del dataset. En la interfaz suel
 | `artificial_pct` | number | % | Cobertura artificial municipal. | `04_entorno_osm.R` |
 | `naturality_index` | number | 0-100 | Indice de naturalidad. | `04_entorno_osm.R` |
 | `landcover_diversity` | number | 0-100 | Diversidad de coberturas. | `04_entorno_osm.R` |
-| `river_access_score` | number | 0-100 | Acceso fluvial recreativo potencial. | `04g_banio_score_simple.R` |
-| `river_access_class` | string | 5 clases | Clase cualitativa de acceso fluvial. | `04g_banio_score_simple.R` |
-| `river_nearest_name` | string | texto | Nombre del tramo candidato más cercano. | `04g_banio_score_simple.R` |
-| `river_nearest_distance_km` | number | km | Distancia al tramo candidato más cercano. | `04g_banio_score_simple.R` |
-| `river_nearest_confidence` | number | 0-100 | Confianza del tramo nearest. | `04g_banio_score_simple.R` |
-| `river_candidate_count_10km` | integer | conteo | Numero de tramos candidatos en 10 km. | `04g_banio_score_simple.R` |
-| `river_method_version` | string | versión | Versión del metodo fluvial. | `04g_banio_score_simple.R` |
+| `river_access_score` | number | 0-100 | Acceso recreativo a zonas de baño o cursos fluviales candidatos. | `04z_bathing_access_score.R` / `04g_banio_score_simple.R` legacy |
+| `river_access_class` | string | 5 clases | Clase cualitativa de acceso recreativo. | `04z_bathing_access_score.R` / `04g_banio_score_simple.R` legacy |
+| `river_nearest_name` | string | texto | Nombre de la zona o tramo candidato más cercano. | `04z_bathing_access_score.R` / `04g_banio_score_simple.R` legacy |
+| `river_nearest_distance_km` | number | km | Distancia a la zona o tramo candidato seleccionado. | `04z_bathing_access_score.R` / `04g_banio_score_simple.R` legacy |
+| `river_nearest_confidence` | number | 0-100 | Confianza de la fuente seleccionada. | `04z_bathing_access_score.R` / `04g_banio_score_simple.R` legacy |
+| `river_candidate_count_10km` | integer | conteo | Numero de candidatos en 10 km para la fuente seleccionada. | `04z_bathing_access_score.R` / `04g_banio_score_simple.R` legacy |
+| `river_access_source_type` | string | categoría | Fuente que determina el score: `official_bathing`, `river_summer_proxy` o `community_bathing` si se activa. | `04z_bathing_access_score.R` |
+| `river_method_version` | string | versión | Versión del metodo de acceso recreativo. | `04z_bathing_access_score.R` / `04g_banio_score_simple.R` legacy |
 | `forest_norm` | number | [0,1] | Forestal normalizado. | `05_export_frontend_v2.R` |
 | `water_norm` | number | [0,1] | Agua normalizada. | `05_export_frontend_v2.R` |
 | `artificial_norm` | number | [0,1] | Artificial invertido normalizado. | `05_export_frontend_v2.R` |
@@ -92,7 +93,7 @@ Los nombres con guion bajo son nombres internos del dataset. En la interfaz suel
 ## Notas de interpretación
 
 - `mixed_score` es comparativo multicriterio; no es causal ni prescriptivo.
-- `river_access_score` mide acceso potencial recreativo, no calidad sanitaria del agua.
+- `river_access_score` mide acceso recreativo potencial. Si `river_access_source_type = official_bathing`, se apoya en zonas oficiales/inventariadas; si vale `river_summer_proxy`, es un proxy capado de curso fluvial con caudal estival probable y no certifica baño ni calidad sanitaria.
 - El valor final depende del alcance territorial activo (`ANALYSIS_SCOPE`).
 - Si un resultado parece raro, conviene revisar primero el desglose por bloques y la fuente de cada indicador.
 

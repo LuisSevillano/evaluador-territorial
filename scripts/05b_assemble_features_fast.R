@@ -44,12 +44,8 @@ mun <- mun |>
   join_feature(paths$output_feature_climate_rds, paths$output_feature_climate_parquet, c("precip_annual_mm", "temp_winter_mean_c", "temp_summer_mean_c", "temp_jan_mean_c", "temp_jul_mean_c")) |>
   join_feature(paths$output_feature_isochrones_rds, paths$output_feature_isochrones_parquet, c("iso_01h30m", "iso_02h00m", "iso_02h30m", "iso_03h30m", "iso_04h00m", "travel_bucket")) |>
   join_feature(paths$output_feature_mfe_rds, paths$output_feature_mfe_parquet, c("forest_nature_quality", "water_pct")) |>
-  join_feature(paths$output_feature_relief_rds, paths$output_feature_relief_parquet, c("elev_range_m", "slope_p90", "tri_mean", "relieve_score_raw", "relieve_norm"))
-
-if (!use_bathing_sources) {
-  mun <- mun |>
-    join_feature(paths$output_feature_river_rds, paths$output_feature_river_parquet, c("river_access_score", "river_access_class", "river_nearest_name", "river_nearest_distance_km", "river_nearest_confidence", "river_candidate_count_10km", "river_method_version"))
-}
+  join_feature(paths$output_feature_relief_rds, paths$output_feature_relief_parquet, c("elev_range_m", "slope_p90", "tri_mean", "relieve_score_raw", "relieve_norm")) |>
+  join_feature(paths$output_feature_river_rds, paths$output_feature_river_parquet, c("river_access_score", "river_access_class", "river_nearest_name", "river_nearest_distance_km", "river_nearest_confidence", "river_candidate_count_10km", "river_access_source_type", "river_method_version"))
 
 mun <- mun |>
   join_feature(paths$output_feature_transport_osm_rds, paths$output_feature_transport_osm_parquet, c("dist_estacion_tren_km", "dist_parada_bus_km", "transporte_norm")) |>

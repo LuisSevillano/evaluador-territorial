@@ -577,7 +577,7 @@ grid_sf <- grid_sf |>
     ),
     access_block_score = round_idx(accesibilidad_norm),
     nature_block_score = round_idx(
-      rowMeans(cbind(natural_cover_norm, river_access_norm), na.rm = TRUE)
+      natural_cover_norm
     ),
     mixed_score = round_idx(
       0.4 * climate_block_score +

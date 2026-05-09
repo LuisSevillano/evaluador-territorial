@@ -17,13 +17,10 @@ assemble_feature_inputs <- c(
   paths$output_feature_isochrones_rds,
   paths$output_feature_mfe_rds,
   paths$output_feature_relief_rds,
+  paths$output_feature_river_rds,
   paths$output_feature_transport_osm_rds,
   paths$output_feature_transport_renfe_rds
 )
-
-if (!use_bathing_sources) {
-  assemble_feature_inputs <- c(assemble_feature_inputs, paths$output_feature_river_rds)
-}
 
 steps <- list(
   list(
@@ -100,6 +97,18 @@ steps <- list(
       paths$output_feature_bathing_areas_rds
     ),
     inputs = c(path(project_root, "data", "raw", "bathing_areas"))
+  ) else NULL,
+  if (use_bathing_sources) list(
+    path = "scripts/04g_build_summer_flow_river_candidates.R",
+    label = "Rios con caudal estival probable",
+    outputs = c(paths$output_river_summer_candidates_rds),
+    inputs = c(path(paths$rivers_cache_dir, "banio_access", paste0("scope_", analysis_scope, "_rivers_candidates.rds")))
+  ) else NULL,
+  if (use_bathing_sources) list(
+    path = "scripts/04z_bathing_access_score.R",
+    label = "Acceso hibrido a zonas de bano",
+    outputs = c(paths$output_feature_river_rds),
+    inputs = c(paths$output_base_geojson, paths$output_bathing_areas_unified_geojson, paths$output_river_summer_candidates_rds)
   ) else NULL,
   list(
     path = "scripts/05b_assemble_features_fast.R",
