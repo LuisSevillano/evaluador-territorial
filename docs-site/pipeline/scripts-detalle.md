@@ -41,10 +41,11 @@ Sirve como referencia rápida para ejecución, depuración y auditoría.
 
 - Genera anillos diferenciales para representación no solapada.
 
-### `scripts/04_entorno_osm.R`
+### `scripts/04_entorno_mfe.R`
 
-- Calcula métricas de entorno natural usando capas OSM Geofabrik (`landuse`, `natural`, `water`).
-- Deriva `forest_pct`, `water_pct`, `artificial_pct`, `naturality_index`, `landcover_diversity`.
+- Calcula métricas de entorno natural usando el Mapa Forestal de España.
+- Deriva `forest_pct`, `water_pct`, `artificial_pct`, `naturality_index`, `landcover_diversity` y `forest_nature_quality`.
+- `water_pct` representa láminas/superficie de agua cartografiada; la experiencia de agua se explica mejor con distancia y clase de acceso fluvial.
 
 ### `scripts/04_transporte_distance.R`
 

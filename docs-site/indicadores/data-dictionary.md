@@ -29,6 +29,18 @@ Los nombres con guion bajo son nombres internos del dataset. En la interfaz suel
 | `population_men` | number | hab | Poblacion masculina. | `05b_add_population.R` |
 | `population_women` | number | hab | Poblacion femenina. | `05b_add_population.R` |
 | `precip_annual_mm` | number | mm/anual | Precipitacion anual agregada. | `02_clima_real.R` |
+| `precip_summer_mm` | number | mm/JJA | Precipitacion acumulada de junio, julio y agosto. | `02_clima_real.R` |
+| `precip_winter_mm` | number | mm/DJF | Precipitacion acumulada de diciembre, enero y febrero. | `02_clima_real.R` |
+| `precip_seasonality_index` | number | índice | Coeficiente de variacion mensual de la precipitacion. | `02_clima_real.R` |
+| `aridity_index` | number | P/PET | Relacion anual entre precipitacion y evapotranspiracion potencial. | `02_clima_real.R` |
+| `summer_aridity_index` | number | P/PET JJA | Relacion estival entre precipitacion y evapotranspiracion potencial. | `02_clima_real.R` |
+| `dry_months_count` | integer | meses | Meses secos segun `precip_mm < 2 * temp_mean_c`. | `02_clima_real.R` |
+| `moisture_absolute_score` | number | [0,1] | Humedad climatica absoluta por umbrales fijos TerraClimate 1991-2020. | `02_clima_real.R` |
+| `summer_drought_score` | number | [0,1] | Score de lluvia util y sequia estival. | `02_clima_real.R` |
+| `precip_relative_score` | number | [0,1] | Ventaja relativa dentro del alcance activo. | `02_clima_real.R` |
+| `precip_moisture_score` | number | [0,1] | Score hibrido: 60% absoluto, 25% estival, 15% relativo. | `02_clima_real.R` |
+| `water_drops_level` | integer | 1-3 | Nivel visual estable de gotas derivado de humedad absoluta y sequia estival. | `02_clima_real.R` |
+| `water_drops_label` | string | clase | Etiqueta `Seco`, `Equilibrado` o `Humedo`. | `02_clima_real.R` |
 | `temp_winter_mean_c` | number | C | Temperatura media invernal (DJF). | `02_clima_real.R` |
 | `temp_summer_mean_c` | number | C | Temperatura media estival (JJA). | `02_clima_real.R` |
 | `temp_jan_mean_c` | number | C | Media de enero. | `02_clima_real.R` |
@@ -62,14 +74,14 @@ Los nombres con guion bajo son nombres internos del dataset. En la interfaz suel
 | `nearest_station_distance_km` | number | km | Distancia a la estación conectada con Madrid más cercana. | `04b_transporte_renfe.R` |
 | `transport_confidence` | string | categoría | Nivel de confianza simplificado para el estado de transporte. | `04b_transporte_renfe.R` |
 | `transport_status` | string | categoría | Estado visible de tren: directo, cercano o lejano. | `04b_transporte_renfe.R` |
-| `precip_norm` | number | [0,1] | Precipitacion normalizada. | `05_export_frontend_v2.R` |
+| `precip_norm` | number | [0,1] | Precipitacion normalizada legacy/comparativa dentro del alcance activo. | `05_export_frontend_v2.R` |
 | `temp_verano_norm` | number | [0,1] | Temperatura estival invertida y normalizada. | `05_export_frontend_v2.R` |
 | `temp_invierno_norm` | number | [0,1] | Temperatura invernal normalizada. | `05_export_frontend_v2.R` |
-| `forest_pct` | number | % | Cobertura forestal municipal. | `04_entorno_osm.R` |
-| `water_pct` | number | % | Cobertura de agua municipal. | `04_entorno_osm.R` |
-| `artificial_pct` | number | % | Cobertura artificial municipal. | `04_entorno_osm.R` |
-| `naturality_index` | number | 0-100 | Indice de naturalidad. | `04_entorno_osm.R` |
-| `landcover_diversity` | number | 0-100 | Diversidad de coberturas. | `04_entorno_osm.R` |
+| `forest_pct` | number | % | Cobertura forestal municipal del Mapa Forestal de España. | `04_entorno_mfe.R` |
+| `water_pct` | number | % | Láminas/superficie de agua municipal del Mapa Forestal de España; dato secundario, no lectura principal de acceso al agua. | `04_entorno_mfe.R` |
+| `artificial_pct` | number | % | Cobertura artificial municipal del Mapa Forestal de España. | `04_entorno_mfe.R` |
+| `naturality_index` | number | 0-100 | Indice de naturalidad derivado de MFE. | `04_entorno_mfe.R` |
+| `landcover_diversity` | number | 0-100 | Diversidad de coberturas MFE. | `04_entorno_mfe.R` |
 | `river_access_score` | number | 0-100 | Acceso recreativo a zonas de baño o cursos fluviales candidatos. | `04z_bathing_access_score.R` / `04g_banio_score_simple.R` legacy |
 | `river_access_class` | string | 5 clases | Clase cualitativa de acceso recreativo. | `04z_bathing_access_score.R` / `04g_banio_score_simple.R` legacy |
 | `river_nearest_name` | string | texto | Nombre de la zona o tramo candidato más cercano. | `04z_bathing_access_score.R` / `04g_banio_score_simple.R` legacy |
@@ -94,6 +106,7 @@ Los nombres con guion bajo son nombres internos del dataset. En la interfaz suel
 
 - `mixed_score` es comparativo multicriterio; no es causal ni prescriptivo.
 - `river_access_score` mide acceso recreativo potencial. Si `river_access_source_type = official_bathing`, se apoya en zonas oficiales/inventariadas; si vale `river_summer_proxy`, es un proxy capado de curso fluvial con caudal estival probable y no certifica baño ni calidad sanitaria.
+- `water_pct` mide superficie de agua cartografiada, no presencia de arroyos, caudal, accesibilidad ni calidad sanitaria. En la interfaz se interpreta como detalle secundario junto a distancia y clase de acceso fluvial.
 - En la rejilla de 2 km, `river_access_norm` se usa como bonus contextual dentro del bloque naturaleza, capado y ponderado por cobertura natural para evitar que las bandas de distancia dominen visualmente el `mixed_score`.
 - El valor final depende del alcance territorial activo (`ANALYSIS_SCOPE`).
 - Si un resultado parece raro, conviene revisar primero el desglose por bloques y la fuente de cada indicador.

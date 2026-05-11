@@ -14,7 +14,9 @@ La lectura correcta es: qué municipios ofrecen un entorno natural relativamente
 
 ## Qué se mide en entorno natural
 
-El bloque combina cobertura forestal, cobertura de agua, superficie artificial y diversidad de usos del suelo. La idea es evitar depender de una sola variable.
+El bloque combina cobertura forestal, láminas de agua, superficie artificial y diversidad de usos del suelo. La idea es evitar depender de una sola variable.
+
+`water_pct` es superficie de agua cartografiada. Es útil como contexto, pero no resume la experiencia de agua del municipio: no mide arroyos estrechos, caudal, accesibilidad, aptitud legal ni calidad sanitaria. Por eso la interfaz prioriza distancia al tramo de referencia y clase de acceso fluvial, y deja las láminas de agua como detalle secundario.
 
 También incorpora relieve, porque la variabilidad topográfica puede cambiar mucho la experiencia del territorio.
 

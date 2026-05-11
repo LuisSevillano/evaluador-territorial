@@ -157,18 +157,6 @@
 		if (tone === 'bad') return '#c56a42';
 		return '#7a9e8a';
 	});
-	const summerDroughtNote = $derived.by(() => {
-		const dryMonths = selectedMunicipio?.dry_months_count;
-		const summerScore = selectedMunicipio?.summer_drought_score;
-		if (!Number.isFinite(dryMonths) && !Number.isFinite(summerScore)) return null;
-		const months = Number.isFinite(dryMonths)
-			? `${Math.round(dryMonths as number)} meses secos`
-			: 'meses secos no disponibles';
-		const score = Number.isFinite(summerScore)
-			? ` · sequía estival ${formatScorePercent(summerScore as number)}`
-			: '';
-		return `${months}${score}`;
-	});
 </script>
 
 <aside class="inspector">
@@ -207,17 +195,13 @@
 				<div
 					class={`metric ${climateToneFromMoistureScore(selectedMunicipio.moisture_absolute_score)}`}
 				>
-					<span>Humedad climática</span><strong
+					<span>Precipitación</span><strong
 						><WaterDropIcon count={waterDropCount} size={10} color={dropColor} />
 						{selectedMunicipio.water_drops_label ?? '-'}</strong
 					>
-					{#if summerDroughtNote}
-						<small>{summerDroughtNote}</small>
-					{/if}
-				</div>
-				<div class="metric">
-					<span>Precipitación</span><strong>{formatMetricValue(selectedMunicipio.precip_annual_mm)} mm</strong>
-					<small>{formatMetricValue(selectedMunicipio.precip_summer_mm)} mm verano · ventaja {formatScoreMetric(selectedMunicipio.precip_relative_score)}</small>
+					<small>{formatMetricValue(selectedMunicipio.precip_annual_mm)} mm ·
+						{formatMetricValue(selectedMunicipio.precip_summer_mm)} mm verano ·
+						ventaja {formatScoreMetric(selectedMunicipio.precip_relative_score)}</small>
 				</div>
 				<div class="metric">
 					<span>Temperatura</span><strong
@@ -229,25 +213,15 @@
 						)} · Amplitud {formatMetricValue(context?.tempAmplitude)} °C</small>
 				</div>
 				<div class="metric">
-					<span>% forestal / agua</span><strong
-						>{formatPercentMetric(selectedMunicipio.forest_pct)} / {formatPercentMetric(
+					<span>Cobertura forestal</span><strong>{formatPercentMetric(selectedMunicipio.forest_pct)}</strong>
+				</div>
+				<div class="metric">
+					<span>Agua y ríos</span><strong
+						>{formatMetricValue(selectedMunicipio.river_nearest_distance_km)} km al río · {selectedMunicipio.river_access_class ?? '-'}</strong
+					>
+					<small>{selectedMunicipio.river_nearest_name ?? 'Río más cercano'} · láminas de agua {formatPercentMetric(
 							selectedMunicipio.water_pct
-						)}</strong
-					>
-				</div>
-				<div class="metric">
-					<span>Acceso a baño</span><strong
-						>{selectedMunicipio.river_access_class ?? '-'} ({formatMetricValue(
-							selectedMunicipio.river_access_score
-						) ?? '-'} )</strong
-					>
-				</div>
-				<div class="metric">
-					<span>Río más cercano</span><strong
-						>{selectedMunicipio.river_nearest_name ?? '-'} ({formatMetricValue(
-							selectedMunicipio.river_nearest_distance_km
-						) ?? '-'} km)</strong
-					>
+						)}</small>
 				</div>
 			</div>
 			<div class="transport-block">
