@@ -11,6 +11,18 @@ export type Municipio = {
 	population_men?: number;
 	population_women?: number;
 	precip_annual_mm: number;
+	precip_summer_mm?: number;
+	precip_winter_mm?: number;
+	precip_seasonality_index?: number;
+	aridity_index?: number;
+	summer_aridity_index?: number;
+	dry_months_count?: number;
+	moisture_absolute_score?: number;
+	summer_drought_score?: number;
+	precip_relative_score?: number;
+	precip_moisture_score?: number;
+	water_drops_level?: number;
+	water_drops_label?: string;
 	temp_winter_mean_c: number;
 	temp_summer_mean_c: number;
 	temp_jan_mean_c: number;
@@ -107,6 +119,7 @@ export type DatasetMetadata = {
 	generated_at_utc: string;
 	analysis_scope: string;
 	climate_source: string;
+	climate_reference?: string;
 	environment_source?: string;
 	climate_period: string;
 	aggregation_method: string;

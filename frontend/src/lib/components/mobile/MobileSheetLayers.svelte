@@ -25,6 +25,7 @@
 	<p class="sheet-subtitle sheet-subtitle-help">Color municipal <FilterHelp text={FILTER_HELP.mapColor} /></p>
 	<div class="chips-row">
 		<ChipButton label="Puntuacion global" active={props.mapColorMetric === 'mixed_score'} onclick={() => props.onMapColorMetricChange('mixed_score')} />
+		<ChipButton label="Humedad climatica" active={props.mapColorMetric === 'precip_moisture_score'} onclick={() => props.onMapColorMetricChange('precip_moisture_score')} />
 		<ChipButton label="Precipitacion" active={props.mapColorMetric === 'precip_annual_mm'} onclick={() => props.onMapColorMetricChange('precip_annual_mm')} />
 		<ChipButton label="Tiempo de desplazamiento" active={props.mapColorMetric === 'travel_bucket'} onclick={() => props.onMapColorMetricChange('travel_bucket')} />
 		<ChipButton label="Transporte OSM" active={props.mapColorMetric === 'transporte_norm'} onclick={() => props.onMapColorMetricChange('transporte_norm')} />

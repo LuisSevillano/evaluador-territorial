@@ -53,7 +53,7 @@ const median = (values: number[]) => {
 };
 
 const scoreBlocks = (municipio: Municipio) => ({
-	clima: municipio.climate_block_score ?? municipio.precip_norm ?? 0.5,
+	clima: municipio.climate_block_score ?? municipio.precip_moisture_score ?? municipio.precip_norm ?? 0.5,
 	accesibilidad: municipio.access_block_score ?? municipio.accesibilidad_norm ?? 0.5,
 	naturaleza: municipio.nature_block_score ?? municipio.naturality_norm ?? 0.5
 });
@@ -137,10 +137,7 @@ export const buildMunicipioContext = ({
 	];
 
 	const blockDetails: Record<BlockKey, string> = {
-		clima:
-			selectedBlocks.clima >= avgBlocks.clima
-				? `Bloque climático por encima de la mediana del conjunto (${selectedMunicipio.precip_annual_mm.toFixed(0)} mm anuales).`
-				: `Bloque climático por debajo de la mediana del conjunto (${selectedMunicipio.precip_annual_mm.toFixed(0)} mm anuales).`,
+		clima: `Humedad ${selectedMunicipio.water_drops_label?.toLowerCase() ?? 'sin clasificar'} (${selectedMunicipio.precip_annual_mm.toFixed(0)} mm anuales) y ventaja relativa ${Math.round((selectedMunicipio.precip_relative_score ?? 0) * 100)}% dentro del conjunto analizado.`,
 		accesibilidad:
 			selectedMunicipio.travel_bucket === '>4h00'
 				? `Desplazamiento largo (${selectedMunicipio.travel_bucket}), con encaje bajo en accesibilidad.`

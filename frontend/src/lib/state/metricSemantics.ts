@@ -24,6 +24,13 @@ export const climateToneFromBlockScore = (climateBlockScore?: number, precipNorm
 	return 'bad';
 };
 
+export const climateToneFromMoistureScore = (moistureScore?: number): MetricTone => {
+	if (typeof moistureScore !== 'number' || !Number.isFinite(moistureScore)) return 'mid';
+	if (moistureScore >= 0.72) return 'good';
+	if (moistureScore >= 0.45) return 'mid';
+	return 'bad';
+};
+
 export const renfeMadridToneFromScore = (score?: number): MetricTone => {
 	if (typeof score !== 'number' || !Number.isFinite(score)) return 'bad';
 	if (score >= 0.66) return 'good';

@@ -11,6 +11,8 @@
 		type MapColorMetric,
 		buildMunicipioColorExpression,
 		getScoreThresholdsForMunicipios,
+		moistureColors,
+		moistureThresholds,
 		precipColors,
 		precipThresholds,
 		scoreColors,
@@ -252,6 +254,27 @@
 					precipColors[3],
 					precipThresholds[3],
 					precipColors[4]
+				]
+			] as any;
+		}
+
+		if (mapColorMetric === 'precip_moisture_score') {
+			return [
+				'case',
+				['!', ['has', 'precip_moisture_score']],
+				missingDataColor,
+				[
+					'step',
+					['to-number', ['get', 'precip_moisture_score']],
+					moistureColors[0],
+					moistureThresholds[0],
+					moistureColors[1],
+					moistureThresholds[1],
+					moistureColors[2],
+					moistureThresholds[2],
+					moistureColors[3],
+					moistureThresholds[3],
+					moistureColors[4]
 				]
 			] as any;
 		}

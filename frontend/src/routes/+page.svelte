@@ -306,6 +306,7 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 
 	const mapColorLabel = $derived.by(() => {
 		if (mapColorMetric === 'mixed_score') return 'Puntuación global';
+		if (mapColorMetric === 'precip_moisture_score') return 'Humedad climática';
 		if (mapColorMetric === 'precip_annual_mm') return 'Precipitación anual';
 		if (mapColorMetric === 'travel_bucket') return 'Tiempo de desplazamiento';
 		if (mapColorMetric === 'transporte_norm') return 'Transporte OSM';

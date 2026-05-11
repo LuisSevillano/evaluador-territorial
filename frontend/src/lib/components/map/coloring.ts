@@ -3,6 +3,7 @@ import { formatScorePercent } from '$lib/utils/numberFormat';
 
 export type MapColorMetric =
 	| 'mixed_score'
+	| 'precip_moisture_score'
 	| 'precip_annual_mm'
 	| 'transporte_norm'
 	| 'servicio_renfe_norm'
@@ -22,6 +23,8 @@ export const scoreColors = ['#8c1d18', '#d94841', '#f59f00', '#66c24a', '#15803d
 
 export const precipThresholds = [410, 483, 606, 952] as const;
 export const precipColors = ['#f3d7ac', '#d8c5a4', '#a8c1be', '#7cbac0', '#265d7f'] as const;
+export const moistureThresholds = [0.35, 0.45, 0.72, 0.86] as const;
+export const moistureColors = ['#c56a42', '#d8a15f', '#b8c9b4', '#6aa9b8', '#245f7a'] as const;
 
 export const transporteThresholds = [0.2, 0.4, 0.6, 0.8] as const;
 export const transporteColors = ['#15803d', '#66c24a', '#f59f00', '#d94841', '#8c1d18'] as const;
@@ -97,6 +100,9 @@ export const buildMunicipioColorExpression = (municipios: Municipio[], mapColorM
 				Number.isFinite(municipio.nature_block_score) &&
 				Number.isFinite(municipio.mixed_score);
 			value = municipio.mixed_score ?? 0;
+		} else if (mapColorMetric === 'precip_moisture_score') {
+			hasMetricData = Number.isFinite(municipio.precip_moisture_score);
+			value = municipio.precip_moisture_score ?? 0;
 		} else if (mapColorMetric === 'precip_annual_mm') {
 			hasMetricData = Number.isFinite(municipio.precip_annual_mm);
 			value = municipio.precip_annual_mm ?? 0;
@@ -132,6 +138,8 @@ export const buildMunicipioColorExpression = (municipios: Municipio[], mapColorM
 			? missingDataColor
 			: mapColorMetric === 'mixed_score'
 				? resolveBucketColor(value as number, activeScoreThresholds, scoreColors)
+				: mapColorMetric === 'precip_moisture_score'
+					? resolveBucketColor(value as number, moistureThresholds, moistureColors)
 				: mapColorMetric === 'precip_annual_mm'
 					? resolveBucketColor(value as number, precipThresholds, precipColors)
 				: mapColorMetric === 'travel_bucket'
@@ -163,6 +171,14 @@ export const getLegendConfig = (
 				formatLabel: (value: number) => `${formatScorePercent(value)}%`,
 				labels: ['Muy baja', 'Baja', 'Media', 'Alta', 'Muy alta']
 		  }
+		: mapColorMetric === 'precip_moisture_score'
+			? {
+					title: 'Humedad climática',
+					thresholds: [...moistureThresholds],
+					colors: [...moistureColors],
+					formatLabel: (value: number) => `${Math.round(value * 100)}%`,
+					labels: ['Muy seca', 'Seca', 'Equilibrada', 'Húmeda', 'Muy húmeda']
+			  }
 		: mapColorMetric === 'transporte_norm'
 			? {
 					title: 'Proximidad transporte',
