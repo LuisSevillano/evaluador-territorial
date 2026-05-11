@@ -2,11 +2,16 @@
 	import type { Municipio, MunicipioClimateMonthly } from '$lib/types/municipio';
 	import ClimateTempLineChart from '$lib/components/charts/ClimateTempLineChart.svelte';
 	import ClimatePrecipBarsChart from '$lib/components/charts/ClimatePrecipBarsChart.svelte';
+	import WaterDropIcon from '$lib/components/ui/WaterDropIcon.svelte';
 	import MunicipioContextCard from '$lib/components/inspector/MunicipioContextCard.svelte';
 	import { buildMunicipioContext } from '$lib/components/inspector/context';
 	import { getLegendConfig } from '$lib/components/map/coloring';
 	import { classifyMixedScore, labelForScoreBand } from '$lib/components/map/scoreClassification';
-	import { accessToneFromBucket, climateToneFromBlockScore, renfeMadridToneFromScore } from '$lib/state/metricSemantics';
+	import {
+		accessToneFromBucket,
+		climateToneFromMoistureScore,
+		renfeMadridToneFromScore
+	} from '$lib/state/metricSemantics';
 	import ReliefIndicator from '$lib/components/inspector/ReliefIndicator.svelte';
 	import { DEFAULT_WEIGHTS_NORMALIZED, DEFAULT_WEIGHTS_RAW } from '$lib/state/scoring';
 	import { formatScorePercent, formatSmartNumber } from '$lib/utils/numberFormat';
@@ -71,11 +76,18 @@
 	});
 
 	const renfeIsDirect = $derived(
-		selectedMunicipio?.has_direct_madrid_service ?? selectedMunicipio?.renfe_tipo_servicio === 'direct'
+		selectedMunicipio?.has_direct_madrid_service ??
+			selectedMunicipio?.renfe_tipo_servicio === 'direct'
 	);
-	const renfeDist = $derived(selectedMunicipio?.dist_renfe_madrid_km ?? selectedMunicipio?.dist_renfe_km);
-	const renfeDepartures = $derived(selectedMunicipio?.renfe_madrid_departures_avg_day ?? selectedMunicipio?.renfe_salidas_dia);
-	const renfeScore = $derived(selectedMunicipio?.renfe_madrid_service_norm ?? selectedMunicipio?.servicio_renfe_norm);
+	const renfeDist = $derived(
+		selectedMunicipio?.dist_renfe_madrid_km ?? selectedMunicipio?.dist_renfe_km
+	);
+	const renfeDepartures = $derived(
+		selectedMunicipio?.renfe_madrid_departures_avg_day ?? selectedMunicipio?.renfe_salidas_dia
+	);
+	const renfeScore = $derived(
+		selectedMunicipio?.renfe_madrid_service_norm ?? selectedMunicipio?.servicio_renfe_norm
+	);
 	const renfeStatus = $derived.by(() => {
 		if (selectedMunicipio?.transport_status) return selectedMunicipio.transport_status;
 		if (renfeIsDirect) return 'direct_madrid';
@@ -83,23 +95,24 @@
 		return 'no_station';
 	});
 	const renfeTone = $derived(
-		renfeStatus === 'direct_madrid' ? 'good' :
-		renfeStatus === 'station_nearby' ? 'mid' : 'bad'
+		renfeStatus === 'direct_madrid' ? 'good' : renfeStatus === 'station_nearby' ? 'mid' : 'bad'
 	);
 	const renfeStatusText = $derived(
-		renfeStatus === 'direct_madrid' ? 'Tren directo a Madrid' :
-		renfeStatus === 'station_nearby' ? 'Estación de tren cercana' :
-		`Estación a ${formatSmartNumber(renfeDist ?? 0)} km`
+		renfeStatus === 'direct_madrid'
+			? 'Tren directo a Madrid'
+			: renfeStatus === 'station_nearby'
+				? 'Estación de tren cercana'
+				: `Estación a ${formatSmartNumber(renfeDist ?? 0)} km`
 	);
 	const renfeDistLabel = $derived(
 		Number.isFinite(renfeDist) ? formatSmartNumber(renfeDist as number) : '-'
 	);
 	const renfeDeparturesLabel = $derived(
-		Number.isFinite(renfeDepartures) ? Math.round(renfeDepartures as number).toLocaleString('es-ES') : '-'
+		Number.isFinite(renfeDepartures)
+			? Math.round(renfeDepartures as number).toLocaleString('es-ES')
+			: '-'
 	);
-	const renfeStationName = $derived(
-		selectedMunicipio?.renfe_madrid_stop_name ?? '-'
-	);
+	const renfeStationName = $derived(selectedMunicipio?.renfe_madrid_stop_name ?? '-');
 	const renfeStationLoc = $derived.by(() => {
 		if (!selectedMunicipio?.renfe_madrid_stop_municipality) return '';
 		const stopMuni = selectedMunicipio.renfe_madrid_stop_municipality;
@@ -131,6 +144,31 @@
 		Number.isFinite(value) ? formatSmartNumber(value as number) : '-';
 	const formatPercentMetric = (value: number | null | undefined) =>
 		Number.isFinite(value) ? `${formatSmartNumber(value as number)}%` : '-';
+	const formatScoreMetric = (value: number | null | undefined) =>
+		Number.isFinite(value) ? formatScorePercent(value as number) : '-';
+	const waterDropCount = $derived.by(() => {
+		const level = selectedMunicipio?.water_drops_level;
+		if (!Number.isFinite(level)) return 0;
+		return Math.max(1, Math.min(3, Math.round(level as number)));
+	});
+	const dropColor = $derived.by(() => {
+		const tone = climateToneFromMoistureScore(selectedMunicipio?.moisture_absolute_score);
+		if (tone === 'good') return '#1f7a9c';
+		if (tone === 'bad') return '#c56a42';
+		return '#7a9e8a';
+	});
+	const summerDroughtNote = $derived.by(() => {
+		const dryMonths = selectedMunicipio?.dry_months_count;
+		const summerScore = selectedMunicipio?.summer_drought_score;
+		if (!Number.isFinite(dryMonths) && !Number.isFinite(summerScore)) return null;
+		const months = Number.isFinite(dryMonths)
+			? `${Math.round(dryMonths as number)} meses secos`
+			: 'meses secos no disponibles';
+		const score = Number.isFinite(summerScore)
+			? ` · sequía estival ${formatScorePercent(summerScore as number)}`
+			: '';
+		return `${months}${score}`;
+	});
 </script>
 
 <aside class="inspector">
@@ -167,35 +205,48 @@
 					<span>Accesibilidad</span><strong>{selectedMunicipio.travel_bucket}</strong>
 				</div>
 				<div
-					class={`metric ${climateToneFromBlockScore(selectedMunicipio.climate_block_score, selectedMunicipio.precip_norm)}`}
+					class={`metric ${climateToneFromMoistureScore(selectedMunicipio.moisture_absolute_score)}`}
 				>
+					<span>Humedad climática</span><strong
+						><WaterDropIcon count={waterDropCount} size={10} color={dropColor} />
+						{selectedMunicipio.water_drops_label ?? '-'}</strong
+					>
+					{#if summerDroughtNote}
+						<small>{summerDroughtNote}</small>
+					{/if}
+				</div>
+				<div class="metric">
 					<span>Precipitación</span><strong>{formatMetricValue(selectedMunicipio.precip_annual_mm)} mm</strong>
+					<small>{formatMetricValue(selectedMunicipio.precip_summer_mm)} mm verano · ventaja {formatScoreMetric(selectedMunicipio.precip_relative_score)}</small>
 				</div>
 				<div class="metric">
-					<span>Invierno / Verano</span><strong
-						>{formatMetricValue(selectedMunicipio.temp_winter_mean_c)} / {formatMetricValue(selectedMunicipio.temp_summer_mean_c)} °C</strong
+					<span>Temperatura</span><strong
+						>{formatMetricValue(selectedMunicipio.temp_winter_mean_c)} /
+						{formatMetricValue(selectedMunicipio.temp_summer_mean_c)} °C</strong
 					>
-				</div>
-				<div class="metric">
-					<span>Enero / Julio</span><strong
-						>{formatMetricValue(selectedMunicipio.temp_jan_mean_c)} / {formatMetricValue(selectedMunicipio.temp_jul_mean_c)} °C</strong
-					>
+					<small>Enero: {formatMetricValue(selectedMunicipio.temp_jan_mean_c)} / Julio: {formatMetricValue(
+							selectedMunicipio.temp_jul_mean_c
+						)} · Amplitud {formatMetricValue(context?.tempAmplitude)} °C</small>
 				</div>
 				<div class="metric">
 					<span>% forestal / agua</span><strong
-						>{formatPercentMetric(selectedMunicipio.forest_pct)} / {formatPercentMetric(selectedMunicipio.water_pct)}</strong
+						>{formatPercentMetric(selectedMunicipio.forest_pct)} / {formatPercentMetric(
+							selectedMunicipio.water_pct
+						)}</strong
 					>
 				</div>
 				<div class="metric">
 					<span>Acceso a baño</span><strong
-						>{selectedMunicipio.river_access_class ?? '-'} ({formatMetricValue(selectedMunicipio.river_access_score) ??
-							'-'} )</strong
+						>{selectedMunicipio.river_access_class ?? '-'} ({formatMetricValue(
+							selectedMunicipio.river_access_score
+						) ?? '-'} )</strong
 					>
 				</div>
 				<div class="metric">
 					<span>Río más cercano</span><strong
-						>{selectedMunicipio.river_nearest_name ?? '-'} ({formatMetricValue(selectedMunicipio.river_nearest_distance_km) ??
-							'-'} km)</strong
+						>{selectedMunicipio.river_nearest_name ?? '-'} ({formatMetricValue(
+							selectedMunicipio.river_nearest_distance_km
+						) ?? '-'} km)</strong
 					>
 				</div>
 			</div>
@@ -210,7 +261,7 @@
 							<span class="transport-score">{formatScorePercent(renfeScore ?? 0)}%</span>
 						{/if}
 					</div>
-		{#if renfeStationName !== '-'}
+					{#if renfeStationName !== '-'}
 						<div class="transport-info">
 							<span class="transport-station">{renfeStationName}{renfeStationLoc}</span>
 							<span class="transport-dist">
@@ -233,7 +284,8 @@
 					/>
 					{#if context?.tempAmplitude !== null}
 						<small
-							>Amplitud anual: {formatMetricValue(context?.tempAmplitude)} °C (más alto = estacionalidad más marcada).</small
+							>Amplitud anual: {formatMetricValue(context?.tempAmplitude)} °C (más alto = estacionalidad
+							más marcada).</small
 						>
 					{/if}
 				</div>
@@ -242,8 +294,11 @@
 					<ClimatePrecipBarsChart data={climateSeries} />
 					{#if context?.wettest && context?.driest}
 						<small
-							>Pico humedo mes {context.wettest.month} ({formatMetricValue(context.wettest.precip_mm)} mm) · valle
-							seco mes {context.driest.month} ({formatMetricValue(context.driest.precip_mm)} mm).</small
+							>Pico humedo mes {context.wettest.month} ({formatMetricValue(
+								context.wettest.precip_mm
+							)} mm) · valle seco mes {context.driest.month} ({formatMetricValue(
+								context.driest.precip_mm
+							)} mm).</small
 						>
 					{/if}
 				</div>
@@ -379,6 +434,15 @@
 	}
 	.metric-grid strong {
 		font-size: 0.9rem;
+		display: flex;
+		align-items: center;
+	}
+	.metric-grid small {
+		display: block;
+		margin-top: 0.22rem;
+		font-size: 0.68rem;
+		line-height: 1.25;
+		color: #52645f;
 	}
 	.charts {
 		display: grid;
