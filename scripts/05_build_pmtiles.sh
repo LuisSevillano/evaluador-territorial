@@ -6,7 +6,7 @@ OUTPUT_DIR="$ROOT_DIR/output/tiles"
 FRONTEND_TILES_DIR="$ROOT_DIR/frontend/static/tiles"
 
 MUNI_GEOJSON_V2="$ROOT_DIR/output/municipios_v2.geojson"
-MUNI_GEOJSON_FALLBACK="$ROOT_DIR/output/municipios_final.geojson"
+MUNI_GIFOJSON_FALLBACK="$ROOT_DIR/output/municipios_final.geojson"
 CCAA_GEOJSON="$ROOT_DIR/output/ccaa_boundaries.geojson"
 PROV_GEOJSON="$ROOT_DIR/output/provincias_boundaries.geojson"
 LANDUSE_GEOJSON="$ROOT_DIR/output/usos_suelo.geojson"
@@ -38,7 +38,7 @@ fi
 
 MUNI_INPUT="$MUNI_GEOJSON_V2"
 if [[ ! -f "$MUNI_INPUT" ]]; then
-  MUNI_INPUT="$MUNI_GEOJSON_FALLBACK"
+  MUNI_INPUT="$MUNI_GIFOJSON_FALLBACK"
 fi
 
 if [[ ! -f "$MUNI_INPUT" ]]; then
@@ -62,15 +62,58 @@ fi
 mkdir -p "$OUTPUT_DIR"
 mkdir -p "$FRONTEND_TILES_DIR"
 
-MUNI_SIMPLIFY_PCT="${MUNI_SIMPLIFY_PCT:-8}"
+MUNI_SIMPLIFY_PCT="${MUNI_SIMPLIFY_PCT:-0}"
+PROV_SIMPLIFY_PCT="${PROV_SIMPLIFY_PCT:-0}"
+CCAA_SIMPLIFY_PCT="${CCAA_SIMPLIFY_PCT:-0}"
+
 MUNI_SIMPLIFIED="$OUTPUT_DIR/municipios_simplified.geojson"
+PROV_SIMPLIFIED="$OUTPUT_DIR/provincias_simplified.geojson"
+CCAA_SIMPLIFIED="$OUTPUT_DIR/ccaa_simplified.geojson"
+PROV_FROM_MUNI="$OUTPUT_DIR/provincias_from_municipios.geojson"
+CCAA_FROM_MUNI="$OUTPUT_DIR/ccaa_from_municipios.geojson"
+
+if [[ "$MUNI_SIMPLIFY_PCT" != "0" ]]; then
+  mapshaper \
+    -i "$MUNI_INPUT" \
+    -clean \
+    -snap \
+    -simplify "$MUNI_SIMPLIFY_PCT%" weighted keep-shapes \
+    -o format=geojson "$MUNI_SIMPLIFIED"
+else
+  cp "$MUNI_INPUT" "$MUNI_SIMPLIFIED"
+fi
+
+if [[ "$PROV_SIMPLIFY_PCT" != "0" ]]; then
+  mapshaper -i "$PROV_GEOJSON" -clean -snap -simplify "$PROV_SIMPLIFY_PCT%" -o format=geojson "$PROV_SIMPLIFIED"
+else
+  cp "$PROV_GEOJSON" "$PROV_SIMPLIFIED"
+fi
+
+if [[ "$CCAA_SIMPLIFY_PCT" != "0" ]]; then
+  mapshaper -i "$CCAA_GEOJSON" -clean -snap -simplify "$CCAA_SIMPLIFY_PCT%" -o format=geojson "$CCAA_SIMPLIFIED"
+else
+  cp "$CCAA_GEOJSON" "$CCAA_SIMPLIFIED"
+fi
 
 mapshaper \
-  -i "$MUNI_INPUT" \
-  -clean \
-  -snap \
-  -simplify "$MUNI_SIMPLIFY_PCT%" weighted keep-shapes \
-  -o format=geojson "$MUNI_SIMPLIFIED"
+  -i "$MUNI_SIMPLIFIED" name=municipios \
+  -i "$PROV_SIMPLIFIED" name=provincias \
+  combine-files \
+  -target municipios \
+  -join provincias fields=id_prov,nombre_prov largest-overlap \
+  -filter '!!id_prov' \
+  -dissolve id_prov copy-fields=nombre_prov \
+  -o format=geojson "$PROV_FROM_MUNI"
+
+mapshaper \
+  -i "$MUNI_SIMPLIFIED" name=municipios \
+  -i "$CCAA_SIMPLIFIED" name=ccaa \
+  combine-files \
+  -target municipios \
+  -join ccaa fields=id_ccaa,nombre_ccaa largest-overlap \
+  -filter '!!id_ccaa' \
+  -dissolve id_ccaa copy-fields=nombre_ccaa \
+  -o format=geojson "$CCAA_FROM_MUNI"
 
 tippecanoe \
   -f \
@@ -79,10 +122,8 @@ tippecanoe \
   -z12 \
   -Z0 \
   -y id \
-  -y codigo \
-  -y precip_annual_mm \
-  -y mixed_score \
-  -S 6 \
+  --detect-shared-borders \
+  -S 12 \
   -pk \
   -pf \
   "$MUNI_SIMPLIFIED"
@@ -96,7 +137,7 @@ tippecanoe \
   -S 6 \
   -pk \
   -pf \
-  "$CCAA_GEOJSON"
+  "$CCAA_FROM_MUNI"
 
 tippecanoe \
   -f \
@@ -107,7 +148,7 @@ tippecanoe \
   -S 6 \
   -pk \
   -pf \
-  "$PROV_GEOJSON"
+  "$PROV_FROM_MUNI"
 
 pmtiles convert "$MUNI_MBTILES" "$MUNI_PMTILES"
 pmtiles convert "$CCAA_MBTILES" "$CCAA_PMTILES"

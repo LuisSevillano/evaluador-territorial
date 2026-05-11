@@ -33,6 +33,7 @@
 ## Estado Operativo
 - Hay doble configuracion Netlify: `frontend/netlify.toml` es fuente operativa; `.netlify/netlify.toml` puede reflejar estado local de CLI.
 - Los datos finales para frontend se escriben tanto en `output/` como en `frontend/static/data/`; revisar ambos si hay divergencias.
+- Los tiles de municipios, provincias y CCAA deben compartir geometria base: `scripts/05_build_pmtiles.sh` simplifica municipios con mapshaper, asigna provincia/CCAA por join espacial contra capas oficiales y deriva provincias/CCAA por dissolve desde esa misma capa antes de tippecanoe.
 - `output/` contiene artefactos grandes y cache; no borrar ni regenerar masivamente sin necesidad.
 
 ## Decision De Gobernanza Documental
