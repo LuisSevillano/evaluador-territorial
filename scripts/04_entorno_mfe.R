@@ -52,6 +52,7 @@ prov_mfe_map <- list(
   "20" = list(dir = "mfe_pais_vasco", file = "MFE_21.shp", nut3 = "Gipuzkoa"),
   "26" = list(dir = "mfe_larioja", file = "MFE_23.shp", nut3 = "La Rioja"),
   "28" = list(dir = "mfe_madrid", file = "MFE_30.shp", nut3 = "Madrid"),
+  "33" = list(dir = "mfe_principadodeasturias", file = "MFE_12.shp", nut3 = "Asturias"),
   "27" = list(dir = "mfe_galicia", file = "MFE_11.shp", nut3 = "Lugo"),
   "32" = list(dir = "mfe_galicia", file = "MFE_11.shp", nut3 = "Ourense"),
   "19" = list(dir = "MFE_42", file = "mFE_42.shp", nut3 = "Guadalajara")
@@ -66,10 +67,13 @@ build_targets <- function(scope_cfg) {
   }
 
   cods <- unique(c(
-    c("05", "09", "24", "34", "37", "39", "40", "42", "47", "48", "49", "01", "20", "26"),
+    c("05", "09", "24", "34", "37", "39", "40", "42", "47", "48", "49", "01", "20", "26", "33"),
     scope_cfg[["codprov_include"]]
   ))
-  cods <- cods[cods %in% names(prov_mfe_map)]
+  missing_map <- setdiff(cods, names(prov_mfe_map))
+  if (length(missing_map) > 0) {
+    stop("Sin mapping MFE para codprov: ", paste(missing_map, collapse = ", "))
+  }
   lapply(cods, function(cp) list(codprov = cp, cfg = prov_mfe_map[[cp]]))
 }
 

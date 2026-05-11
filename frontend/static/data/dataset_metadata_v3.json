@@ -1,13 +1,14 @@
 {
   "dataset_version": "v3.0.0",
-  "generated_at_utc": "2026-05-08 17:30:47 UTC",
+  "generated_at_utc": "2026-05-11 11:51:42 UTC",
   "analysis_scope": "Castilla y Leon + La Rioja + Pais Vasco + Cantabria + Asturias + Lugo + Ourense + Guadalajara + Madrid",
-  "climate_source": "TerraClimate (tmin, tmax, ppt)",
+  "climate_source": "TerraClimate (tmin, tmax, ppt, pet)",
+  "climate_reference": "TerraClimate",
   "environment_source": "OSM Geofabrik (landuse/natural/water)",
   "climate_period": "2014-2023",
   "aggregation_method": "Analisis primario por celda de 2x2 km y agregacion posterior a municipio (medianas y estadisticos de celdas)",
   "isochrones_definition": "Bucket de accesibilidad calculado por celda y agregado a municipio por mayoria de celdas",
-  "scoring_method": "Score mixto por bloques normalizados calculado en celdas: clima 40%, accesibilidad 30%, naturaleza 30%; el valor municipal se obtiene por agregacion de celdas",
+  "scoring_method": "v3.1_hybrid_moisture",
   "accessibility_normalization_floor": 0.2,
   "scoring_weights": {
     "climate": 0.4,

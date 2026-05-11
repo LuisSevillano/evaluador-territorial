@@ -16,7 +16,7 @@ Ejemplo: un municipio puede tener muy buen clima y naturaleza, pero accesibilida
 
 ## Qué resume cada bloque
 
-- **Clima**: lluvia y temperaturas estacionales.
+- **Clima**: humedad climática, sequía estival y temperaturas estacionales.
 - **Accesibilidad**: posición relativa en tramos de tiempo de acceso.
 - **Naturaleza**: entorno natural, agua, relieve y acceso fluvial recreativo potencial.
 
@@ -44,6 +44,10 @@ Un `mixed_score` alto suele indicar mejor equilibrio entre bloques dentro del al
 
 Cuando dos municipios tienen puntuaciones parecidas, conviene tratarlos como alternativas similares y revisar el detalle por bloques.
 
+## Ponderación interna de clima
+
+El bloque clima usa `precip_moisture_score` en lugar de basarse solo en percentiles internos de lluvia anual. Esta puntuación combina referencia climática absoluta TerraClimate 2014-2023, sequía estival y una parte menor de ventaja relativa dentro del alcance activo.
+
 ## Ponderación interna de naturaleza
 
 Cada métrica se normaliza en escala comparativa (0 a 1) antes de combinarse:
@@ -67,8 +71,9 @@ Para que el resultado sea auditable, cada componente del score queda ligado a su
 Flujo general de cálculo del score:
 
 1. Cálculo de indicadores por bloque (clima, accesibilidad y naturaleza) a escala municipal.
-2. Normalización de cada métrica en escala comparativa dentro del alcance activo.
-3. Ponderación por bloques y combinación final en `mixed_score`.
+2. Cálculo de humedad climática híbrida: 60% referencia absoluta, 25% sequía estival, 15% ventaja relativa.
+3. Normalización de cada métrica restante en escala comparativa dentro del alcance activo.
+4. Ponderación por bloques y combinación final en `mixed_score`.
 
 Así, cada valor publicado en un municipio puede rastrearse a su origen de datos y a la regla aplicada en pipeline.
 

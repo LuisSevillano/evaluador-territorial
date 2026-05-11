@@ -97,8 +97,9 @@ if (nrow(grid_sf) == 0) {
 
 log_step(paste0("Cargadas ", nrow(grid_sf), " celdas"))
 
-log_step("Cargando TerraClimate (ppt, tmin, tmax)")
+log_step("Cargando TerraClimate (ppt, pet, tmin, tmax)")
 ppt <- get_monthly_raster("ppt", years)
+pet <- get_monthly_raster("pet", years)
 tmin <- get_monthly_raster("tmin", years)
 tmax <- get_monthly_raster("tmax", years)
 
@@ -106,20 +107,24 @@ log_step("Recortando rasters al ámbito de la rejilla")
 ext <- st_bbox(grid_sf)
 pad <- 0.15
 ppt <- terra::crop(ppt, terra::ext(ext$xmin - pad, ext$xmax + pad, ext$ymin - pad, ext$ymax + pad), snap = "out")
+pet <- terra::crop(pet, terra::ext(ext$xmin - pad, ext$xmax + pad, ext$ymin - pad, ext$ymax + pad), snap = "out")
 tmin <- terra::crop(tmin, terra::ext(ext$xmin - pad, ext$xmax + pad, ext$ymin - pad, ext$ymax + pad), snap = "out")
 tmax <- terra::crop(tmax, terra::ext(ext$xmin - pad, ext$xmax + pad, ext$ymin - pad, ext$ymax + pad), snap = "out")
 
-log_step("Calculando climatología mensual (2014-2023)")
+log_step("Calculando climatologia mensual (1991-2020)")
 ppt_scaled <- ifel(ppt < 0, NA, ppt * 0.1)
+pet_scaled <- ifel(pet < 0, NA, pet * 0.1)
 temp_mean_raw <- ((tmin * 0.01) - 99 + (tmax * 0.01) - 99) / 2
 
 ppt_clim <- monthly_climatology_raster(ppt_scaled, years, "precip_mm")
+pet_clim <- monthly_climatology_raster(pet_scaled, years, "pet_mm")
 temp_clim <- monthly_climatology_raster(temp_mean_raw, years, "temp_mean_c")
 
 log_step("Extrayendo valores mensuales por celda (puede tardar)")
 start_extract <- Sys.time()
 
 ppt_values <- extract_monthly_values(ppt_clim, grid_sf, "precip_mm")
+pet_values <- extract_monthly_values(pet_clim, grid_sf, "pet_mm")
 temp_values <- extract_monthly_values(temp_clim, grid_sf, "temp_mean_c")
 
 log_step(sprintf("Extracción completada en %.1fs", as.numeric(difftime(Sys.time(), start_extract, units = "secs"))))
@@ -129,14 +134,19 @@ grid_climate <- bind_cols(
   st_drop_geometry(grid_sf) |> select(cell_id, municipio_id, municipio_nombre, provincia),
   temp_values
 ) |> bind_cols(ppt_values) |>
+  bind_cols(pet_values) |>
   pivot_longer(
-    cols = matches("^(temp_mean_c|precip_mm)_[0-9]{2}$"),
+    cols = matches("^(temp_mean_c|precip_mm|pet_mm)_[0-9]{2}$"),
     names_to = "metric_month",
     values_to = "value"
   ) |>
   mutate(
     month = as.integer(str_extract(metric_month, "[0-9]{2}$")),
-    variable = ifelse(str_starts(metric_month, "temp_"), "temp_mean_c", "precip_mm")
+    variable = case_when(
+      str_starts(metric_month, "temp_") ~ "temp_mean_c",
+      str_starts(metric_month, "pet_") ~ "pet_mm",
+      TRUE ~ "precip_mm"
+    )
   ) |>
   pivot_wider(
     id_cols = c(cell_id, municipio_id, municipio_nombre, provincia, month),
@@ -145,21 +155,78 @@ grid_climate <- bind_cols(
   ) |>
   mutate(
     temp_mean_c = round(temp_mean_c, 1),
-    precip_mm = round(precip_mm, 1)
+    precip_mm = round(precip_mm, 1),
+    pet_mm = round(pet_mm, 1)
   ) |>
   arrange(cell_id, month)
+
+clamp01 <- function(x) pmax(0, pmin(1, x))
+
+score_from_breaks <- function(x, breaks, scores) {
+  approx(breaks, scores, xout = x, rule = 2, ties = "ordered")$y |>
+    clamp01()
+}
+
+calc_moisture_scores <- function(df) {
+  annual_precip_score <- score_from_breaks(df$precip_annual_mm, c(250, 400, 600, 900, 1400), c(0.10, 0.35, 0.70, 0.95, 1.00))
+  aridity_score <- score_from_breaks(df$aridity_index, c(0.20, 0.35, 0.50, 0.65, 0.90, 1.20), c(0.10, 0.25, 0.45, 0.70, 0.90, 1.00))
+  regularity_score <- score_from_breaks(df$precip_seasonality_index, c(0.35, 0.65, 1.00, 1.40), c(1.00, 0.80, 0.55, 0.25))
+  summer_aridity_score <- score_from_breaks(df$summer_aridity_index, c(0.05, 0.15, 0.30, 0.50, 0.80), c(0.10, 0.30, 0.55, 0.80, 1.00))
+  summer_precip_score <- score_from_breaks(df$precip_summer_mm, c(20, 60, 100, 160, 240), c(0.10, 0.35, 0.60, 0.85, 1.00))
+  dry_months_score <- clamp01(1 - (df$dry_months_count / 5))
+
+  moisture_absolute_score <- clamp01(0.45 * annual_precip_score + 0.40 * aridity_score + 0.15 * regularity_score)
+  summer_drought_score <- clamp01(0.50 * summer_aridity_score + 0.30 * summer_precip_score + 0.20 * dry_months_score)
+  relative_base <- clamp01(0.60 * moisture_absolute_score + 0.40 * summer_drought_score)
+  precip_relative_score <- rank(relative_base, ties.method = "average", na.last = "keep") / sum(is.finite(relative_base))
+  precip_moisture_score <- clamp01(0.60 * moisture_absolute_score + 0.25 * summer_drought_score + 0.15 * precip_relative_score)
+
+  water_drops_level <- dplyr::case_when(
+    !is.finite(moisture_absolute_score) | !is.finite(summer_drought_score) ~ NA_integer_,
+    moisture_absolute_score < 0.45 | summer_drought_score < 0.35 ~ 1L,
+    moisture_absolute_score >= 0.72 & summer_drought_score >= 0.50 ~ 3L,
+    TRUE ~ 2L
+  )
+
+  df |>
+    mutate(
+      moisture_absolute_score = round(moisture_absolute_score, 3),
+      summer_drought_score = round(summer_drought_score, 3),
+      precip_relative_score = round(precip_relative_score, 3),
+      precip_moisture_score = round(precip_moisture_score, 3),
+      water_drops_level = water_drops_level,
+      water_drops_label = case_when(
+        water_drops_level == 1L ~ "Seco",
+        water_drops_level == 2L ~ "Equilibrado",
+        water_drops_level == 3L ~ "Humedo",
+        TRUE ~ NA_character_
+      )
+    )
+}
 
 log_step("Generando datos anuales por celda")
 grid_climate_annual <- grid_climate |>
   group_by(cell_id, municipio_id, municipio_nombre, provincia) |>
   summarize(
     precip_annual_mm = round(sum(precip_mm, na.rm = TRUE), 0),
+    precip_summer_mm = round(sum(precip_mm[month %in% c(6, 7, 8)], na.rm = TRUE), 0),
+    precip_winter_mm = round(sum(precip_mm[month %in% c(12, 1, 2)], na.rm = TRUE), 0),
+    pet_annual_mm = round(sum(pet_mm, na.rm = TRUE), 0),
+    pet_summer_mm = round(sum(pet_mm[month %in% c(6, 7, 8)], na.rm = TRUE), 0),
+    dry_months_count = sum(precip_mm < 2 * temp_mean_c, na.rm = TRUE),
+    precip_seasonality_index = round(sd(precip_mm, na.rm = TRUE) / mean(precip_mm, na.rm = TRUE), 3),
     temp_winter_mean_c = round(mean(temp_mean_c[month %in% c(12, 1, 2)], na.rm = TRUE), 1),
     temp_summer_mean_c = round(mean(temp_mean_c[month %in% c(6, 7, 8)], na.rm = TRUE), 1),
     temp_jan_mean_c = round(mean(temp_mean_c[month == 1], na.rm = TRUE), 1),
     temp_jul_mean_c = round(mean(temp_mean_c[month == 7], na.rm = TRUE), 1),
     .groups = "drop"
-  )
+  ) |>
+  mutate(
+    aridity_index = round(ifelse(pet_annual_mm > 0, precip_annual_mm / pet_annual_mm, NA_real_), 3),
+    summer_aridity_index = round(ifelse(pet_summer_mm > 0, precip_summer_mm / pet_summer_mm, NA_real_), 3)
+  ) |>
+  calc_moisture_scores() |>
+  select(-pet_annual_mm, -pet_summer_mm)
 
 log_step("Resumen climate grid:")
 log_step(paste0("  precip_annual_mm rango: ", min(grid_climate_annual$precip_annual_mm, na.rm = TRUE), " - ", max(grid_climate_annual$precip_annual_mm, na.rm = TRUE)))

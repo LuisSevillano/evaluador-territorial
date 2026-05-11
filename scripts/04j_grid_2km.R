@@ -87,6 +87,16 @@ if (!"travel_bucket" %in% names(mun_sf)) {
   mun_sf$travel_bucket <- NA_character_
 }
 
+for (col_name in c(
+  "precip_summer_mm", "precip_winter_mm", "precip_seasonality_index",
+  "aridity_index", "summer_aridity_index", "dry_months_count",
+  "moisture_absolute_score", "summer_drought_score", "precip_relative_score",
+  "precip_moisture_score", "water_drops_level"
+)) {
+  if (!col_name %in% names(mun_sf)) mun_sf[[col_name]] <- NA_real_
+}
+if (!"water_drops_label" %in% names(mun_sf)) mun_sf$water_drops_label <- NA_character_
+
 mun_sf <- mun_sf |>
   st_transform(25830) |>
   select(
@@ -94,6 +104,18 @@ mun_sf <- mun_sf |>
     nombre,
     provincia,
     precip_annual_mm,
+    precip_summer_mm,
+    precip_winter_mm,
+    precip_seasonality_index,
+    aridity_index,
+    summer_aridity_index,
+    dry_months_count,
+    moisture_absolute_score,
+    summer_drought_score,
+    precip_relative_score,
+    precip_moisture_score,
+    water_drops_level,
+    water_drops_label,
     temp_winter_mean_c,
     temp_summer_mean_c,
     river_access_score,
@@ -128,6 +150,18 @@ suppressWarnings({
           nombre,
           provincia,
           precip_annual_mm,
+          precip_summer_mm,
+          precip_winter_mm,
+          precip_seasonality_index,
+          aridity_index,
+          summer_aridity_index,
+          dry_months_count,
+          moisture_absolute_score,
+          summer_drought_score,
+          precip_relative_score,
+          precip_moisture_score,
+          water_drops_level,
+          water_drops_label,
           temp_winter_mean_c,
           temp_summer_mean_c,
           river_access_score,
@@ -166,6 +200,8 @@ grid_sf <- grid_base |>
     municipio_id = codigo,
     municipio_nombre = nombre,
     precip_annual = precip_annual_mm,
+    precip_summer = precip_summer_mm,
+    precip_winter = precip_winter_mm,
     temp_winter = temp_winter_mean_c,
     temp_summer = temp_summer_mean_c,
     natural_cover_pct = pmax(0, pmin(100, forest_nature_quality * 100))
@@ -577,7 +613,7 @@ grid_sf <- grid_sf |>
   mutate(
     accesibilidad_norm = round_idx(access_floor + (1 - access_floor) * access_raw),
     climate_block_score = round_idx(
-      rowMeans(cbind(precip_norm, temp_verano_norm, temp_invierno_norm), na.rm = TRUE)
+      rowMeans(cbind(precip_moisture_score, temp_verano_norm, temp_invierno_norm), na.rm = TRUE)
     ),
     access_block_score = round_idx(accesibilidad_norm),
     nature_block_score = round_idx(
@@ -601,6 +637,18 @@ grid_sf <- grid_sf |>
     grid_col,
     mixed_score,
     precip_annual,
+    precip_summer,
+    precip_winter,
+    precip_seasonality_index,
+    aridity_index,
+    summer_aridity_index,
+    dry_months_count,
+    moisture_absolute_score,
+    summer_drought_score,
+    precip_relative_score,
+    precip_moisture_score,
+    water_drops_level,
+    water_drops_label,
     temp_winter,
     temp_summer,
     river_distance_km,
@@ -632,6 +680,17 @@ grid_agg <- grid_sf |>
     grid_cell_count = n(),
     grid_precip_annual_mean = mean(precip_annual, na.rm = TRUE),
     grid_precip_annual_median = median(precip_annual, na.rm = TRUE),
+    grid_precip_summer_median = median(precip_summer, na.rm = TRUE),
+    grid_precip_winter_median = median(precip_winter, na.rm = TRUE),
+    grid_precip_seasonality_median = median(precip_seasonality_index, na.rm = TRUE),
+    grid_aridity_median = median(aridity_index, na.rm = TRUE),
+    grid_summer_aridity_median = median(summer_aridity_index, na.rm = TRUE),
+    grid_dry_months_median = median(dry_months_count, na.rm = TRUE),
+    grid_moisture_absolute_median = median(moisture_absolute_score, na.rm = TRUE),
+    grid_summer_drought_median = median(summer_drought_score, na.rm = TRUE),
+    grid_precip_relative_median = median(precip_relative_score, na.rm = TRUE),
+    grid_precip_moisture_median = median(precip_moisture_score, na.rm = TRUE),
+    grid_water_drops_median = median(water_drops_level, na.rm = TRUE),
     grid_temp_winter_mean = mean(temp_winter, na.rm = TRUE),
     grid_temp_winter_median = median(temp_winter, na.rm = TRUE),
     grid_temp_summer_mean = mean(temp_summer, na.rm = TRUE),

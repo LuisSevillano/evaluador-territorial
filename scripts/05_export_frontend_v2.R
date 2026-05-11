@@ -30,6 +30,17 @@ grid_agg <- readRDS(paths$output_feature_grid_agg_rds) |>
     "codigo",
     "grid_cell_count",
     "grid_precip_annual_median",
+    "grid_precip_summer_median",
+    "grid_precip_winter_median",
+    "grid_precip_seasonality_median",
+    "grid_aridity_median",
+    "grid_summer_aridity_median",
+    "grid_dry_months_median",
+    "grid_moisture_absolute_median",
+    "grid_summer_drought_median",
+    "grid_precip_relative_median",
+    "grid_precip_moisture_median",
+    "grid_water_drops_median",
     "grid_temp_winter_median",
     "grid_temp_summer_median",
     "grid_river_access_median",
@@ -234,6 +245,10 @@ round_idx <- function(x) round(x, 3)
 
 for (col_name in c(
   "precip_annual_mm", "temp_summer_mean_c", "temp_winter_mean_c", "temp_jan_mean_c", "temp_jul_mean_c",
+  "precip_summer_mm", "precip_winter_mm", "precip_seasonality_index",
+  "aridity_index", "summer_aridity_index", "dry_months_count",
+  "moisture_absolute_score", "summer_drought_score", "precip_relative_score",
+  "precip_moisture_score", "water_drops_level",
   "forest_pct", "forest_nature_quality", "water_pct", "artificial_pct",
   "naturality_index", "landcover_diversity", "river_access_score",
   "relieve_norm", "relieve_score_raw", "dist_estacion_tren_km",
@@ -260,9 +275,21 @@ for (col_name in c(
   mun <- ensure_chr_col(mun, col_name)
 }
 mun <- ensure_chr_col(mun, "river_access_source_type")
+mun <- ensure_chr_col(mun, "water_drops_label")
 
 for (col_name in c(
   "grid_precip_annual_median",
+  "grid_precip_summer_median",
+  "grid_precip_winter_median",
+  "grid_precip_seasonality_median",
+  "grid_aridity_median",
+  "grid_summer_aridity_median",
+  "grid_dry_months_median",
+  "grid_moisture_absolute_median",
+  "grid_summer_drought_median",
+  "grid_precip_relative_median",
+  "grid_precip_moisture_median",
+  "grid_water_drops_median",
   "grid_temp_winter_median",
   "grid_temp_summer_median",
   "grid_river_access_median",
@@ -305,7 +332,7 @@ access_raw <- (travel_score[mun$travel_bucket] - 1) / (length(travel_order) - 1)
 mun$accesibilidad_norm <- round_idx(access_floor + (1 - access_floor) * access_raw)
 
 mun$climate_block_score <- round_idx(
-  rowMeans(cbind(mun$precip_norm, mun$temp_verano_norm, mun$temp_invierno_norm), na.rm = TRUE)
+  rowMeans(cbind(mun$precip_moisture_score, mun$temp_verano_norm, mun$temp_invierno_norm), na.rm = TRUE)
 )
 mun$access_block_score <- round_idx(mun$accesibilidad_norm)
 nature_weights <- c(
@@ -345,6 +372,23 @@ mun$mixed_score <- round_idx(
 mun <- mun |>
   mutate(
     precip_annual_mm = ifelse(is.finite(grid_precip_annual_median), grid_precip_annual_median, precip_annual_mm),
+    precip_summer_mm = ifelse(is.finite(grid_precip_summer_median), grid_precip_summer_median, precip_summer_mm),
+    precip_winter_mm = ifelse(is.finite(grid_precip_winter_median), grid_precip_winter_median, precip_winter_mm),
+    precip_seasonality_index = ifelse(is.finite(grid_precip_seasonality_median), grid_precip_seasonality_median, precip_seasonality_index),
+    aridity_index = ifelse(is.finite(grid_aridity_median), grid_aridity_median, aridity_index),
+    summer_aridity_index = ifelse(is.finite(grid_summer_aridity_median), grid_summer_aridity_median, summer_aridity_index),
+    dry_months_count = ifelse(is.finite(grid_dry_months_median), grid_dry_months_median, dry_months_count),
+    moisture_absolute_score = ifelse(is.finite(grid_moisture_absolute_median), grid_moisture_absolute_median, moisture_absolute_score),
+    summer_drought_score = ifelse(is.finite(grid_summer_drought_median), grid_summer_drought_median, summer_drought_score),
+    precip_relative_score = ifelse(is.finite(grid_precip_relative_median), grid_precip_relative_median, precip_relative_score),
+    precip_moisture_score = ifelse(is.finite(grid_precip_moisture_median), grid_precip_moisture_median, precip_moisture_score),
+    water_drops_level = ifelse(is.finite(grid_water_drops_median), round(grid_water_drops_median), water_drops_level),
+    water_drops_label = case_when(
+      water_drops_level == 1 ~ "Seco",
+      water_drops_level == 2 ~ "Equilibrado",
+      water_drops_level == 3 ~ "Humedo",
+      TRUE ~ water_drops_label
+    ),
     temp_winter_mean_c = ifelse(is.finite(grid_temp_winter_median), grid_temp_winter_median, temp_winter_mean_c),
     temp_summer_mean_c = ifelse(is.finite(grid_temp_summer_median), grid_temp_summer_median, temp_summer_mean_c),
     river_access_score = ifelse(!use_bathing_sources & is.finite(grid_river_access_median), grid_river_access_median, river_access_score),
@@ -376,6 +420,18 @@ mun_v2 <- mun |>
     population_men,
     population_women,
     precip_annual_mm,
+    precip_summer_mm,
+    precip_winter_mm,
+    precip_seasonality_index,
+    aridity_index,
+    summer_aridity_index,
+    dry_months_count,
+    moisture_absolute_score,
+    summer_drought_score,
+    precip_relative_score,
+    precip_moisture_score,
+    water_drops_level,
+    water_drops_label,
     temp_winter_mean_c,
     temp_summer_mean_c,
     temp_jan_mean_c,
@@ -473,5 +529,36 @@ write_file(toJSON(monthly, auto_unbox = TRUE), paths$output_climate_monthly_json
 
 file_copy(paths$output_v2_json, paths$frontend_v2_json, overwrite = TRUE)
 file_copy(paths$output_climate_monthly_json, paths$frontend_climate_monthly_json, overwrite = TRUE)
+
+base36_code <- function(index) {
+  alphabet <- c(0:9, letters)
+  n <- index
+  code <- character()
+  repeat {
+    code <- c(alphabet[(n %% 36) + 1], code)
+    n <- n %/% 36
+    if (n == 0) break
+  }
+  paste0(code, collapse = "")
+}
+
+compact_codes <- vapply(seq_along(names(mun_tab)) - 1, base36_code, character(1))
+compact_dictionary <- list(
+  version = 1,
+  codeToKey = as.list(stats::setNames(names(mun_tab), compact_codes))
+)
+compact_rows <- lapply(seq_len(nrow(mun_tab)), function(i) {
+  unname(as.list(mun_tab[i, , drop = FALSE]))
+})
+compact_payload <- list(version = 1, fields = compact_codes, rows = compact_rows)
+
+write_file(
+  toJSON(compact_dictionary, auto_unbox = TRUE, pretty = TRUE),
+  path(project_root, "frontend", "static", "data", "municipios_v2.dictionary.json")
+)
+write_file(
+  toJSON(compact_payload, auto_unbox = TRUE),
+  path(project_root, "frontend", "static", "data", "municipios_v2.compact.json")
+)
 
 message("OK: export v2 tabular generado y copiado a frontend/static/data")

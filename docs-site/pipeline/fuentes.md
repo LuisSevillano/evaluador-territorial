@@ -8,9 +8,11 @@ La regla general es usar fuentes trazables, con cobertura suficiente y con lími
 
 ## Clima
 
-- TerraClimate mensual (2014-2023 como climatología de referencia).
+- TerraClimate mensual (2014-2023 como normal climática operativa).
 
-Se usa para comparar patrones medios de lluvia y temperatura, no para describir el microclima exacto de una parcela.
+Se usa para comparar patrones medios de lluvia, temperatura, evapotranspiración potencial, aridez y sequía estival, no para describir el microclima exacto de una parcela.
+
+AEMET queda como referencia institucional para una fase posterior de validación, calibración y documentación pública, no como fuente principal inicial del cálculo.
 
 ## Cobertura del suelo
 

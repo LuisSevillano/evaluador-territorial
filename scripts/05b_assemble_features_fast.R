@@ -41,7 +41,13 @@ join_feature <- function(data_sf, rds_path, parquet_path, cols_expected) {
 }
 
 mun <- mun |>
-  join_feature(paths$output_feature_climate_rds, paths$output_feature_climate_parquet, c("precip_annual_mm", "temp_winter_mean_c", "temp_summer_mean_c", "temp_jan_mean_c", "temp_jul_mean_c")) |>
+  join_feature(paths$output_feature_climate_rds, paths$output_feature_climate_parquet, c(
+    "precip_annual_mm", "precip_summer_mm", "precip_winter_mm", "precip_seasonality_index",
+    "aridity_index", "summer_aridity_index", "dry_months_count",
+    "moisture_absolute_score", "summer_drought_score", "precip_relative_score",
+    "precip_moisture_score", "water_drops_level", "water_drops_label",
+    "temp_winter_mean_c", "temp_summer_mean_c", "temp_jan_mean_c", "temp_jul_mean_c"
+  )) |>
   join_feature(paths$output_feature_isochrones_rds, paths$output_feature_isochrones_parquet, c("iso_01h30m", "iso_02h00m", "iso_02h30m", "iso_03h30m", "iso_04h00m", "travel_bucket")) |>
   join_feature(paths$output_feature_mfe_rds, paths$output_feature_mfe_parquet, c("forest_nature_quality", "water_pct")) |>
   join_feature(paths$output_feature_relief_rds, paths$output_feature_relief_parquet, c("elev_range_m", "slope_p90", "tri_mean", "relieve_score_raw", "relieve_norm")) |>
