@@ -20,6 +20,18 @@ El bloque combina cobertura forestal, láminas de agua, superficie artificial y 
 
 También incorpora relieve, porque la variabilidad topográfica puede cambiar mucho la experiencia del territorio.
 
+## Espacios naturales protegidos
+
+De forma opcional, el pipeline puede cruzar la rejilla 2x2 km con la capa oficial de Espacios Naturales Protegidos 2025 del MITECO.
+
+Cuando está activado (`PIPELINE_INCLUDE_PROTECTED_AREAS=1`), la ficha del municipio o celda puede mostrar una lista contextual con formato:
+
+- `Parque Regional: nombre del espacio`
+- `Reserva Natural: nombre del espacio`
+- `Parque Nacional: nombre del espacio`
+
+La figura procede del campo oficial `ODESIGNATE` y el nombre del campo `SITE_NAME`. Esta información no crea una métrica nueva, no modifica el bloque de naturaleza y no afecta al `mixed_score`.
+
 ## Acceso fluvial recreativo
 
 Para ríos, el Atlas publica:
