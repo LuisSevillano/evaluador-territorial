@@ -1055,7 +1055,7 @@
 			</div>
 			<ViewControl
 				{viewMode}
-				gridMinZoom={currentZoom}
+				{currentZoom}
 				onChange={(mode) => {
 					onViewModeChange(mode);
 				}}

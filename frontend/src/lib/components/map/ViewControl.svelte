@@ -4,10 +4,11 @@
 	type Props = {
 		viewMode: MapViewMode;
 		gridMinZoom?: number;
+		currentZoom?: number;
 		onChange: (mode: MapViewMode) => void;
 	};
 
-	let { viewMode, gridMinZoom = 6, onChange }: Props = $props();
+	let { viewMode, gridMinZoom = 6, currentZoom = 0, onChange }: Props = $props();
 
 	const modes: { value: Exclude<MapViewMode, 'auto'>; label: string; title: string }[] = [
 		{
@@ -22,7 +23,15 @@
 		}
 	];
 
-	const activeMode = $derived(viewMode === 'grid' ? 'grid' : 'municipality');
+	const activeMode = $derived.by(() => {
+		if (viewMode === 'grid') return 'grid';
+		if (viewMode === 'municipality') return 'municipality';
+		// auto mode: use zoom threshold to determine active
+		const gridVisible = currentZoom >= getGridMinZoom();
+		return gridVisible ? 'grid' : 'municipality';
+	});
+
+	const getGridMinZoom = () => 9;
 </script>
 
 <div class="view-control" role="group" aria-label="Modo de vista del mapa">
