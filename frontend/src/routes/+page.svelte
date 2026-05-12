@@ -28,6 +28,7 @@ import MobileSheetTabs from '$lib/components/mobile/MobileSheetTabs.svelte';
 		type TravelBucket
 	} from '$lib/state/filters';
 	import {
+		filterVisibleLayerOrder,
 		isLayerVisible,
 		layerLabels,
 		type LayerVisibilityState
@@ -124,7 +125,7 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 	const showIgnRivers = $derived(layersStore.state.showIgnRivers);
 	const showIgnReservoirs = $derived(layersStore.state.showIgnReservoirs);
 	const showForestLayer = $derived(layersStore.state.showForestLayer);
-	const showLandUseLayer = $derived(layersStore.state.showLandUseLayer);
+	const showLandUseLayer = false;
 	const showVegetationLayer = $derived(layersStore.state.showVegetationLayer);
 	const layerOrder = $derived(layersStore.state.layerOrder);
 	const selectionStore = createSelectionStore();
@@ -286,7 +287,7 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 	};
 
 	const layerItems = $derived(
-		layerOrder.map((layerKey) => ({
+		filterVisibleLayerOrder(layerOrder).map((layerKey) => ({
 			key: layerKey,
 			label: layerLabels[layerKey] ?? layerKey,
 			visible: isLayerVisible(layerKey, layerVisibility())
@@ -296,7 +297,6 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 	const activeLayerCount = $derived(
 		(showMunicipioPolygons ? 1 : 0) +
 			(showIsochronesLayer ? 1 : 0) +
-			(showLandUseLayer ? 1 : 0) +
 			(showVegetationLayer ? 1 : 0) +
 			(showForestLayer ? 1 : 0) +
 			(showIgnReservoirs ? 1 : 0) +
@@ -404,7 +404,7 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 	};
 
 	const handleLayerOrderChange = (nextOrder: string[]) => {
-		layersStore.state.layerOrder = nextOrder;
+		layersStore.state.layerOrder = filterVisibleLayerOrder(nextOrder);
 	};
 
 	const openWelcomeModal = () => {

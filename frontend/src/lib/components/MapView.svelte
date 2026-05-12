@@ -135,7 +135,7 @@
 		showForestLayer = false,
 		showLandUseLayer = false,
 		showVegetationLayer = false,
-		layerOrder = ['municipios', 'isochrones', 'landuse', 'reservoirs', 'rivers'],
+		layerOrder = ['municipios', 'isochrones', 'vegetation', 'forest', 'reservoirs', 'rivers'],
 		visibleMunicipioIds = [],
 		provinceFilter = 'Todas',
 		maxTravelBucket = null,

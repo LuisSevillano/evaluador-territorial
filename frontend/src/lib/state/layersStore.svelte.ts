@@ -1,3 +1,5 @@
+import { visibleLayerKeys } from '$lib/state/layers';
+
 export const createLayersStore = () => {
 	const state = $state({
 		showMunicipioPolygons: true,
@@ -10,7 +12,7 @@ export const createLayersStore = () => {
 		showForestLayer: false,
 		showLandUseLayer: false,
 		showVegetationLayer: false,
-		layerOrder: ['municipios', 'isochrones', 'landuse', 'reservoirs', 'rivers'] as string[]
+		layerOrder: [...visibleLayerKeys] as string[]
 	});
 
 	return { state };

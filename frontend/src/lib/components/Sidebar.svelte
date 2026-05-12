@@ -101,7 +101,7 @@
 		maxThermalAmplitude = 21,
 		maxThermalAmplitudeLimit = 21,
 		minCompositeScore = 0,
-		layerOrder = ['municipios', 'isochrones', 'landuse', 'reservoirs', 'rivers'],
+		layerOrder = ['municipios', 'isochrones', 'vegetation', 'forest', 'reservoirs', 'rivers'],
 		activeFiltersSummary = [],
 		shortlistedIds = [],
 		shortlistMunicipios = [],
@@ -167,7 +167,6 @@
 	const layerLabels: Record<string, string> = {
 		municipios: 'Municipios',
 		isochrones: 'Isocronas (overlay)',
-		// landuse: 'Usos del suelo',
 		vegetation: 'Cobertura vegetal',
 		forest: 'Masa forestal',
 		reservoirs: 'Embalses IGN',
@@ -196,7 +195,7 @@
 	};
 
 	const layerItems = $derived(
-		layerOrder.map((layerKey) => ({
+		layerOrder.filter((layerKey) => layerKey !== 'landuse').map((layerKey) => ({
 			key: layerKey,
 			label: layerLabels[layerKey] ?? layerKey,
 			visible: isLayerVisible(layerKey)
@@ -275,53 +274,6 @@
 		display: grid;
 		gap: 0.85rem;
 		box-sizing: border-box;
-	}
-	.sidebar > * {
-		min-width: 0;
-	}
-	.hero {
-		padding: var(--space-panel-lg);
-		border: 0;
-		border-radius: var(--radius-panel);
-		background: var(--panel-bg);
-		box-shadow: var(--shadow-soft);
-	}
-	.hero-stats {
-		padding: 0.75rem 0.85rem;
-	}
-	.kicker {
-		margin: 0;
-		font-size: 0.72rem;
-		letter-spacing: 0.14em;
-		text-transform: uppercase;
-		color: var(--text-secondary);
-	}
-	.stats {
-		display: grid;
-		grid-template-columns: repeat(2, minmax(0, 1fr));
-		gap: 0.55rem;
-		margin-top: 0.45rem;
-	}
-	.stats div {
-		min-width: 0;
-		padding: 0.35rem 0;
-		border-radius: 0;
-		background: transparent;
-		border-top: 1px solid var(--divider-border);
-	}
-	.stats span {
-		display: block;
-		font-size: 0.69rem;
-		text-transform: uppercase;
-		letter-spacing: 0.08em;
-		color: var(--text-muted);
-	}
-	.stats strong {
-		display: block;
-		font-family: 'Fraunces', serif;
-		font-size: clamp(1rem, 2.3vw, 1.2rem);
-		line-height: 1.06;
-		overflow-wrap: anywhere;
 	}
 	@media (max-width: 900px) {
 		.sidebar {
