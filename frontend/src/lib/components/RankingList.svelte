@@ -1,6 +1,10 @@
 <script lang="ts">
 	import type { Municipio } from '$lib/types/municipio';
-	import { classifyMixedScore, labelForScoreBand, normalizeScoreThresholds } from '$lib/components/map/scoreClassification';
+	import {
+		classifyMixedScore,
+		labelForScoreBand,
+		normalizeScoreThresholds
+	} from '$lib/components/map/scoreClassification';
 	import { formatScorePercent } from '$lib/utils/numberFormat';
 
 	type Props = {
@@ -11,7 +15,13 @@
 		scoreThresholds?: number[];
 	};
 
-	let { rows = [], limit = 25, onSelect = () => undefined, compact = false, scoreThresholds = [] }: Props = $props();
+	let {
+		rows = [],
+		limit = 25,
+		onSelect = () => undefined,
+		compact = false,
+		scoreThresholds = []
+	}: Props = $props();
 	const normalizedThresholds = $derived(normalizeScoreThresholds(scoreThresholds));
 	const scoreBadge = (score?: number) => {
 		if (!Number.isFinite(score)) return '-';
@@ -40,6 +50,7 @@
 	.rank-row {
 		display: grid;
 		grid-template-columns: auto 1fr auto;
+		align-items: baseline;
 		gap: 0.12rem 0.62rem;
 		align-items: center;
 		text-align: left;
@@ -49,7 +60,9 @@
 		background: transparent;
 		padding: 0.52rem 0.18rem;
 		cursor: pointer;
-		transition: background-color 140ms ease, color 140ms ease;
+		transition:
+			background-color 140ms ease,
+			color 140ms ease;
 	}
 	.rank-row:hover {
 		background: var(--hover-bg);
