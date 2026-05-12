@@ -24,6 +24,8 @@ import {
 	GRID_FORCE_MIN_ZOOM
 } from './mapConfig';
 
+const roundedLineLayout = { 'line-cap': 'round', 'line-join': 'round' } as const;
+
 export const addIsochroneLayers = (map: maplibregl.Map) => {
 	try {
 		if (!map.getSource(isochronesPmtilesSourceId)) {
@@ -45,6 +47,7 @@ export const addIsochroneLayers = (map: maplibregl.Map) => {
 					source: isochronesPmtilesSourceId,
 					'source-layer': isochronesSourceLayerName,
 					filter: ['==', ['get', 'iso_key'], isochrone.key],
+					layout: roundedLineLayout,
 					paint: { 'line-color': isochrone.color, 'line-width': ['interpolate', ['linear'], ['zoom'], 5, 1.2, 8, 2.4, 10, 3.6], 'line-opacity': 0.9 }
 				});
 			}
@@ -70,23 +73,23 @@ export const addIgnHydroWmsLayers = (map: maplibregl.Map) => {
 export const addProvinciasBoundaries = (map: maplibregl.Map) => {
 	try {
 		map.addSource(provinciasPmtilesSourceId, { type: 'vector', url: 'pmtiles:///tiles/provincias.pmtiles' });
-		map.addLayer({ id: provinciasLineLayerId, type: 'line', source: provinciasPmtilesSourceId, 'source-layer': provinciasSourceLayerName, paint: { 'line-color': '#ffffff', 'line-width': ['interpolate', ['linear'], ['zoom'], 4, 1, 7, 1.5], 'line-opacity': 1 } });
+		map.addLayer({ id: provinciasLineLayerId, type: 'line', source: provinciasPmtilesSourceId, 'source-layer': provinciasSourceLayerName, layout: roundedLineLayout, paint: { 'line-color': '#ffffff', 'line-width': ['interpolate', ['linear'], ['zoom'], 4, 1, 7, 1.5], 'line-opacity': 1 } });
 	} catch (_error) {}
 };
 
 export const addCcaaBoundaries = (map: maplibregl.Map) => {
 	try {
 		map.addSource(ccaaPmtilesSourceId, { type: 'vector', url: 'pmtiles:///tiles/ccaa.pmtiles' });
-		map.addLayer({ id: ccaaLineLayerId, type: 'line', source: ccaaPmtilesSourceId, 'source-layer': ccaaSourceLayerName, paint: { 'line-color': '#000000', 'line-width': ['interpolate', ['linear'], ['zoom'], 4, 1, 8, 2], 'line-opacity': 1 } });
+		map.addLayer({ id: ccaaLineLayerId, type: 'line', source: ccaaPmtilesSourceId, 'source-layer': ccaaSourceLayerName, layout: roundedLineLayout, paint: { 'line-color': '#000000', 'line-width': ['interpolate', ['linear'], ['zoom'], 4, 1, 8, 2], 'line-opacity': 1 } });
 	} catch (_error) {}
 };
 
 export const addGridPmtiles = (map: maplibregl.Map, activeGridPmtilesPath: string, gridFillColorExpression: any) => {
 	if (map.getSource(gridPmtilesSourceId)) return;
 	map.addSource(gridPmtilesSourceId, { type: 'vector', url: `pmtiles://${activeGridPmtilesPath}`, promoteId: 'cell_id', minzoom: GRID_FORCE_MIN_ZOOM });
-	map.addLayer({ id: gridLineLayerId, type: 'line', source: gridPmtilesSourceId, 'source-layer': 'grid', paint: { 'line-color': '#a1a1aa', 'line-width': ['interpolate', ['linear'], ['zoom'], 7, 0.18, 14, 1.2], 'line-opacity': ['interpolate', ['linear'], ['zoom'], 7, 0.06, 12, 0.42] } });
+	map.addLayer({ id: gridLineLayerId, type: 'line', source: gridPmtilesSourceId, 'source-layer': 'grid', layout: roundedLineLayout, paint: { 'line-color': '#a1a1aa', 'line-width': ['interpolate', ['linear'], ['zoom'], 7, 0.18, 14, 1.2], 'line-opacity': ['interpolate', ['linear'], ['zoom'], 7, 0.06, 12, 0.42] } });
 	map.addLayer({ id: gridFillLayerId, type: 'fill', source: gridPmtilesSourceId, 'source-layer': 'grid', paint: { 'fill-color': gridFillColorExpression, 'fill-opacity': 0.62 } });
-	map.addLayer({ id: gridHoverLineLayerId, type: 'line', source: gridPmtilesSourceId, 'source-layer': 'grid', paint: { 'line-color': '#ffffff', 'line-width': ['interpolate', ['linear'], ['zoom'], 4, 2.2, 8, 4.2, 10, 5.4], 'line-opacity': ['case', ['boolean', ['feature-state', 'hover'], false], 1, 0] } });
+	map.addLayer({ id: gridHoverLineLayerId, type: 'line', source: gridPmtilesSourceId, 'source-layer': 'grid', layout: roundedLineLayout, paint: { 'line-color': '#ffffff', 'line-width': ['interpolate', ['linear'], ['zoom'], 4, 2.2, 8, 4.2, 10, 5.4], 'line-opacity': ['case', ['boolean', ['feature-state', 'hover'], false], 1, 0] } });
 };
 
 export const ensureLandUseLayer = (map: maplibregl.Map) => {

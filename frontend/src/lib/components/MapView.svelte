@@ -88,6 +88,7 @@
 	import { type TravelBucketFilter } from '$lib/state/filters';
 
 	type CoordinateSearchRequest = { id: number; lat: number; lon: number } | null;
+	const roundedLineLayout = { 'line-cap': 'round', 'line-join': 'round' } as const;
 
 	type Props = {
 		municipios?: Municipio[];
@@ -283,11 +284,16 @@
 			return [
 				'match',
 				['get', 'isochrone_bucket'],
-				'<=1h30', travelBucketColors[0],
-				'<=2h00', travelBucketColors[1],
-				'<=2h30', travelBucketColors[2],
-				'<=3h30', travelBucketColors[3],
-				'<=4h00', travelBucketColors[4],
+				'<=1h30',
+				travelBucketColors[0],
+				'<=2h00',
+				travelBucketColors[1],
+				'<=2h30',
+				travelBucketColors[2],
+				'<=3h30',
+				travelBucketColors[3],
+				'<=4h00',
+				travelBucketColors[4],
 				travelBucketColors[5]
 			] as any;
 		}
@@ -300,14 +306,12 @@
 		map.setPaintProperty(gridFillLayerId, 'fill-color', gridFillColorExpression);
 	};
 
-
 	const refreshMunicipiosSource = () => {
 		if (!map) return;
 		const source = map.getSource(municipiosSourceId) as maplibregl.GeoJSONSource | undefined;
 		if (!source) return;
 		source.setData(toFeatureCollection(municipios) as any);
 	};
-
 
 	const findMunicipioByFeatureId = (rawId: string | number | null | undefined) => {
 		if (rawId === null || rawId === undefined) return null;
@@ -342,7 +346,9 @@
 		setLayerVisibility(map, municipiosQueryLayerId, false);
 		const feature = hits[0];
 		if (!feature) return null;
-		return findMunicipioByFeatureId(feature.id ?? feature.properties?.id ?? feature.properties?.codigo);
+		return findMunicipioByFeatureId(
+			feature.id ?? feature.properties?.id ?? feature.properties?.codigo
+		);
 	};
 
 	const findNearestMunicipioCentroid = (lon: number, lat: number): Municipio | null => {
@@ -405,6 +411,7 @@
 			source,
 			minzoom: municipiosMinVisibleZoom,
 			...sourceLayerConfig,
+			layout: roundedLineLayout,
 			paint: {
 				'line-color': '#ffffff',
 				'line-width': ['interpolate', ['linear'], ['zoom'], 4, 2.2, 8, 4.2, 10, 5.4],
@@ -418,6 +425,7 @@
 			source,
 			minzoom: municipiosMinVisibleZoom,
 			...sourceLayerConfig,
+			layout: roundedLineLayout,
 			paint: {
 				'line-color': '#ffffff',
 				'line-width': ['interpolate', ['linear'], ['zoom'], 4, 2.4, 9, 4.6],
@@ -564,6 +572,7 @@
 				source: municipiosPmtilesSourceId,
 				'source-layer': sourceLayerName,
 				minzoom: municipiosMinVisibleZoom,
+				layout: roundedLineLayout,
 				paint: {
 					'line-color': '#113a46',
 					'line-width': ['interpolate', ['linear'], ['zoom'], 4, 0.28, 9, 0.95],
@@ -686,7 +695,6 @@
 		applyGridFillPaint();
 	};
 
-
 	const resolveGridPmtilesPath = () => {
 		const fromFilter = provinceFilter && provinceFilter !== 'Todas' ? provinceFilter.trim() : null;
 		const province = fromFilter;
@@ -714,7 +722,6 @@
 			applyLayerOrdering();
 		}
 	};
-
 
 	const applyGridFilter = () => {
 		if (!map) return;
