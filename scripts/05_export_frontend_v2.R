@@ -60,6 +60,13 @@ grid_agg <- readRDS(paths$output_feature_grid_agg_rds) |>
 mun <- mun |>
   left_join(grid_agg, by = "codigo")
 
+if (file.exists(paths$output_feature_protected_areas_municipal_rds)) {
+  protected_areas <- readRDS(paths$output_feature_protected_areas_municipal_rds) |>
+    select(any_of(c("codigo", "protected_areas", "protected_areas_source")))
+  mun <- mun |>
+    left_join(protected_areas, by = "codigo")
+}
+
 if (file.exists(paths$output_provincias_geojson)) {
   provincias_bounds <- st_read(paths$output_provincias_geojson, quiet = TRUE) |>
     st_transform(4326)
@@ -270,7 +277,7 @@ for (col_name in c(
   "renfe_tipo_servicio", "renfe_madrid_connection_type",
   "renfe_madrid_stop_id", "renfe_madrid_stop_name",
   "renfe_madrid_stop_municipality", "renfe_madrid_stop_province",
-  "travel_bucket", "transport_status"
+  "travel_bucket", "transport_status", "protected_areas", "protected_areas_source"
 )) {
   mun <- ensure_chr_col(mun, col_name)
 }
@@ -484,6 +491,8 @@ mun_v2 <- mun |>
     river_candidate_count_10km,
     river_access_source_type,
     river_method_version,
+    protected_areas,
+    protected_areas_source,
     grid_pct_cells_bathing_20km,
     forest_norm,
     forest_nature_quality_norm,
@@ -548,7 +557,13 @@ compact_dictionary <- list(
   codeToKey = as.list(stats::setNames(names(mun_tab), compact_codes))
 )
 compact_rows <- lapply(seq_len(nrow(mun_tab)), function(i) {
-  unname(as.list(mun_tab[i, , drop = FALSE]))
+  row <- as.list(mun_tab[i, , drop = FALSE])
+  row <- lapply(row, function(v) {
+    if (is.na(v)) return(NULL)
+    if (identical(v, "NA")) return(NULL)
+    v
+  })
+  unname(row)
 })
 compact_payload <- list(version = 1, fields = compact_codes, rows = compact_rows)
 
