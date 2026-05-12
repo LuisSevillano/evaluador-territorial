@@ -170,7 +170,7 @@
 	let initialBoundsApplied = $state(false);
 	let lastAutoFitSignature = $state('');
 
-	const getGridMinZoom = () => (isMobileView ? 7.2 : 6);
+	const getGridMinZoom = () => 9;
 	let currentZoom = $state(0);
 	let activeGridPmtilesPath = $state('/tiles/grid/grid_norte.pmtiles');
 	const municipiosQueryLayerId = 'municipios-polygons-query-layer';
@@ -208,7 +208,7 @@
 		setLayerVisibility(map, municipiosPolygonsFillLayerId, showMunicipios);
 		setLayerVisibility(map, municipiosPolygonsLineLayerId, showMunicipios);
 		setLayerVisibility(map, gridFillLayerId, showGrid);
-		setLayerVisibility(map, gridLineLayerId, showGrid || v.municipalityLineVisible);
+		setLayerVisibility(map, gridLineLayerId, showGrid);
 		setLayerVisibility(map, gridHoverLineLayerId, showGrid);
 	};
 
@@ -803,6 +803,8 @@
 				showMunicipioPolygons || !!selectedMunicipio
 			);
 			applyPolygonFilter();
+			applyGridFilter();
+			applyVisibilityBasedOnMode();
 			applyLayerOrdering();
 			applyMaxBoundsToMunicipios();
 
@@ -833,6 +835,12 @@
 		map.on('zoomend', () => {
 			currentZoom = map.getZoom();
 			writeHashView(map);
+		});
+
+		map.on('zoom', () => {
+			currentZoom = map.getZoom();
+			applyVisibilityBasedOnMode();
+			applyGridFilter();
 		});
 
 		map.on('moveend', () => {

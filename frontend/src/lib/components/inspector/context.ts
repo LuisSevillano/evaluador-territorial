@@ -1,5 +1,6 @@
 import type { Municipio, MunicipioClimateMonthly } from '$lib/types/municipio';
 import { formatTravelBucketLabel } from '$lib/state/filters';
+import { scoreForMunicipio } from '$lib/state/scoring';
 
 export type ScoreWeights = { climate: number; access: number; nature: number };
 
@@ -59,14 +60,7 @@ const scoreBlocks = (municipio: Municipio) => ({
 	naturaleza: municipio.nature_block_score ?? municipio.naturality_norm ?? 0.5
 });
 
-const scoreFor = (municipio: Municipio, weights: ScoreWeights) => {
-	const blocks = scoreBlocks(municipio);
-	return (
-		weights.climate * blocks.clima +
-		weights.access * blocks.accesibilidad +
-		weights.nature * blocks.naturaleza
-	);
-};
+const scoreFor = (municipio: Municipio, weights: ScoreWeights) => scoreForMunicipio(municipio, weights);
 
 const bucketLabel = (bucket: string) => {
 	if (bucket === '<=1h30' || bucket === '<=2h00') return 'alta';
