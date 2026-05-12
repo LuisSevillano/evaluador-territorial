@@ -176,6 +176,7 @@
 	const municipiosQueryLayerId = 'municipios-polygons-query-layer';
 	let lastProcessedCoordinateSearchRequestId = $state<number | null>(null);
 	let skipNextSelectedMunicipioFlyTo = $state(false);
+	const mobileSelectedMunicipioLatOffset = -0.4;
 
 	$effect(() => {
 		if (!map || !mapReady || viewMode !== 'grid') return;
@@ -959,7 +960,8 @@
 		}
 		if (!Number.isFinite(selectedMunicipio.lon) || !Number.isFinite(selectedMunicipio.lat)) return;
 		const zoom = isMobileView ? 7 : 9;
-		map.flyTo({ center: [selectedMunicipio.lon, selectedMunicipio.lat], zoom, speed: 0.8 });
+		const lat = selectedMunicipio.lat + (isMobileView ? mobileSelectedMunicipioLatOffset : 0);
+		map.flyTo({ center: [selectedMunicipio.lon, lat], zoom, speed: 0.8 });
 	});
 
 	$effect(() => {
