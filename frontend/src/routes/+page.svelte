@@ -377,6 +377,13 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 		uiStore.state.isBottomSheetOpen = panel.open;
 	};
 
+	const clearSelectionForFilterChange = () => {
+		selectionStore.clearSelection();
+		const panel = panelStateOnClearSelection(activeSheetTab, isMobileView);
+		uiStore.state.activeSheetTab = panel.tab;
+		uiStore.state.isBottomSheetOpen = panel.open;
+	};
+
 	const handleSelectSheetTab = (tab: 'sel' | 'filtr' | 'capas' | 'rank' | 'meta') => {
 		const panel = panelStateOnTabClick(tab);
 		uiStore.state.activeSheetTab = panel.tab;
@@ -873,20 +880,20 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 				onToggleForestLayer={(value) => (layersStore.state.showForestLayer = value)}
 				onToggleLandUseLayer={(value) => (layersStore.state.showLandUseLayer = value)}
 				onToggleVegetationLayer={(value) => (layersStore.state.showVegetationLayer = value)}
-				onProvinceFilterChange={(value) => (filtersStore.state.provinceFilter = value)}
-				onMaxTravelBucketChange={(value) => (filtersStore.state.maxTravelBucket = value)}
-				onMinPrecipAnnualChange={(value) => (filtersStore.state.minPrecipAnnual = value)}
-				onMinWinterTempChange={(value) => (filtersStore.state.minWinterTemp = value)}
-				onMaxSummerTempChange={(value) => (filtersStore.state.maxSummerTemp = value)}
-				onMaxThermalAmplitudeChange={(value) => (filtersStore.state.maxThermalAmplitude = value)}
-				onMinCompositeScoreChange={(value: number) => (filtersStore.state.minCompositeScore = value)}
-				onClearFilters={handleClearFilters}
+				onProvinceFilterChange={(value) => { clearSelectionForFilterChange(); filtersStore.state.provinceFilter = value; }}
+				onMaxTravelBucketChange={(value) => { clearSelectionForFilterChange(); filtersStore.state.maxTravelBucket = value; }}
+				onMinPrecipAnnualChange={(value) => { clearSelectionForFilterChange(); filtersStore.state.minPrecipAnnual = value; }}
+				onMinWinterTempChange={(value) => { clearSelectionForFilterChange(); filtersStore.state.minWinterTemp = value; }}
+				onMaxSummerTempChange={(value) => { clearSelectionForFilterChange(); filtersStore.state.maxSummerTemp = value; }}
+				onMaxThermalAmplitudeChange={(value) => { clearSelectionForFilterChange(); filtersStore.state.maxThermalAmplitude = value; }}
+				onMinCompositeScoreChange={(value: number) => { clearSelectionForFilterChange(); filtersStore.state.minCompositeScore = value; }}
+				onClearFilters={() => { clearSelectionForFilterChange(); handleClearFilters(); }}
 				onLayerOrderChange={handleLayerOrderChange}
 				onToggleShortlist={handleToggleShortlist}
-				onClimateWeightChange={handleClimateWeightChange}
-				onAccessWeightChange={handleAccessWeightChange}
-				onNatureWeightChange={handleNatureWeightChange}
-				onPresetWeights={handlePresetWeights}
+				onClimateWeightChange={(value) => { clearSelectionForFilterChange(); handleClimateWeightChange(value); }}
+				onAccessWeightChange={(value) => { clearSelectionForFilterChange(); handleAccessWeightChange(value); }}
+				onNatureWeightChange={(value) => { clearSelectionForFilterChange(); handleNatureWeightChange(value); }}
+				onPresetWeights={(preset) => { clearSelectionForFilterChange(); handlePresetWeights(preset); }}
 			/>
 		</div>
 
@@ -1038,18 +1045,18 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 							onQueryChange={(value) => (filtersStore.state.query = value)}
 							onSelectMunicipio={handleSelectMunicipio}
 							onCoordinateSearch={handleCoordinateSearch}
-							onProvinceFilterChange={(value) => (filtersStore.state.provinceFilter = value)}
-								onMaxTravelBucketChange={(value) => (filtersStore.state.maxTravelBucket = value)}
-								onMinPrecipAnnualChange={(value) => (filtersStore.state.minPrecipAnnual = value)}
-								onMinWinterTempChange={(value) => (filtersStore.state.minWinterTemp = value)}
-								onMaxSummerTempChange={(value) => (filtersStore.state.maxSummerTemp = value)}
-								onMaxThermalAmplitudeChange={(value) => (filtersStore.state.maxThermalAmplitude = value)}
-								onMinCompositeScoreChange={(value) => (filtersStore.state.minCompositeScore = value)}
-								onPresetWeights={handlePresetWeights}
-								onClimateWeightChange={handleClimateWeightChange}
-								onAccessWeightChange={handleAccessWeightChange}
-								onNatureWeightChange={handleNatureWeightChange}
-								onClearFilters={handleClearFilters}
+							onProvinceFilterChange={(value) => { clearSelectionForFilterChange(); filtersStore.state.provinceFilter = value; }}
+								onMaxTravelBucketChange={(value) => { clearSelectionForFilterChange(); filtersStore.state.maxTravelBucket = value; }}
+								onMinPrecipAnnualChange={(value) => { clearSelectionForFilterChange(); filtersStore.state.minPrecipAnnual = value; }}
+								onMinWinterTempChange={(value) => { clearSelectionForFilterChange(); filtersStore.state.minWinterTemp = value; }}
+								onMaxSummerTempChange={(value) => { clearSelectionForFilterChange(); filtersStore.state.maxSummerTemp = value; }}
+								onMaxThermalAmplitudeChange={(value) => { clearSelectionForFilterChange(); filtersStore.state.maxThermalAmplitude = value; }}
+								onMinCompositeScoreChange={(value) => { clearSelectionForFilterChange(); filtersStore.state.minCompositeScore = value; }}
+								onPresetWeights={(preset) => { clearSelectionForFilterChange(); handlePresetWeights(preset); }}
+								onClimateWeightChange={(value) => { clearSelectionForFilterChange(); handleClimateWeightChange(value); }}
+								onAccessWeightChange={(value) => { clearSelectionForFilterChange(); handleAccessWeightChange(value); }}
+								onNatureWeightChange={(value) => { clearSelectionForFilterChange(); handleNatureWeightChange(value); }}
+								onClearFilters={() => { clearSelectionForFilterChange(); handleClearFilters(); }}
 								onGoToRank={() => handleSelectSheetTab('rank')}
 							/>
 						{:else if activeSheetTab === 'capas'}
