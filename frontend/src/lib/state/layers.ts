@@ -1,13 +1,11 @@
 export const layerLabels: Record<string, string> = {
 	municipios: 'Municipios',
 	isochrones: 'Isocronas (lineas)',
-	vegetation: 'Cobertura vegetal',
-	forest: 'Masa forestal',
 	reservoirs: 'Embalses IGN',
 	rivers: 'Rios IGN'
 };
 
-export const visibleLayerKeys = ['municipios', 'isochrones', 'vegetation', 'forest', 'reservoirs', 'rivers'] as const;
+export const visibleLayerKeys = ['municipios', 'isochrones', 'reservoirs', 'rivers'] as const;
 
 export const filterVisibleLayerOrder = (layerOrder: string[]) =>
 	layerOrder.filter((layerKey) => (visibleLayerKeys as readonly string[]).includes(layerKey));

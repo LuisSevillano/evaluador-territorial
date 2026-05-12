@@ -101,7 +101,7 @@
 		maxThermalAmplitude = 21,
 		maxThermalAmplitudeLimit = 21,
 		minCompositeScore = 0,
-		layerOrder = ['municipios', 'isochrones', 'vegetation', 'forest', 'reservoirs', 'rivers'],
+		layerOrder = ['municipios', 'isochrones', 'reservoirs', 'rivers'],
 		activeFiltersSummary = [],
 		shortlistedIds = [],
 		shortlistMunicipios = [],
@@ -167,8 +167,6 @@
 	const layerLabels: Record<string, string> = {
 		municipios: 'Municipios',
 		isochrones: 'Isocronas (overlay)',
-		vegetation: 'Cobertura vegetal',
-		forest: 'Masa forestal',
 		reservoirs: 'Embalses IGN',
 		rivers: 'Rios IGN'
 	};
