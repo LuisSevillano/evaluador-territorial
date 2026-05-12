@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { Municipio, MunicipioClimateMonthly } from '$lib/types/municipio';
+	import type { Municipio, MunicipioClimateMonthly, ProtectedAreaRef } from '$lib/types/municipio';
 	import ClimateTempLineChart from '$lib/components/charts/ClimateTempLineChart.svelte';
 	import ClimatePrecipBarsChart from '$lib/components/charts/ClimatePrecipBarsChart.svelte';
 	import WaterDropIcon from '$lib/components/ui/WaterDropIcon.svelte';
@@ -102,7 +102,7 @@
 			? 'Tren directo a Madrid'
 			: renfeStatus === 'station_nearby'
 				? 'Estación de tren cercana'
-				: `Estación a ${formatSmartNumber(renfeDist ?? 0)} km`
+				: 'Sin conexión clara con Madrid'
 	);
 	const renfeDistLabel = $derived(
 		Number.isFinite(renfeDist) ? formatSmartNumber(renfeDist as number) : '-'
@@ -121,6 +121,39 @@
 		if (stopProv && stopProv !== muniProv) return `, ${stopProv}`;
 		return '';
 	});
+	const safeParseProtectedAreas = (value: string): ProtectedAreaRef[] => {
+		try {
+			const parsed = JSON.parse(value) as unknown;
+			if (!Array.isArray(parsed)) return [];
+			return parsed.flatMap((item) => {
+				if (!item || typeof item !== 'object') return [];
+				const area = item as Record<string, unknown>;
+				const designation = typeof area.designation === 'string' ? area.designation : '';
+				const name = typeof area.name === 'string' ? area.name : '';
+				return designation && name ? [{ designation, name }] : [];
+			});
+		} catch (_error) {
+			return [];
+		}
+	};
+	const protectedAreas = $derived.by((): ProtectedAreaRef[] => {
+		const raw = selectedMunicipio?.protected_areas;
+		if (!raw) return [];
+		const parsed = typeof raw === 'string' ? safeParseProtectedAreas(raw) : raw;
+		return parsed
+			.filter((area) => area?.designation && area?.name)
+			.filter(
+				(area, index, rows) =>
+					rows.findIndex(
+						(candidate) =>
+							candidate.designation === area.designation && candidate.name === area.name
+					) === index
+			);
+	});
+	const visibleProtectedAreas = $derived(protectedAreas.slice(0, 4));
+	const hiddenProtectedAreasCount = $derived(
+		Math.max(0, protectedAreas.length - visibleProtectedAreas.length)
+	);
 
 	const context = $derived.by(() => {
 		return buildMunicipioContext({
@@ -199,31 +232,42 @@
 						><WaterDropIcon count={waterDropCount} size={10} color={dropColor} />
 						{selectedMunicipio.water_drops_label ?? '-'}</strong
 					>
-					<small>{formatMetricValue(selectedMunicipio.precip_annual_mm)} mm ·
-						{formatMetricValue(selectedMunicipio.precip_summer_mm)} mm verano ·
-						ventaja {formatScoreMetric(selectedMunicipio.precip_relative_score)}</small>
+					<small
+						>{formatMetricValue(selectedMunicipio.precip_annual_mm)} mm ·
+						{formatMetricValue(selectedMunicipio.precip_summer_mm)} mm verano · ventaja {formatScoreMetric(
+							selectedMunicipio.precip_relative_score
+						)}</small
+					>
 				</div>
 				<div class="metric">
 					<span>Temperatura</span><strong
 						>{formatMetricValue(selectedMunicipio.temp_winter_mean_c)} /
 						{formatMetricValue(selectedMunicipio.temp_summer_mean_c)} °C</strong
 					>
-					<small>Enero: {formatMetricValue(selectedMunicipio.temp_jan_mean_c)} / Julio: {formatMetricValue(
+					<small
+						>Enero: {formatMetricValue(selectedMunicipio.temp_jan_mean_c)} / Julio: {formatMetricValue(
 							selectedMunicipio.temp_jul_mean_c
-						)} · Amplitud {formatMetricValue(context?.tempAmplitude)} °C</small>
+						)} · Amplitud {formatMetricValue(context?.tempAmplitude)} °C</small
+					>
 				</div>
 				<div class="metric">
-					<span>Cobertura forestal</span><strong>{formatPercentMetric(selectedMunicipio.forest_pct)}</strong>
+					<span>Cobertura forestal</span><strong
+						>{formatPercentMetric(selectedMunicipio.forest_pct)}</strong
+					>
 				</div>
 				<div class="metric">
 					<span>Agua y ríos</span><strong
-						>{formatMetricValue(selectedMunicipio.river_nearest_distance_km)} km al río · {selectedMunicipio.river_access_class ?? '-'}</strong
+						>{formatMetricValue(selectedMunicipio.river_nearest_distance_km)} km al río · {selectedMunicipio.river_access_class ??
+							'-'}</strong
 					>
-					<small>{selectedMunicipio.river_nearest_name ?? 'Río más cercano'} · láminas de agua {formatPercentMetric(
+					<small
+						>{selectedMunicipio.river_nearest_name ?? 'Río más cercano'} · láminas de agua {formatPercentMetric(
 							selectedMunicipio.water_pct
-						)}</small>
+						)}</small
+					>
 				</div>
 			</div>
+
 			<div class="transport-block">
 				<div class="transport-header">TRANSPORTE</div>
 				<div class={`transport-content ${renfeTone}`}>
@@ -235,7 +279,7 @@
 							<span class="transport-score">{formatScorePercent(renfeScore ?? 0)}%</span>
 						{/if}
 					</div>
-					{#if renfeStationName !== '-'}
+					{#if renfeStatus !== 'no_station' && renfeStationName !== '-'}
 						<div class="transport-info">
 							<span class="transport-station">{renfeStationName}{renfeStationLoc}</span>
 							<span class="transport-dist">
@@ -248,6 +292,19 @@
 					{/if}
 				</div>
 			</div>
+			{#if protectedAreas.length > 0}
+				<div class="protected-block">
+					<div class="protected-header">ZONAS PROTEGIDAS</div>
+					<ul class="protected-list">
+						{#each visibleProtectedAreas as area}
+							<li><strong>{area.designation}:</strong> {area.name}</li>
+						{/each}
+					</ul>
+					{#if hiddenProtectedAreasCount > 0}
+						<div class="protected-more">+ {hiddenProtectedAreasCount} espacios más</div>
+					{/if}
+				</div>
+			{/if}
 			<div class="charts">
 				<div class="chart-card">
 					<p>Temperatura mensual (media + rango)</p>
@@ -465,6 +522,42 @@
 	}
 	.transport-block {
 		margin-top: 0.35rem;
+	}
+	.protected-block {
+		margin-top: 0.5rem;
+		padding: 0.45rem 0.55rem;
+		border: 1px solid rgba(34, 92, 63, 0.2);
+		border-radius: 9px;
+		background: linear-gradient(135deg, rgba(236, 252, 241, 0.72), rgba(255, 255, 255, 0.58));
+	}
+	.protected-header {
+		font-size: 0.58rem;
+		font-weight: 700;
+		letter-spacing: 0.1em;
+		text-transform: uppercase;
+		color: #2f6046;
+		margin-bottom: 0.25rem;
+	}
+	.protected-list {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		display: grid;
+		gap: 0.2rem;
+	}
+	.protected-list li {
+		font-size: 0.72rem;
+		line-height: 1.28;
+		color: #244038;
+	}
+	.protected-list strong {
+		color: #1d5b3d;
+	}
+	.protected-more {
+		margin-top: 0.25rem;
+		font-size: 0.66rem;
+		font-weight: 700;
+		color: #52705f;
 	}
 	.transport-header {
 		font-size: 0.58rem;

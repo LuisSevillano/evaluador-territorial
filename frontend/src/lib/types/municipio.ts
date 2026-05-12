@@ -1,3 +1,8 @@
+export type ProtectedAreaRef = {
+	designation: string;
+	name: string;
+};
+
 export type Municipio = {
 	id: string;
 	codigo: string;
@@ -55,6 +60,8 @@ export type Municipio = {
 	river_nearest_confidence?: number;
 	river_candidate_count_10km?: number;
 	river_method_version?: string;
+	protected_areas?: string | ProtectedAreaRef[];
+	protected_areas_source?: string;
 	climate_block_score?: number;
 	access_block_score?: number;
 	nature_block_score?: number;

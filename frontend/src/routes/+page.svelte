@@ -1099,7 +1099,6 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 						</button>
 					</div>
 					{#if desktopPanel === 'rank'}
-					<p class="muted">Top 25 por score mixto · robustez {sensitivityOverlap}/10</p>
 						<RankingList rows={tableRows} limit={25} onSelect={handleSelectMunicipio} scoreThresholds={mixedScoreThresholds} />
 					{:else}
 						{#if shortlistMunicipios.length > 0}
@@ -1445,9 +1444,16 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 		color: #2f7d85;
 		font-weight: 600;
 	}
+	.inspector-desktop .muted {
+		display: flex;
+		justify-content: center;
+		padding: 0.9rem;
+		color: #dfe8e7;
+	}
 	.desktop-ranking .muted {
 		font-size: 0.76rem;
 		color: #4b6460;
+
 	}
 	.sheet-content {
 		display: none;

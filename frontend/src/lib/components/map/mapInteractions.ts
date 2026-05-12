@@ -75,6 +75,7 @@ const buildCellAsMunicipio = (props: any, sourceMunicipios: Municipio[]): Munici
 		river_access_class: props.river_buffer_class,
 		river_nearest_name: undefined,
 		river_nearest_distance_km: props.river_distance_km,
+		protected_areas: props.protected_areas,
 		climate_block_score: props.climate_block_score,
 		access_block_score: props.access_block_score,
 		nature_block_score: props.nature_block_score,
