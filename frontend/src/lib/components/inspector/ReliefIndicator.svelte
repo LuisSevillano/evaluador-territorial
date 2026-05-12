@@ -36,7 +36,7 @@
 		align-items: center;
 		gap: 0.35rem;
 		padding: 0.2rem 0.55rem;
-		border-radius: 999px;
+		border-radius: var(--radius-pill);
 		background: color-mix(in srgb, var(--relief-color) 8%, rgba(255, 255, 255, 0));
 	}
 
@@ -59,6 +59,6 @@
 		font-size: 0.74rem;
 		font-weight: 400;
 		font-style: italic;
-		color: #3f5652;
+		color: var(--text-secondary);
 	}
 </style>

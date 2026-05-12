@@ -14,9 +14,14 @@
 		relieveNorm?: number;
 	};
 
-	let { context = null, scoreThresholds = [0.319, 0.354, 0.3885, 0.4283], relieveNorm = undefined }: Props = $props();
+	let {
+		context = null,
+		scoreThresholds = [0.319, 0.354, 0.3885, 0.4283],
+		relieveNorm = undefined
+	}: Props = $props();
 
-	const scoreTone = (score: number) => classifyMixedScore(score, normalizeScoreThresholds(scoreThresholds));
+	const scoreTone = (score: number) =>
+		classifyMixedScore(score, normalizeScoreThresholds(scoreThresholds));
 
 	const scoreLabel = (score: number) => labelForScoreBand(scoreTone(score));
 
@@ -56,14 +61,12 @@
 				Posición {context.rank}/{context.total} (percentil {context.percentile.toFixed(0)}).
 			</p>
 			<p>
-				Comparativa: {context.selectedScore >= context.provinceAvg ? 'mejor' : 'peor'} que su provincia y {context.selectedScore >=
-				context.bucketAvg
-					? 'mejor'
-					: 'peor'} que su grupo de accesibilidad.
+				Comparativa: {context.selectedScore >= context.provinceAvg ? 'mejor' : 'peor'} que su provincia
+				y {context.selectedScore >= context.bucketAvg ? 'mejor' : 'peor'} que su grupo de accesibilidad.
 			</p>
 		</div>
 		<div class="relief-row">
-			<ReliefIndicator relieveNorm={relieveNorm} />
+			<ReliefIndicator {relieveNorm} />
 		</div>
 		<div class="block-grid">
 			{#each context.blockBreakdown as block}
@@ -73,10 +76,16 @@
 				<div class="block-item">
 					<span>{blockLabel(block.key)}</span>
 					<div class="bar-track">
-						<div class="bar-fill" class:positive={pctAbove >= 0} class:negative={pctAbove < 0} style="width: {barWidth}%"></div>
+						<div
+							class="bar-fill"
+							class:positive={pctAbove >= 0}
+							class:negative={pctAbove < 0}
+							style="width: {barWidth}%"
+						></div>
 					</div>
 					<em class={pctAbove >= 0 ? 'up' : 'down'}>
-						{pctAbove >= 0 ? '↑' : '↓'} {Math.abs(pctAbove).toFixed(0)}% vs mediana del bloque
+						{pctAbove >= 0 ? '↑' : '↓'}
+						{Math.abs(pctAbove).toFixed(0)}% vs mediana del bloque
 					</em>
 				</div>
 			{/each}
@@ -117,10 +126,12 @@
 
 	.explain-card {
 		margin-top: 0.5rem;
-		padding: 0.5rem;
-		border-radius: 8px;
-		border: 1px solid rgba(19, 63, 70, 0.18);
-		background: rgba(234, 246, 242, 0.62);
+		padding: 0.5rem 0;
+		border-radius: var(--radius-card);
+		border: 0;
+		background: transparent;
+		border-top: 1px solid var(--divider-border);
+		border-radius: 0;
 		display: grid;
 		gap: 0.3rem;
 	}
@@ -135,16 +146,16 @@
 		align-items: center;
 		gap: 0.75rem;
 		padding: 0.5rem 0.6rem;
-		border-radius: 10px;
-		border: 1px solid rgba(30, 56, 51, 0.22);
-		background: rgba(255, 255, 255, 0.82);
+		border-radius: var(--radius-card);
+		border: 0;
+		background: var(--panel-bg-subtle);
 	}
 	.hero-label {
 		display: block;
 		font-size: 0.64rem;
 		text-transform: uppercase;
 		letter-spacing: 0.08em;
-		color: #4b6461;
+		color: var(--text-muted);
 	}
 	.score-hero strong {
 		font-size: 1.2rem;
@@ -162,27 +173,22 @@
 	}
 	.hero-meta small {
 		font-size: 0.68rem;
-		color: #425c58;
+		color: var(--text-muted);
 	}
 	.score-hero.very-low {
-		border-color: rgba(140, 29, 24, 0.45);
-		background: rgba(252, 233, 231, 0.84);
+		background: var(--status-bad-bg);
 	}
 	.score-hero.low {
-		border-color: rgba(217, 72, 65, 0.45);
-		background: rgba(255, 239, 236, 0.85);
+		background: color-mix(in srgb, var(--status-bad-bg) 72%, var(--surface));
 	}
 	.score-hero.mid {
-		border-color: rgba(245, 159, 0, 0.42);
-		background: rgba(255, 248, 227, 0.88);
+		background: var(--status-warn-bg);
 	}
 	.score-hero.high {
-		border-color: rgba(102, 194, 74, 0.45);
-		background: rgba(237, 251, 234, 0.9);
+		background: color-mix(in srgb, var(--status-good-bg) 72%, var(--surface));
 	}
 	.score-hero.very-high {
-		border-color: rgba(21, 128, 61, 0.45);
-		background: rgba(227, 248, 232, 0.92);
+		background: var(--status-good-bg);
 	}
 	.drivers-grid {
 		display: grid;
@@ -193,7 +199,7 @@
 		font-size: 0.76rem;
 		text-transform: uppercase;
 		letter-spacing: 0.04em;
-		color: #27423f;
+		color: var(--text-primary);
 	}
 	.driver-list {
 		margin: 0;
@@ -204,14 +210,14 @@
 	.driver-list li {
 		font-size: 0.75rem;
 		line-height: 1.3;
-		color: #2f4542;
+		color: var(--text-secondary);
 	}
 	.driver-list li b {
 		text-transform: capitalize;
 	}
 	.empty {
 		font-size: 0.72rem;
-		color: #455d5a;
+		color: var(--text-muted);
 		margin-top: 0.18rem;
 	}
 	.explainer p {
@@ -228,9 +234,9 @@
 	}
 	.block-item {
 		padding: 0.3rem;
-		border-radius: 8px;
-		background: rgba(248, 253, 250, 0.8);
-		border: 1px solid rgba(35, 68, 64, 0.16);
+		border-radius: var(--radius-card);
+		background: var(--panel-bg-subtle);
+		border: 0;
 		display: grid;
 		gap: 0.2rem;
 	}
@@ -239,7 +245,7 @@
 		font-size: 0.68rem;
 		text-transform: uppercase;
 		letter-spacing: 0.06em;
-		color: #35514e;
+		color: var(--text-secondary);
 	}
 	.block-grid em {
 		display: block;
@@ -248,11 +254,11 @@
 		font-size: 0.7rem;
 	}
 	.block-grid em.up {
-		color: #0f766e;
+		color: var(--status-good);
 	}
 	.bar-track {
 		height: 6px;
-		background: rgba(209, 213, 216, 0.5);
+		background: color-mix(in srgb, var(--paper-2) 70%, var(--surface));
 		border-radius: 3px;
 		margin-top: 0.08rem;
 		overflow: hidden;
@@ -264,13 +270,13 @@
 		transition: width 300ms ease;
 	}
 	.bar-fill.positive {
-		background: linear-gradient(90deg, #22c55e, #16a34a);
+		background: var(--status-good);
 	}
 	.bar-fill.negative {
-		background: linear-gradient(90deg, #ef4444, #dc2626);
+		background: var(--status-bad);
 	}
 	.block-grid em.down {
-		color: #b91c1c;
+		color: var(--status-bad);
 	}
 	@media (max-width: 760px) {
 		.drivers-grid {

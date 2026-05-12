@@ -28,10 +28,11 @@
 <style>
 	.chip-btn {
 		width: auto;
-		padding: 0.3rem 0.55rem;
-		border-radius: 999px;
-		border: 1px solid rgba(21, 32, 33, 0.2);
-		background: rgba(255, 255, 255, 0.72);
+		padding: 0.28rem 0.56rem;
+		border-radius: var(--radius-pill);
+		border: 1px solid var(--control-border);
+		background: var(--control-bg);
+		color: var(--text-secondary);
 		font-size: 0.72rem;
 		line-height: 1.1;
 		letter-spacing: 0.01em;
@@ -43,17 +44,19 @@
 			color 160ms ease;
 	}
 	.chip-btn:hover {
-		transform: translateY(-1px);
-		border-color: #2f7d85;
+		transform: translateY(-0.5px);
+		background: var(--control-bg-hover);
+		border-color: var(--control-border);
 	}
 	.chip-btn:focus-visible {
-		outline: 2px solid #2f7d85;
+		outline: 2px solid var(--focus-ring);
 		outline-offset: 2px;
 	}
 	.chip-btn.active {
-		background: #2f7d85;
-		color: #f5f4ef;
-		border-color: #1f5f66;
+		background: var(--active-bg);
+		color: var(--brand);
+		border-color: color-mix(in srgb, var(--brand) 36%, transparent);
+		font-weight: 600;
 	}
 	.chip-btn.compact {
 		padding-left: 0;

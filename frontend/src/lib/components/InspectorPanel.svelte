@@ -12,6 +12,7 @@
 		climateToneFromMoistureScore,
 		renfeMadridToneFromScore
 	} from '$lib/state/metricSemantics';
+	import { formatTravelBucketSentence } from '$lib/state/filters';
 	import ReliefIndicator from '$lib/components/inspector/ReliefIndicator.svelte';
 	import { DEFAULT_WEIGHTS_NORMALIZED, DEFAULT_WEIGHTS_RAW } from '$lib/state/scoring';
 	import { formatScorePercent, formatSmartNumber } from '$lib/utils/numberFormat';
@@ -223,7 +224,7 @@
 					<span>Score mixto</span><strong>{scoreLabelWithValue}</strong>
 				</div>
 				<div class={`metric ${accessToneFromBucket(selectedMunicipio.travel_bucket)}`}>
-					<span>Accesibilidad</span><strong>{selectedMunicipio.travel_bucket}</strong>
+					<span>Accesibilidad</span><strong>{formatTravelBucketSentence(selectedMunicipio.travel_bucket)}</strong>
 				</div>
 				<div
 					class={`metric ${climateToneFromMoistureScore(selectedMunicipio.moisture_absolute_score)}`}
@@ -352,18 +353,19 @@
 		height: 100%;
 		min-height: 0;
 		overflow-y: auto;
-		background: linear-gradient(180deg, rgba(246, 239, 227, 0.9), rgba(234, 222, 198, 0.92));
-		border-left: 1px solid rgba(21, 32, 33, 0.18);
-		padding: 0.9rem;
+		background: var(--sidebar-bg);
+		border-left: 1px solid var(--divider-border);
+		padding: var(--space-panel-lg);
 		display: grid;
 		gap: 0.8rem;
 		box-sizing: border-box;
 	}
 	.panel {
-		border: 1px solid rgba(21, 32, 33, 0.16);
-		border-radius: 12px;
-		padding: 0.95rem;
-		background: rgba(255, 255, 255, 0.72);
+		border: 1px solid var(--panel-border);
+		border-radius: var(--radius-panel);
+		padding: var(--space-panel-lg);
+		background: var(--panel-bg);
+		box-shadow: var(--shadow-soft);
 	}
 	h3,
 	p {
@@ -376,7 +378,7 @@
 	p {
 		font-size: 0.82rem;
 		line-height: 1.35;
-		color: #3f5652;
+		color: var(--text-secondary);
 	}
 	.title-row + p {
 		margin-top: 0.12rem;
@@ -402,9 +404,9 @@
 		gap: 0.45rem;
 		margin-top: 0.35rem;
 		padding: 0.25rem 0.3rem;
-		border-radius: 8px;
-		background: rgba(254, 243, 199, 0.35);
-		color: #7a4a1c;
+		border-radius: var(--radius-card);
+		background: var(--status-warn-bg);
+		color: var(--status-warn);
 		font-size: 0.74rem;
 		line-height: 1.35;
 	}
@@ -412,19 +414,19 @@
 		width: 0.4rem;
 		height: 0.4rem;
 		margin-top: 0.3rem;
-		border-radius: 999px;
-		background: #d97706;
+		border-radius: var(--radius-pill);
+		background: var(--status-warn);
 		flex: 0 0 auto;
 	}
 	.grid-loading {
-		color: #92400e;
+		color: var(--status-warn);
 		font-style: italic;
 	}
 	.ghost-btn {
 		width: auto;
-		border: 1px solid rgba(19, 63, 70, 0.24);
-		border-radius: 999px;
-		background: rgba(255, 255, 255, 0.78);
+		border: 1px solid var(--control-border);
+		border-radius: var(--radius-pill);
+		background: var(--control-bg);
 		padding: 0.2rem 0.5rem;
 		font-size: 0.74rem;
 	}
@@ -436,32 +438,28 @@
 	}
 	.metric-grid div {
 		padding: 0.55rem;
-		border-radius: 10px;
-		background: rgba(238, 248, 245, 0.64);
-		border: 1px solid rgba(19, 63, 70, 0.16);
+		border-radius: var(--radius-card);
+		background: var(--panel-bg-subtle);
+		border: 0;
 	}
 	.metric.score {
-		border-color: rgba(35, 98, 108, 0.45);
-		background: rgba(224, 244, 247, 0.72);
+		background: color-mix(in srgb, var(--brand) 9%, var(--surface));
 	}
 	.metric.good {
-		border-color: rgba(15, 118, 110, 0.42);
-		background: rgba(220, 248, 241, 0.72);
+		background: var(--status-good-bg);
 	}
 	.metric.mid {
-		border-color: rgba(180, 111, 36, 0.38);
-		background: rgba(252, 242, 222, 0.74);
+		background: var(--status-warn-bg);
 	}
 	.metric.bad {
-		border-color: rgba(170, 45, 45, 0.38);
-		background: rgba(252, 234, 234, 0.74);
+		background: var(--status-bad-bg);
 	}
 	.metric-grid span {
 		display: block;
 		font-size: 0.68rem;
 		text-transform: uppercase;
 		letter-spacing: 0.08em;
-		color: #4b5d5a;
+		color: var(--text-muted);
 	}
 	.metric-grid strong {
 		font-size: 0.9rem;
@@ -473,7 +471,7 @@
 		margin-top: 0.22rem;
 		font-size: 0.68rem;
 		line-height: 1.25;
-		color: #52645f;
+		color: var(--text-muted);
 	}
 	.charts {
 		display: grid;
@@ -481,31 +479,31 @@
 		margin-top: 0.75rem;
 	}
 	.chart-card {
-		border: 1px solid rgba(19, 63, 70, 0.16);
-		border-radius: 10px;
-		background: rgba(255, 255, 255, 0.68);
+		border: 0;
+		border-radius: var(--radius-card);
+		background: var(--panel-bg-subtle);
 		padding: 0.55rem;
 	}
 	.chart-card p {
 		font-size: 0.72rem;
 		letter-spacing: 0.03em;
 		text-transform: uppercase;
-		color: #3d5552;
+		color: var(--text-secondary);
 		margin-bottom: 0.22rem;
 	}
 	.chart-card small {
 		display: block;
 		margin-top: 0.25rem;
 		font-size: 0.7rem;
-		color: #3b5250;
+		color: var(--text-secondary);
 	}
 	.shortlist-btn {
 		margin-top: 0.6rem;
 		cursor: pointer;
-		border: 1px solid rgba(21, 32, 33, 0.22);
-		border-radius: 999px;
-		background: linear-gradient(120deg, #2f7d85, #245f66);
-		color: #f7f4ec;
+		border: 1px solid color-mix(in srgb, var(--brand) 28%, transparent);
+		border-radius: var(--radius-pill);
+		background: var(--brand);
+		color: var(--text-inverse);
 		padding: 0.45rem 0.72rem;
 		font-size: 0.78rem;
 		transition:
@@ -517,7 +515,7 @@
 		filter: brightness(1.05);
 	}
 	.shortlist-btn:focus-visible {
-		outline: 2px solid #2f7d85;
+		outline: 2px solid var(--focus-ring);
 		outline-offset: 2px;
 	}
 	.transport-block {
@@ -526,16 +524,18 @@
 	.protected-block {
 		margin-top: 0.5rem;
 		padding: 0.45rem 0.55rem;
-		border: 1px solid rgba(34, 92, 63, 0.2);
-		border-radius: 9px;
-		background: linear-gradient(135deg, rgba(236, 252, 241, 0.72), rgba(255, 255, 255, 0.58));
+		border: 0;
+		border-radius: var(--radius-card);
+		background: transparent;
+		border-top: 1px solid var(--divider-border);
+		border-radius: 0;
 	}
 	.protected-header {
 		font-size: 0.58rem;
 		font-weight: 700;
 		letter-spacing: 0.1em;
 		text-transform: uppercase;
-		color: #2f6046;
+		color: var(--brand);
 		margin-bottom: 0.25rem;
 	}
 	.protected-list {
@@ -548,42 +548,41 @@
 	.protected-list li {
 		font-size: 0.72rem;
 		line-height: 1.28;
-		color: #244038;
+		color: var(--text-secondary);
 	}
 	.protected-list strong {
-		color: #1d5b3d;
+		color: var(--brand);
 	}
 	.protected-more {
 		margin-top: 0.25rem;
 		font-size: 0.66rem;
 		font-weight: 700;
-		color: #52705f;
+		color: var(--text-muted);
 	}
 	.transport-header {
 		font-size: 0.58rem;
 		font-weight: 700;
 		letter-spacing: 0.1em;
 		text-transform: uppercase;
-		color: #6b7280;
+		color: var(--text-muted);
 		margin-bottom: 0.2rem;
 	}
 	.transport-content {
 		padding: 0.35rem 0.45rem;
-		border: 1px solid rgba(21, 32, 33, 0.12);
-		border-radius: 8px;
-		background: rgba(255, 255, 255, 0.58);
+		border: 0;
+		border-radius: var(--radius-card);
+		background: transparent;
+		border-top: 1px solid var(--divider-border);
+		border-radius: 0;
 	}
 	.transport-content.good {
-		border-color: rgba(15, 118, 110, 0.24);
-		background: rgba(220, 248, 241, 0.44);
+		background: color-mix(in srgb, var(--status-good-bg) 52%, transparent);
 	}
 	.transport-content.mid {
-		border-color: rgba(180, 111, 36, 0.22);
-		background: rgba(254, 243, 199, 0.42);
+		background: color-mix(in srgb, var(--status-warn-bg) 52%, transparent);
 	}
 	.transport-content.bad {
-		border-color: rgba(170, 45, 45, 0.22);
-		background: rgba(254, 226, 226, 0.42);
+		background: color-mix(in srgb, var(--status-bad-bg) 52%, transparent);
 	}
 	.transport-row {
 		display: flex;
@@ -593,7 +592,7 @@
 	.transport-type {
 		font-size: 0.78rem;
 		font-weight: 700;
-		color: #1f2937;
+		color: var(--text-primary);
 	}
 	.transport-indicator {
 		width: 8px;
@@ -602,48 +601,48 @@
 		flex-shrink: 0;
 	}
 	.transport-indicator.good {
-		background: #059669;
+		background: var(--status-good);
 	}
 	.transport-indicator.mid {
-		background: #d97706;
+		background: var(--status-warn);
 	}
 	.transport-indicator.bad {
-		background: #dc2626;
+		background: var(--status-bad);
 	}
 	.transport-status {
 		flex: 1;
 		font-size: 0.72rem;
 		font-weight: 500;
-		color: #374151;
+		color: var(--text-secondary);
 	}
 	.transport-score {
 		flex: 0 0 auto;
-		border-radius: 999px;
+		border-radius: var(--radius-pill);
 		padding: 0.06rem 0.3rem;
-		background: rgba(255, 255, 255, 0.7);
+		background: var(--control-bg);
 		font-size: 0.62rem;
 		font-weight: 700;
-		color: #065f46;
+		color: var(--brand);
 	}
 	.transport-info {
 		margin-top: 0.22rem;
 		font-size: 0.66rem;
-		color: #4b5563;
+		color: var(--text-muted);
 	}
 	.transport-station {
 		font-weight: 600;
-		color: #1f2937;
+		color: var(--text-primary);
 	}
 	.transport-dist {
 		display: block;
 		margin-top: 0.05rem;
-		color: #6b7280;
+		color: var(--text-muted);
 	}
 	.transport-sep {
 		margin: 0 0.2rem;
 	}
 	.muted {
-		color: #48615d;
+		color: var(--text-muted);
 		font-size: 0.76rem;
 		margin-top: 0.4rem;
 		line-height: 1.35;

@@ -195,10 +195,11 @@
 		right: 0;
 		height: var(--sheet-height, var(--expanded-height, 92vh));
 		max-height: var(--sheet-height, var(--expanded-height, 92vh));
-		background: linear-gradient(180deg, rgba(252, 248, 238, 0.97), rgba(248, 242, 226, 0.97));
-		border-top-left-radius: 1rem;
-		border-top-right-radius: 1rem;
-		box-shadow: 0 -6px 20px rgba(16, 44, 54, 0.16);
+		background: color-mix(in srgb, var(--chrome-bg) 96%, transparent);
+		border-top: 1px solid var(--border-color-strong);
+		border-top-left-radius: var(--radius-panel);
+		border-top-right-radius: var(--radius-panel);
+		box-shadow: 0 -1px 2px rgba(0, 0, 0, 0.05);
 		transform: translateY(calc(100% - var(--visible-height, var(--peek-height, 4.8rem))));
 		transition: transform 260ms cubic-bezier(0.4, 0, 0.2, 1);
 		z-index: 100;
@@ -224,8 +225,8 @@
 		content: '';
 		width: 2rem;
 		height: 0.3rem;
-		background: rgba(16, 44, 54, 0.32);
-		border-radius: 999px;
+		background: var(--border-color-strong);
+		border-radius: var(--radius-pill);
 	}
 
 	.handle:active {
@@ -233,7 +234,7 @@
 	}
 
 	.content {
-		padding: 0 0.75rem calc(0.75rem + env(safe-area-inset-bottom));
+		padding: 0 0.8rem calc(0.8rem + env(safe-area-inset-bottom));
 		overflow-y: auto;
 		overflow-x: hidden;
 		max-height: calc(var(--visible-height, var(--sheet-height, var(--expanded-height, 92vh))) - 1.6rem);

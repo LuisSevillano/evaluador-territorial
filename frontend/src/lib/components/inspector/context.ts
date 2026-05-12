@@ -1,4 +1,5 @@
 import type { Municipio, MunicipioClimateMonthly } from '$lib/types/municipio';
+import { formatTravelBucketLabel } from '$lib/state/filters';
 
 export type ScoreWeights = { climate: number; access: number; nature: number };
 
@@ -140,10 +141,10 @@ export const buildMunicipioContext = ({
 		clima: `Humedad ${selectedMunicipio.water_drops_label?.toLowerCase() ?? 'sin clasificar'} (${selectedMunicipio.precip_annual_mm.toFixed(0)} mm anuales) y ventaja relativa ${Math.round((selectedMunicipio.precip_relative_score ?? 0) * 100)}% dentro del conjunto analizado.`,
 		accesibilidad:
 			selectedMunicipio.travel_bucket === '>4h00'
-				? `Desplazamiento largo (${selectedMunicipio.travel_bucket}), con encaje bajo en accesibilidad.`
+				? `Desplazamiento largo (${formatTravelBucketLabel(selectedMunicipio.travel_bucket)}), con encaje bajo en accesibilidad.`
 				: selectedMunicipio.travel_bucket === '<=1h30' || selectedMunicipio.travel_bucket === '<=2h00'
-					? `Desplazamiento corto (${selectedMunicipio.travel_bucket}), buen encaje de acceso.`
-					: `Accesibilidad intermedia (${selectedMunicipio.travel_bucket}).`,
+					? `Desplazamiento corto (${formatTravelBucketLabel(selectedMunicipio.travel_bucket)}), buen encaje de acceso.`
+					: `Accesibilidad intermedia (${formatTravelBucketLabel(selectedMunicipio.travel_bucket)}).`,
 		naturaleza: `Entorno natural ${selectedBlocks.naturaleza >= avgBlocks.naturaleza ? 'por encima de la mediana' : 'por debajo de la mediana'} de los municipios analizados.`
 	};
 

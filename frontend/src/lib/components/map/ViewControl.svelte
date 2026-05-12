@@ -46,21 +46,22 @@
 		display: inline-flex;
 		gap: 0.25rem;
 		padding: 0.18rem;
-		border-radius: 999px;
-		border: 1px solid rgba(21, 32, 33, 0.26);
-		background: rgba(255, 252, 245, 0.9);
-		box-shadow: 0 4px 10px rgba(16, 44, 54, 0.2);
+		border-radius: var(--radius-pill);
+		border: 1px solid var(--control-border);
+		background: color-mix(in srgb, var(--control-bg) 92%, transparent);
+		box-shadow: var(--shadow-soft);
+		backdrop-filter: blur(8px);
 	}
 
 	.mode-btn {
 		width: auto;
 		border: 0;
 		background: transparent;
-		color: #3f5652;
+		color: var(--text-secondary);
 		font-size: 0.74rem;
 		font-weight: 600;
 		padding: 0.34rem 0.72rem;
-		border-radius: 999px;
+		border-radius: var(--radius-pill);
 		cursor: pointer;
 		transition:
 			background-color 180ms ease,
@@ -68,12 +69,12 @@
 	}
 
 	.mode-btn:hover {
-		background: rgba(47, 125, 133, 0.14);
+		background: var(--active-bg);
 	}
 
 	.mode-btn.active {
-		background: #2f7d85;
-		color: #f7f4ec;
+		background: var(--brand);
+		color: var(--text-inverse);
 	}
 
 	.mode-btn.disabled {

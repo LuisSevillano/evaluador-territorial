@@ -68,7 +68,7 @@
 		font-size: 0.62rem;
 		letter-spacing: 0.08em;
 		text-transform: uppercase;
-		color: #415753;
+		color: var(--text-secondary);
 	}
 	.legend-scale {
 		display: grid;
@@ -91,7 +91,7 @@
 	.legend-labels span {
 		font-size: 0.56rem;
 		line-height: 1.15;
-		color: #3f5753;
+		color: var(--text-secondary);
 		text-align: center;
 		white-space: nowrap;
 	}

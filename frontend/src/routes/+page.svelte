@@ -21,6 +21,7 @@ import MobileSheetTabs from '$lib/components/mobile/MobileSheetTabs.svelte';
 
 	import {
 		bucketOrder,
+		formatTravelBucketLabel,
 		isPlausiblePrecipAnnual,
 		isPlausibleTemp,
 		travelBuckets,
@@ -248,7 +249,7 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 	const activeFiltersSummary = $derived(
 		[
 			provinceFilter !== 'Todas' ? `provincia=${provinceFilter}` : null,
-			maxTravelBucket !== null ? `acc<=${maxTravelBucket}` : null,
+			maxTravelBucket !== null ? `acc ${formatTravelBucketLabel(maxTravelBucket)}` : null,
 			minPrecipAnnual !== 0 ? `ppt>=${minPrecipAnnual}` : null,
 			minWinterTemp !== -10 ? `t_inv>=${minWinterTemp}` : null,
 			maxSummerTemp !== 40 ? `t_ver<=${maxSummerTemp}` : null,
@@ -932,11 +933,11 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 							<tr>
 								<th><button onclick={() => handleChangeSort('nombre')}>Municipio {sortBy === 'nombre' ? (sortDirection === 'asc' ? '↑' : '↓') : ''}</button></th>
 								<th><button onclick={() => handleChangeSort('provincia')}>Provincia {sortBy === 'provincia' ? (sortDirection === 'asc' ? '↑' : '↓') : ''}</button></th>
-								<th><button onclick={() => handleChangeSort('travel_bucket')}>Acc {sortBy === 'travel_bucket' ? (sortDirection === 'asc' ? '↑' : '↓') : ''}</button></th>
-								<th><button onclick={() => handleChangeSort('precip_annual_mm')}>Precip {sortBy === 'precip_annual_mm' ? (sortDirection === 'asc' ? '↑' : '↓') : ''}</button></th>
-								<th><button onclick={() => handleChangeSort('temp_winter_mean_c')}>T.inv {sortBy === 'temp_winter_mean_c' ? (sortDirection === 'asc' ? '↑' : '↓') : ''}</button></th>
-								<th><button onclick={() => handleChangeSort('temp_summer_mean_c')}>T.ver {sortBy === 'temp_summer_mean_c' ? (sortDirection === 'asc' ? '↑' : '↓') : ''}</button></th>
-								<th><button onclick={() => handleChangeSort('mixed_score')}>Score {sortBy === 'mixed_score' ? (sortDirection === 'asc' ? '↑' : '↓') : ''}</button></th>
+								<th><button onclick={() => handleChangeSort('travel_bucket')}>Accesibilidad {sortBy === 'travel_bucket' ? (sortDirection === 'asc' ? '↑' : '↓') : ''}</button></th>
+								<th><button onclick={() => handleChangeSort('precip_annual_mm')}>Precip. {sortBy === 'precip_annual_mm' ? (sortDirection === 'asc' ? '↑' : '↓') : ''}</button></th>
+								<th><button onclick={() => handleChangeSort('temp_winter_mean_c')}>Temp. inv{sortBy === 'temp_winter_mean_c' ? (sortDirection === 'asc' ? '↑' : '↓') : ''}</button></th>
+								<th><button onclick={() => handleChangeSort('temp_summer_mean_c')}>Temp. ver{sortBy === 'temp_summer_mean_c' ? (sortDirection === 'asc' ? '↑' : '↓') : ''}</button></th>
+								<th><button onclick={() => handleChangeSort('mixed_score')}>Puntuación {sortBy === 'mixed_score' ? (sortDirection === 'asc' ? '↑' : '↓') : ''}</button></th>
 							</tr>
 						</thead>
 						<tbody>
@@ -945,7 +946,7 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 								<tr onclick={() => handleSelectMunicipio(municipio)}>
 									<td>{municipio.nombre}</td>
 									<td>{municipio.provincia}</td>
-									<td>{municipio.travel_bucket}</td>
+									<td>{formatTravelBucketLabel(municipio.travel_bucket)}</td>
 									<td>{municipio.precip_annual_mm}</td>
 									<td>{municipio.temp_winter_mean_c}</td>
 									<td>{municipio.temp_summer_mean_c}</td>
@@ -1148,8 +1149,8 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 		justify-content: space-between;
 		gap: 0.8rem;
 		padding: 0.55rem 0.9rem;
-		border-bottom: 1px solid rgba(21, 32, 33, 0.16);
-		background: linear-gradient(180deg, rgba(253, 250, 244, 0.96), rgba(246, 239, 226, 0.96));
+		border-bottom: 1px solid var(--divider-border);
+		background: color-mix(in srgb, var(--chrome-bg) 92%, var(--surface));
 	}
 	.topbar-brand {
 		display: grid;
@@ -1173,12 +1174,12 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 	}
 	.topbar-brand small {
 		font-size: 0.72rem;
-		color: #405753;
+		color: var(--text-secondary);
 	}
 	.topbar-controls {
 		display: flex;
 		align-items: center;
-		gap: 2rem;
+		gap: 1.4rem;
 		margin-left: auto;
 	}
 	.topbar-actions {
@@ -1196,13 +1197,13 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 		gap: 0.35rem;
 		padding: 0.34rem 0.62rem;
 		border-radius: 999px;
-		border: 1px solid rgba(21, 32, 33, 0.24);
-		background: rgba(255, 255, 255, 0.82);
+		border: 1px solid var(--control-border);
+		background: var(--control-bg);
 		font-size: 0.74rem;
 		font-weight: 600;
 		letter-spacing: 0.02em;
 		text-decoration: none;
-		color: #264944;
+		color: var(--brand);
 		transition: transform 120ms ease, background-color 120ms ease;
 	}
 	.topbar-help-btn {
@@ -1211,32 +1212,32 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 		gap: 0.35rem;
 		padding: 0.34rem 0.62rem;
 		border-radius: 999px;
-		border: 1px solid rgba(21, 32, 33, 0.24);
-		background: rgba(255, 255, 255, 0.82);
+		border: 1px solid var(--control-border);
+		background: var(--control-bg);
 		font-size: 0.74rem;
 		font-weight: 600;
 		letter-spacing: 0.02em;
-		color: #264944;
+		color: var(--brand);
 		cursor: pointer;
 		transition: transform 120ms ease, background-color 120ms ease;
 	}
 	.topbar-help-btn:hover {
-		background: rgba(255, 255, 255, 0.98);
+		background: var(--control-bg-hover);
 		transform: translateY(-1px);
 	}
 	.topbar-help-btn:focus-visible {
-		outline: 2px solid rgba(47, 125, 133, 0.65);
+		outline: 2px solid var(--focus-ring);
 		outline-offset: 2px;
 	}
 	.topbar-docs-link:visited {
-		color: #264944;
+		color: var(--brand);
 	}
 	.topbar-docs-link:hover {
-		background: rgba(255, 255, 255, 0.98);
+		background: var(--control-bg-hover);
 		transform: translateY(-1px);
 	}
 	.topbar-docs-link:focus-visible {
-		outline: 2px solid rgba(47, 125, 133, 0.65);
+		outline: 2px solid var(--focus-ring);
 		outline-offset: 2px;
 	}
 	.topbar-legend {
@@ -1249,13 +1250,13 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 		justify-content: space-between;
 		gap: 0.8rem;
 		padding: 0.45rem 0.9rem;
-		border-bottom: 1px solid rgba(21, 32, 33, 0.14);
-		background: rgba(245, 239, 226, 0.78);
+		border-bottom: 1px solid var(--divider-border);
+		background: color-mix(in srgb, var(--paper-2) 68%, transparent);
 	}
 	.mode-strip p {
 		margin: 0;
 		font-size: 0.78rem;
-		color: #3d5652;
+		color: var(--text-secondary);
 	}
 	.mode-strip-metrics {
 		display: flex;
@@ -1266,11 +1267,11 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 	}
 	.mode-strip-metrics span {
 		font-size: 0.72rem;
-		padding: 0.2rem 0.45rem;
+		padding: 0.18rem 0.42rem;
 		border-radius: 999px;
-		background: rgba(255, 255, 255, 0.68);
-		border: 1px solid rgba(21, 32, 33, 0.14);
-		color: #405a56;
+		background: color-mix(in srgb, var(--panel-bg-subtle) 72%, transparent);
+		border: 0;
+		color: var(--text-secondary);
 	}
 	main {
 		height: calc(100dvh - 106px);
@@ -1286,7 +1287,9 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 		min-height: 0;
 		height: 100%;
 		overflow: hidden;
-		background: rgba(251, 246, 236, 0.72);
+		background: var(--workspace-bg);
+		border-left: 1px solid var(--section-border);
+		border-right: 1px solid var(--section-border);
 		box-sizing: border-box;
 		position: relative;
 		display: flex;
@@ -1301,8 +1304,8 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 		overflow: hidden;
 	}
 	.desktop-table {
-		border-top: 1px solid rgba(21, 32, 33, 0.14);
-		background: rgba(255, 251, 243, 0.9);
+		border-top: 1px solid var(--section-border);
+		background: color-mix(in srgb, var(--surface) 72%, var(--workspace-bg));
 		min-height: 0;
 		height: 26%;
 		flex-shrink: 0;
@@ -1320,12 +1323,12 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 		position: sticky;
 		top: 0;
 		z-index: 1;
-		background: rgba(245, 239, 226, 0.98);
+		background: color-mix(in srgb, var(--paper-2) 90%, var(--surface));
 	}
 	.desktop-table th,
 	.desktop-table td {
-		border-bottom: 1px solid rgba(21, 32, 33, 0.12);
-		padding: 0.32rem 0.45rem;
+		border-bottom: 1px solid var(--divider-border);
+		padding: 0.34rem 0.52rem;
 		white-space: nowrap;
 		text-align: right;
 	}
@@ -1342,13 +1345,18 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 		text-transform: uppercase;
 		letter-spacing: 0.04em;
 		cursor: pointer;
-		color: #3f5652;
+		color: var(--text-secondary);
+		font-weight: 100;
+	}
+	.desktop-table td:first-child {
+		font-weight: 600;
+		color: var(--text-primary);
 	}
 	.desktop-table tbody tr {
 		cursor: pointer;
 	}
 	.desktop-table tbody tr:hover {
-		background: rgba(33, 102, 109, 0.08);
+		background: var(--hover-bg);
 	}
 	.desktop-table tbody tr.spacer-row {
 		cursor: default;
@@ -1361,7 +1369,7 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 		place-items: center;
 		height: auto;
 		font-size: 0.82rem;
-		color: #3f5652;
+		color: var(--text-secondary);
 	}
 	.table-loading-wrap {
 		display: grid;
@@ -1402,13 +1410,13 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 		min-height: 0;
 		overflow-y: auto;
 		height: 100%;
-		background: rgba(251, 246, 236, 0.95);
-		border-left: 1px solid rgba(21, 32, 33, 0.12);
+		background: color-mix(in srgb, var(--workspace-bg) 74%, var(--surface));
+		border-left: 1px solid var(--section-border);
 	}
 	.desktop-ranking {
-		padding: 1rem;
+		padding: 1.05rem 1rem 1.25rem;
 		display: grid;
-		gap: 0.5rem;
+		gap: 0.62rem;
 	}
 	.desktop-ranking h2 {
 		margin: 0;
@@ -1418,16 +1426,16 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 	.desktop-ranking p {
 		margin: 0;
 		font-size: 0.82rem;
-		color: #3f5652;
+		color: var(--text-secondary);
 		line-height: 1.3;
 	}
 	.desktop-toggle {
 		display: inline-flex;
 		gap: 0.25rem;
 		padding: 0.2rem;
-		border: 1px solid rgba(21, 32, 33, 0.18);
+		border: 1px solid var(--control-border);
 		border-radius: 999px;
-		background: rgba(255, 255, 255, 0.65);
+		background: color-mix(in srgb, var(--panel-bg-subtle) 76%, transparent);
 		width: fit-content;
 	}
 	.desktop-toggle button {
@@ -1436,23 +1444,24 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 		padding: 0.28rem 0.62rem;
 		font-size: 0.72rem;
 		background: transparent;
-		color: #425a56;
+		color: var(--text-secondary);
 		cursor: pointer;
 	}
 	.desktop-toggle button.active {
-		background: rgba(47, 125, 133, 0.15);
-		color: #2f7d85;
+		background: var(--active-bg);
+		color: var(--brand);
 		font-weight: 600;
+		box-shadow: var(--shadow-soft);
 	}
 	.inspector-desktop .muted {
 		display: flex;
 		justify-content: center;
 		padding: 0.9rem;
-		color: #dfe8e7;
+		color: var(--text-muted);
 	}
 	.desktop-ranking .muted {
 		font-size: 0.76rem;
-		color: #4b6460;
+		color: var(--text-muted);
 
 	}
 	.sheet-content {
@@ -1485,7 +1494,7 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 			font-size: 0.58rem;
 			font-weight: 500;
 			letter-spacing: 0;
-			color: #2f676a;
+			color: var(--brand);
 			text-decoration: underline;
 			text-underline-offset: 0.11rem;
 			line-height: 1;
@@ -1499,13 +1508,13 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 			font-weight: 500;
 			letter-spacing: 0;
 			gap: 0;
-			color: #2f676a;
+			color: var(--brand);
 			text-decoration: underline;
 			text-underline-offset: 0.11rem;
 			line-height: 1;
 		}
 		.topbar-docs-link:visited {
-			color: #2f676a;
+			color: var(--brand);
 		}
 		.topbar-help-btn:hover,
 		.topbar-docs-link:hover {
@@ -1569,15 +1578,15 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 		}
 		.sheet-empty {
 			font-size: 0.82rem;
-			color: #415955;
+			color: var(--text-secondary);
 			margin: 0.35rem 0;
 		}
 		.sheet-clear {
 			width: auto;
 			justify-self: start;
-			border: 1px solid rgba(21, 32, 33, 0.22);
+			border: 1px solid var(--border-color-strong);
 			border-radius: 999px;
-			background: rgba(255, 255, 255, 0.8);
+			background: var(--control-bg);
 			padding: 0.3rem 0.6rem;
 			font-size: 0.75rem;
 		}

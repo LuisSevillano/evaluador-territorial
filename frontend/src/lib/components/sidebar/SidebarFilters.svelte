@@ -134,10 +134,11 @@
 
 <style>
 	section.panel {
-		border: 1px solid rgba(21, 32, 33, 0.16);
-		border-radius: 12px;
-		padding: 0.8rem;
-		background: rgba(255, 255, 255, 0.62);
+		border: 1px solid var(--panel-border);
+		border-radius: var(--radius-panel);
+		padding: var(--space-panel);
+		background: var(--panel-bg);
+		box-shadow: var(--shadow-soft);
 	}
 	h2 {
 		font-family: 'Fraunces', serif;
@@ -151,8 +152,8 @@
 		margin: 0;
 		font-size: 0.78rem;
 		text-transform: uppercase;
-		letter-spacing: 0.06em;
-		color: #405753;
+		letter-spacing: 0.045em;
+		color: var(--text-secondary);
 	}
 	.label-help-row {
 		display: inline-flex;
@@ -198,21 +199,21 @@
 	}
 	.filter-foot p {
 		font-size: 0.76rem;
-		color: #3f5653;
+		color: var(--text-secondary);
 		margin: 0;
 	}
 	.filter-foot .clear {
 		cursor: pointer;
-		border: 1px solid rgba(21, 32, 33, 0.22);
-		border-radius: 999px;
-		background: rgba(255, 255, 255, 0.8);
+		border: 1px solid var(--control-border);
+		border-radius: var(--radius-pill);
+		background: var(--control-bg);
 		padding: 0.3rem 0.6rem;
-		color: #2f4743;
+		color: var(--text-primary);
 		font-size: 0.75rem;
 		transition: background-color 120ms ease, transform 120ms ease;
 	}
 	.filter-foot .clear:hover {
-		background: rgba(255, 255, 255, 0.94);
+		background: var(--control-bg-hover);
 		transform: translateY(-0.5px);
 	}
 </style>

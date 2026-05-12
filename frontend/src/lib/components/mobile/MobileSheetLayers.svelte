@@ -44,7 +44,7 @@
 	}
 	.sheet-block label {
 		font-size: 0.75rem;
-		color: #3f5753;
+		color: var(--text-secondary);
 	}
 	.sheet-subtitle {
 		margin: 0.3rem 0 0.05rem;
@@ -52,7 +52,7 @@
 		font-weight: 700;
 		letter-spacing: 0.06em;
 		text-transform: uppercase;
-		color: #3d5551;
+		color: var(--text-secondary);
 	}
 	.sheet-subtitle-help {
 		display: inline-flex;

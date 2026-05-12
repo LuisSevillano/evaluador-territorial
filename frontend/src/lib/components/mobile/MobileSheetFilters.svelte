@@ -151,9 +151,9 @@
 		min-width: 0;
 		box-sizing: border-box;
 		padding: 0.5rem;
-		border: 1px solid rgba(21, 32, 33, 0.13);
-		border-radius: 10px;
-		background: rgba(255, 255, 255, 0.45);
+		border: 0;
+		border-radius: var(--radius-card);
+		background: var(--panel-bg-subtle);
 	}
 	.sheet-section-score {
 		padding-top: 0.45rem;
@@ -187,7 +187,7 @@
 	}
 	.sheet-block label {
 		font-size: 0.75rem;
-		color: #3f5753;
+		color: var(--text-secondary);
 	}
 	.sheet-subtitle {
 		margin: 0.3rem 0 0.05rem;
@@ -195,7 +195,7 @@
 		font-weight: 700;
 		letter-spacing: 0.06em;
 		text-transform: uppercase;
-		color: #3d5551;
+		color: var(--text-secondary);
 	}
 	.sheet-subtitle-help {
 		display: inline-flex;
@@ -213,13 +213,13 @@
 		}
 	}
 	.sheet-block select {
-		border: 1px solid rgba(21, 32, 33, 0.2);
-		border-radius: 8px;
+		border: 1px solid var(--border-color);
+		border-radius: var(--radius-card);
 		height: 30px;
 		padding: 0 0.5rem;
 		font-size: 0.8rem;
 		line-height: 1.2;
-		background: rgba(255, 255, 255, 0.86);
+		background: var(--control-bg);
 	}
 	.chips-row {
 		display: flex;
@@ -241,6 +241,6 @@
 	.sheet-meta {
 		margin: 0.1rem 0 0.2rem;
 		font-size: 0.72rem;
-		color: #48605c;
+		color: var(--text-muted);
 	}
 </style>

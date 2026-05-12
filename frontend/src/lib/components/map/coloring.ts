@@ -1,4 +1,5 @@
 import type { Municipio } from '$lib/types/municipio';
+import { formatTravelBucketLabel } from '$lib/state/filters';
 import { formatScorePercent } from '$lib/utils/numberFormat';
 
 export type MapColorMetric =
@@ -209,8 +210,8 @@ export const getLegendConfig = (
 							thresholds: [],
 							colors: [...travelBucketColors],
 							formatLabel: (value: number) => `${value}`,
-							labels: [...travelBucketOrder]
-					  }
+							labels: travelBucketOrder.map((bucket) => formatTravelBucketLabel(bucket))
+			  }
 				: {
 						title: 'Gradiente de precipitación',
 						thresholds: [...precipThresholds],

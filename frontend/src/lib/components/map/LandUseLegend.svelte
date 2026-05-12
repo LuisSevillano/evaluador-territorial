@@ -24,9 +24,11 @@
 		left: 1.55rem;
 		z-index: 18;
 		padding: 0.55rem 0.7rem;
-		background: rgba(248, 246, 240, 0.94);
-		border: 1px solid rgba(18, 40, 44, 0.22);
-		border-radius: 10px;
+		background: color-mix(in srgb, var(--panel-bg-strong) 94%, transparent);
+		border: 1px solid var(--control-border);
+		border-radius: var(--radius-card);
+		box-shadow: var(--shadow-soft);
+		backdrop-filter: blur(8px);
 		display: grid;
 		gap: 0.25rem;
 	}
@@ -35,7 +37,7 @@
 		font-size: 0.72rem;
 		letter-spacing: 0.04em;
 		text-transform: uppercase;
-		color: #2d4240;
+		color: var(--text-primary);
 	}
 
 	.landuse-legend div {
@@ -49,7 +51,7 @@
 		display: inline-flex;
 		align-items: center;
 		gap: 0.25rem;
-		color: #3a4f4c;
+		color: var(--text-secondary);
 	}
 
 	i {
@@ -57,6 +59,6 @@
 		width: 0.65rem;
 		height: 0.65rem;
 		border-radius: 2px;
-		border: 1px solid rgba(0, 0, 0, 0.22);
+		border: 1px solid var(--divider-border);
 	}
 </style>

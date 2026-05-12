@@ -10,7 +10,7 @@
 	import { travelBuckets } from '$lib/state/filters';
 	import { formatScorePercent } from '$lib/utils/numberFormat';
 
-		type Props = {
+	type Props = {
 		query?: string;
 		municipios?: Municipio[];
 		searchMunicipios?: Municipio[];
@@ -71,7 +71,9 @@
 		onClimateWeightChange?: (value: number) => void;
 		onAccessWeightChange?: (value: number) => void;
 		onNatureWeightChange?: (value: number) => void;
-		onPresetWeights?: (preset: 'equilibrado' | 'naturaleza' | 'accesibilidad' | 'clima' | 'clima_estricto') => void;
+		onPresetWeights?: (
+			preset: 'equilibrado' | 'naturaleza' | 'accesibilidad' | 'clima' | 'clima_estricto'
+		) => void;
 	};
 
 	let {
@@ -165,7 +167,7 @@
 	const layerLabels: Record<string, string> = {
 		municipios: 'Municipios',
 		isochrones: 'Isocronas (overlay)',
-		landuse: 'Usos del suelo',
+		// landuse: 'Usos del suelo',
 		vegetation: 'Cobertura vegetal',
 		forest: 'Masa forestal',
 		reservoirs: 'Embalses IGN',
@@ -203,20 +205,6 @@
 </script>
 
 <aside class="sidebar">
-	<header class="hero hero-stats">
-		<p class="kicker">Resumen operativo</p>
-		<div class="stats">
-			<div>
-				<span>Resultados</span>
-				<strong>{totalMunicipios} / {allMunicipiosCount}</strong>
-			</div>
-			<div>
-				<span>Dentro de 2h</span>
-				<strong>{within2h}</strong>
-			</div>
-		</div>
-	</header>
-
 	<SidebarFilters
 		{query}
 		{municipios}
@@ -231,28 +219,28 @@
 		{maxThermalAmplitudeLimit}
 		{minCompositeScore}
 		{activeFiltersSummary}
-		onQueryChange={onQueryChange}
-		onSelectMunicipio={onSelectMunicipio}
-		onCoordinateSearch={onCoordinateSearch}
-		onProvinceFilterChange={onProvinceFilterChange}
-		onMaxTravelBucketChange={onMaxTravelBucketChange}
-		onMinPrecipAnnualChange={onMinPrecipAnnualChange}
-		onMinWinterTempChange={onMinWinterTempChange}
-		onMaxSummerTempChange={onMaxSummerTempChange}
-		onMaxThermalAmplitudeChange={onMaxThermalAmplitudeChange}
-		onMinCompositeScoreChange={onMinCompositeScoreChange}
-		onClearFilters={onClearFilters}
+		{onQueryChange}
+		{onSelectMunicipio}
+		{onCoordinateSearch}
+		{onProvinceFilterChange}
+		{onMaxTravelBucketChange}
+		{onMinPrecipAnnualChange}
+		{onMinWinterTempChange}
+		{onMaxSummerTempChange}
+		{onMaxThermalAmplitudeChange}
+		{onMinCompositeScoreChange}
+		{onClearFilters}
 	/>
 
 	<SidebarScorePanel
 		{weights}
 		{weightsRaw}
 		{sensitivityOverlap}
-		activePreset={activePreset}
-		onPresetWeights={onPresetWeights}
-		onClimateWeightChange={onClimateWeightChange}
-		onAccessWeightChange={onAccessWeightChange}
-		onNatureWeightChange={onNatureWeightChange}
+		{activePreset}
+		{onPresetWeights}
+		{onClimateWeightChange}
+		{onAccessWeightChange}
+		{onNatureWeightChange}
 	/>
 
 	<SidebarLayers
@@ -260,30 +248,91 @@
 		{layerItems}
 		{showIgnWmsBase}
 		{showIgnSatellite}
-		onMapColorMetricChange={onMapColorMetricChange}
-		onLayerOrderChange={onLayerOrderChange}
+		{onMapColorMetricChange}
+		{onLayerOrderChange}
 		onToggleLayerVisibility={toggleLayerVisibility}
-		onToggleIgnWmsBase={onToggleIgnWmsBase}
-		onToggleIgnSatellite={onToggleIgnSatellite}
+		{onToggleIgnWmsBase}
+		{onToggleIgnSatellite}
 	/>
 
-	<SidebarMethodology
-		{datasetMetadata}
-		{scoringActiveText}
-	/>
+	<SidebarMethodology {datasetMetadata} {scoringActiveText} />
 </aside>
 
 <style>
-	.sidebar { width: 100%; max-width: 440px; height: 100%; max-height: 100%; min-height: 0; overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain; scrollbar-gutter: stable; background: linear-gradient(170deg, rgba(245, 238, 224, 0.86), rgba(232, 220, 196, 0.94)); border-right: 1px solid rgba(21, 32, 33, 0.18); padding: 0.9rem; display: grid; gap: 0.8rem; box-sizing: border-box; }
-	.sidebar > * { min-width: 0; }
-	.hero { padding: 0.95rem; border: 1px solid rgba(21, 32, 33, 0.22); border-radius: 14px; background: linear-gradient(135deg, rgba(255, 252, 245, 0.85), rgba(238, 225, 198, 0.78)); box-shadow: 0 8px 20px rgba(21, 32, 33, 0.12); }
-	.hero-stats { padding: 0.75rem 0.85rem; }
-	.kicker { margin: 0; font-size: 0.72rem; letter-spacing: 0.14em; text-transform: uppercase; color: #41534f; }
-	.stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.55rem; margin-top: 0.45rem; }
-	.stats div { min-width: 0; padding: 0.5rem; border-radius: 10px; background: rgba(255, 255, 255, 0.6); border: 1px solid rgba(21, 32, 33, 0.14); }
-	.stats span { display: block; font-size: 0.69rem; text-transform: uppercase; letter-spacing: 0.08em; color: #4d5f5a; }
-	.stats strong { display: block; font-family: 'Fraunces', serif; font-size: clamp(1rem, 2.3vw, 1.2rem); line-height: 1.06; overflow-wrap: anywhere; }
+	.sidebar {
+		width: 100%;
+		max-width: 440px;
+		height: 100%;
+		max-height: 100%;
+		min-height: 0;
+		overflow-y: auto;
+		overflow-x: hidden;
+		overscroll-behavior: contain;
+		scrollbar-gutter: stable;
+		background: var(--sidebar-bg);
+		border-right: 1px solid var(--divider-border);
+		padding: var(--space-panel-lg);
+		display: grid;
+		gap: 0.85rem;
+		box-sizing: border-box;
+	}
+	.sidebar > * {
+		min-width: 0;
+	}
+	.hero {
+		padding: var(--space-panel-lg);
+		border: 0;
+		border-radius: var(--radius-panel);
+		background: var(--panel-bg);
+		box-shadow: var(--shadow-soft);
+	}
+	.hero-stats {
+		padding: 0.75rem 0.85rem;
+	}
+	.kicker {
+		margin: 0;
+		font-size: 0.72rem;
+		letter-spacing: 0.14em;
+		text-transform: uppercase;
+		color: var(--text-secondary);
+	}
+	.stats {
+		display: grid;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		gap: 0.55rem;
+		margin-top: 0.45rem;
+	}
+	.stats div {
+		min-width: 0;
+		padding: 0.35rem 0;
+		border-radius: 0;
+		background: transparent;
+		border-top: 1px solid var(--divider-border);
+	}
+	.stats span {
+		display: block;
+		font-size: 0.69rem;
+		text-transform: uppercase;
+		letter-spacing: 0.08em;
+		color: var(--text-muted);
+	}
+	.stats strong {
+		display: block;
+		font-family: 'Fraunces', serif;
+		font-size: clamp(1rem, 2.3vw, 1.2rem);
+		line-height: 1.06;
+		overflow-wrap: anywhere;
+	}
 	@media (max-width: 900px) {
-		.sidebar { max-width: 100%; height: auto; min-height: 0; border-right: 0; max-height: none; overflow: visible; scrollbar-gutter: auto; padding: 1rem 1rem 1.15rem; }
+		.sidebar {
+			max-width: 100%;
+			height: auto;
+			min-height: 0;
+			border-right: 0;
+			max-height: none;
+			overflow: visible;
+			scrollbar-gutter: auto;
+			padding: 1rem 1rem 1.15rem;
+		}
 	}
 </style>

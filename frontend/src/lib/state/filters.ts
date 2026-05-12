@@ -19,6 +19,31 @@ export const travelBuckets: Array<{ value: TravelBucketFilter; label: string }> 
 	{ value: '<=4h00', label: '4h' }
 ];
 
+export const formatTravelBucketLabel = (bucket: string | null | undefined) => {
+	if (!bucket) return '-';
+	const labels: Record<string, string> = {
+		'<=1h30': '<=1h30',
+		'<=2h00': '<=2h',
+		'<=2h30': '<=2h30',
+		'<=3h30': '<=3h30',
+		'<=4h00': '<=4h',
+		'>4h00': '>4h'
+	};
+	return labels[bucket] ?? bucket.replace('h00', 'h');
+};
+
+export const formatTravelBucketSentence = (bucket: string | null | undefined) => {
+	const labels: Record<string, string> = {
+		'<=1h30': 'Menos de 1h30',
+		'<=2h00': 'Menos de 2h',
+		'<=2h30': 'Menos de 2h30',
+		'<=3h30': 'Menos de 3h30',
+		'<=4h00': 'Menos de 4h',
+		'>4h00': 'Más de 4h'
+	};
+	return labels[bucket ?? ''] ?? formatTravelBucketLabel(bucket);
+};
+
 export const isPlausibleTemp = (value: number) => Number.isFinite(value) && value > -60 && value < 60;
 
 export const isPlausiblePrecipAnnual = (value: number) =>

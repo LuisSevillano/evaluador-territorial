@@ -35,27 +35,27 @@
 		display: inline-flex;
 		gap: 0;
 		padding: 0.18rem;
-		border-radius: 999px;
-		border: 1px solid rgba(21, 32, 33, 0.26);
+		border-radius: var(--radius-pill);
+		border: 1px solid var(--border-color-strong);
 		width: fit-content;
 	}
 	button {
 		width: auto;
 		border: 0;
-		border-radius: 999px;
+		border-radius: var(--radius-pill);
 		background: transparent;
 		padding: 0.34rem 0.8rem;
 		min-width: 108px;
 		font-size: 0.76rem;
 		font-weight: 600;
-		color: #3f5652;
+		color: var(--text-secondary);
 		cursor: pointer;
 		transition:
 			background-color 180ms ease,
 			color 180ms ease;
 	}
 	button.active {
-		background: #2f7d85;
-		color: #f7f4ec;
+		background: var(--brand);
+		color: var(--text-inverse);
 	}
 </style>

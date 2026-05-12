@@ -49,7 +49,7 @@
 	}
 	.sheet-meta-panel li {
 		font-size: 0.76rem;
-		color: #3f5753;
+		color: var(--text-secondary);
 	}
 	.sheet-export-actions {
 		display: flex;

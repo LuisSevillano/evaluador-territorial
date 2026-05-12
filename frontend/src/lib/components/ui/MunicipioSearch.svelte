@@ -208,11 +208,11 @@
 		width: 100%;
 		margin-top: 0.35rem;
 		padding: 0.62rem 0.7rem;
-		border: 1px solid rgba(21, 32, 33, 0.2);
-		border-radius: 10px;
-		background: rgba(255, 255, 255, 0.78);
+		border: 1px solid var(--control-border);
+		border-radius: var(--radius-card);
+		background: var(--control-bg);
 		font-size: 0.82rem;
-		color: #304643;
+		color: var(--text-primary);
 	}
 
 	.search-shell.sheet {
@@ -223,10 +223,10 @@
 		margin-top: 0;
 		height: 30px;
 		padding: 0 0.5rem;
-		border-radius: 8px;
+		border-radius: var(--radius-card);
 		font-size: 0.8rem;
 		line-height: 1.2;
-		background: rgba(255, 255, 255, 0.86);
+		background: var(--control-bg);
 	}
 
 	.search-dropdown {
@@ -234,11 +234,11 @@
 		top: calc(100% + 4px);
 		left: 0;
 		right: 0;
-		background: rgba(255, 252, 246, 0.98);
-		border: 1px solid rgba(21, 32, 33, 0.24);
-		border-radius: 12px;
-		box-shadow: 0 12px 24px rgba(21, 32, 33, 0.16);
-		backdrop-filter: blur(2px);
+		background: color-mix(in srgb, var(--surface) 96%, transparent);
+		border: 1px solid var(--control-border);
+		border-radius: var(--radius-panel);
+		box-shadow: var(--shadow-soft);
+		backdrop-filter: blur(8px);
 		overflow: hidden;
 		z-index: 30;
 	}
@@ -268,17 +268,17 @@
 	}
 
 	.suggestion-btn:hover {
-		background: rgba(47, 125, 133, 0.12);
+		background: var(--active-bg);
 		transform: translateX(1px);
 	}
 
 	.suggestion-btn:focus-visible {
-		outline: 2px solid #2f7d85;
+		outline: 2px solid var(--focus-ring);
 		outline-offset: 2px;
 	}
 
 	small {
-		color: #48615d;
+		color: var(--text-muted);
 		font-size: 0.72rem;
 	}
 </style>

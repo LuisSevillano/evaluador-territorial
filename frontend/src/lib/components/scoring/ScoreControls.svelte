@@ -92,10 +92,11 @@
 
 <style>
 	section.panel {
-		border: 1px solid rgba(21, 32, 33, 0.16);
-		border-radius: 12px;
-		padding: 0.8rem;
-		background: rgba(255, 255, 255, 0.62);
+		border: 1px solid var(--panel-border);
+		border-radius: var(--radius-panel);
+		padding: var(--space-panel);
+		background: var(--panel-bg);
+		box-shadow: var(--shadow-soft);
 	}
 	.score-panel {
 		min-width: 0;
@@ -144,7 +145,7 @@
 		grid-template-columns: repeat(2, minmax(0, 1fr));
 	}
 	.muted {
-		color: #48615d;
+		color: var(--text-muted);
 		font-size: 0.76rem;
 		line-height: 1.35;
 		margin-top: 0.4rem;

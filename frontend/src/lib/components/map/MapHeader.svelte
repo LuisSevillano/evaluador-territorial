@@ -39,9 +39,9 @@
 		justify-content: space-between;
 		align-items: center;
 		padding: 0.75rem 1rem;
-		border: 1px solid rgba(16, 44, 54, 0.25);
-		border-radius: 14px;
-		background: rgba(246, 240, 226, 0.88);
+		border: 0;
+		border-radius: var(--radius-panel);
+		background: color-mix(in srgb, var(--paper-2) 88%, transparent);
 		backdrop-filter: blur(4px);
 	}
 
@@ -55,13 +55,13 @@
 		margin: 0.16rem 0 0;
 		font-size: 0.72rem;
 		letter-spacing: 0.02em;
-		color: #425955;
+		color: var(--text-secondary);
 	}
 
 	.legend {
 		display: flex;
 		align-items: center;
-		color: #2d4240;
+		color: var(--text-primary);
 	}
 
 	@media (max-width: 900px) {

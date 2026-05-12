@@ -61,10 +61,10 @@
 
 <style>
 	.layer-order { margin-top: 0.2rem; margin-bottom: 0; padding-left: 0; list-style: none; }
-	.layer-order li { border: 1px dashed rgba(21, 32, 33, 0.28); border-radius: 8px; padding: 0.3rem 0.5rem; background: rgba(255, 255, 255, 0.72); cursor: grab; display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
+	.layer-order li { border: 0; border-radius: var(--radius-card); padding: 0.3rem 0.5rem; background: var(--panel-bg-subtle); cursor: grab; display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
 	.layer-order li:active { cursor: grabbing; }
-	.layer-order li label { display: inline-flex; align-items: center; gap: 0.45rem; font-size: 0.78rem; color: #2f4542; margin: 0; }
-	.layer-order li small { color: #5a6f6b; font-size: 0.74rem; letter-spacing: 0.08em; }
+	.layer-order li label { display: inline-flex; align-items: center; gap: 0.45rem; font-size: 0.78rem; color: var(--text-primary); margin: 0; }
+	.layer-order li small { color: var(--text-muted); font-size: 0.74rem; letter-spacing: 0.08em; }
 	@media (max-width: 900px) {
 		.layer-order li label { font-size: 0.8rem; }
 		.layer-order li small { font-size: 0.76rem; }

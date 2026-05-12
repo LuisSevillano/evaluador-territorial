@@ -34,7 +34,7 @@
 	}
 	.sheet-tabs button {
 		border: 0;
-		border-radius: 8px;
+		border-radius: var(--radius-card);
 		padding: 0.4rem 0.2rem;
 		font-size: 0.68rem;
 		display: inline-flex;
@@ -42,15 +42,15 @@
 		justify-content: center;
 		gap: 0.22rem;
 		background: transparent;
-		color: #3d5551;
+		color: var(--text-secondary);
 	}
 	.sheet-tabs button :global(svg) {
 		width: 15px;
 		height: 15px;
 	}
 	.sheet-tabs button.active {
-		background: rgba(47, 125, 133, 0.14);
-		color: #2f7d85;
+		background: var(--active-bg);
+		color: var(--brand);
 		font-weight: 600;
 	}
 	.sheet-tabs button.has-selection {

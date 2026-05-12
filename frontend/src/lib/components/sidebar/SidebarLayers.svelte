@@ -62,10 +62,11 @@
 
 <style>
 	section.panel {
-		border: 1px solid rgba(21, 32, 33, 0.16);
-		border-radius: 12px;
-		padding: 0.8rem;
-		background: rgba(255, 255, 255, 0.62);
+		border: 1px solid var(--panel-border);
+		border-radius: var(--radius-panel);
+		padding: var(--space-panel);
+		background: var(--panel-bg);
+		box-shadow: var(--shadow-soft);
 	}
 	h2 {
 		font-family: 'Fraunces', serif;
@@ -79,8 +80,8 @@
 		margin: 0;
 		font-size: 0.78rem;
 		text-transform: uppercase;
-		letter-spacing: 0.06em;
-		color: #405753;
+		letter-spacing: 0.045em;
+		color: var(--text-secondary);
 	}
 	.control-title-help {
 		display: inline-flex;
@@ -99,7 +100,6 @@
 	}
 	.layers {
 		display: grid;
-		gap: 0rem;
 		margin-bottom: 0.75rem;
 		gap: 0.45rem;
 	}
@@ -110,7 +110,7 @@
 		font-size: 0.8rem;
 	}
 	.muted {
-		color: #48615d;
+		color: var(--text-muted);
 		font-size: 0.76rem;
 		line-height: 1.35;
 		margin: 0;
