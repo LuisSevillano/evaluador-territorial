@@ -29,6 +29,7 @@
 - Las isocronas precalculadas son un input metodologico, no una API de routing en tiempo real.
 - El acceso fluvial recreativo no equivale a calidad sanitaria ni aptitud legal de bano.
 - En el inspector, `water_pct` no debe mostrarse como métrica principal aislada: representa láminas/superficie de agua MFE y queda como detalle secundario dentro de una lectura combinada de agua y ríos con distancia al tramo cercano y clase de acceso recreativo.
+- Los Espacios Naturales Protegidos MITECO ENP 2025 se integran como informacion contextual opt-in (`PIPELINE_INCLUDE_PROTECTED_AREAS=1`): lista `ODESIGNATE: SITE_NAME` cruzada por rejilla 2x2 km y agregada a municipio. No crean metrica, no normalizan y no afectan a `mixed_score` ni `nature_block_score`.
 
 ## Estado Operativo
 - Hay doble configuracion Netlify: `frontend/netlify.toml` es fuente operativa; `.netlify/netlify.toml` puede reflejar estado local de CLI.

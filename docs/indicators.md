@@ -28,11 +28,13 @@
 - Isocronas fijas precalculadas: no representan variacion horaria o de trafico en tiempo real.
 
 ## Entorno natural
-- `forest_pct`: porcentaje municipal de cobertura arbolada del Mapa Forestal de España.
-- `water_pct`: porcentaje municipal de láminas/superficie de agua del Mapa Forestal de España. Es contexto secundario; la experiencia de agua en UI se lee con distancia al tramo fluvial y `river_access_class`.
-- `artificial_pct`: porcentaje municipal de coberturas artificiales del Mapa Forestal de España.
+- `forest_pct`: porcentaje municipal de coberturas forestales y matorral (OSM `landuse` + `natural`).
+- `water_pct`: porcentaje municipal de coberturas de agua (OSM `water` + `natural=water/wetland`).
+- `artificial_pct`: porcentaje municipal de coberturas artificiales (OSM `landuse`).
 - `naturality_index`: indice simple de naturalidad (0-100).
 - `landcover_diversity`: diversidad de coberturas (Shannon normalizado 0-100).
+- `protected_areas`: lista contextual opt-in de espacios naturales protegidos presentes en celdas 2x2 km del municipio. Usa `ODESIGNATE` y `SITE_NAME` de MITECO ENP 2025 y no participa en el scoring.
+- `protected_areas_source`: fuente textual de la lista anterior cuando se genera con `PIPELINE_INCLUDE_PROTECTED_AREAS=1`.
 
 ## Scoring compuesto
 - `climate_block_score`: bloque clima (media de precip_moisture_score, temp_verano_norm, temp_invierno_norm).
@@ -42,5 +44,5 @@
 
 ## Trazabilidad del dataset
 - `dataset_version`: v3.0.0
-- `generated_at_utc`: 2026-05-11 11:51:42 UTC
+- `generated_at_utc`: 2026-05-12 08:03:47 UTC
 - `analysis_scope`: Castilla y Leon + La Rioja + Pais Vasco + Cantabria + Asturias + Lugo + Ourense + Guadalajara + Madrid
