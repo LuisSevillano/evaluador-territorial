@@ -351,7 +351,8 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 			selectionStore.state.selectedMunicipio = null;
 			return;
 		}
-		selectionStore.state.selectedMunicipio = municipio;
+		const scoredMunicipio = municipiosScoredForView.find((m) => m.id === municipio.id) ?? municipio;
+		selectionStore.state.selectedMunicipio = scoredMunicipio;
 		const panel = panelStateOnSelect(activeSheetTab, isMobileView);
 		uiStore.state.activeSheetTab = panel.tab;
 		queueMicrotask(() => {
