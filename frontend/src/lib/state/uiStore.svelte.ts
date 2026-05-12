@@ -10,7 +10,7 @@ export const createUiStore = () => {
 		activeSheetTab: 'filtr' as SheetTab,
 		isMobileView: false,
 		desktopPanel: 'rank' as 'rank' | 'shortlist',
-		mapViewMode: 'municipality' as MapViewMode
+		mapViewMode: 'auto' as MapViewMode
 	});
 
 	return { state };
