@@ -1,0 +1,11 @@
+packages:
+  - frontend
+  - docs-site
+
+onlyBuiltDependencies:
+  - esbuild
+  - fsevents
+
+allowBuilds:
+  esbuild: true
+  fsevents: true

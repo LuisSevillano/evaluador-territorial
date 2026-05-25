@@ -14,13 +14,13 @@
 - No dejar decisiones relevantes solo en el chat: el chat no es memoria persistente del proyecto.
 
 ## Comandos Canonicos
-- Frontend dev: `npm run dev` desde `frontend/`.
-- Frontend typecheck: `npm run check` desde `frontend/`.
-- Frontend build: `npm run build` desde `frontend/`.
-- Build prod app + docs: `npm run build:with-docs` desde `frontend/`.
-- Deploy prod: `npm run deploy` desde `frontend/`.
-- Docs local: `npm run docs:dev` desde `docs-site/`.
-- Docs build: `npm run docs:build` desde `docs-site/`.
+- Frontend dev: `pnpm run dev` desde `frontend/`.
+- Frontend typecheck: `pnpm run check` desde `frontend/`.
+- Frontend build: `pnpm run build` desde `frontend/`.
+- Build prod app + docs: `pnpm run build:with-docs` desde `frontend/`.
+- Deploy prod: `pnpm run deploy` desde `frontend/`.
+- Docs local: `pnpm run docs:dev` desde `docs-site/`.
+- Docs build: `pnpm run docs:build` desde `docs-site/`.
 - Pipeline por defecto: `ANALYSIS_SCOPE=norte Rscript scripts/run_pipeline_v2.R` desde la raiz.
 - Rebuild total pipeline: `PIPELINE_FORCE=1 ANALYSIS_SCOPE=norte Rscript scripts/run_pipeline_v2.R`.
 - Solo ensamblado/export: `PIPELINE_MODE=assemble-only ANALYSIS_SCOPE=norte Rscript scripts/run_pipeline_v2.R`.
@@ -33,9 +33,9 @@
 - `scripts/00_config.R` contiene rutas absolutas locales a shapefiles e isocronas; en otra maquina hay que reconfigurar antes de correr pipeline.
 
 ## Verificacion Minima
-- Si se toca frontend: `npm run check` y `npm run build` desde `frontend/`.
-- Si se toca docs publicas: `npm run docs:build` desde `docs-site/`; si afecta integracion final, tambien `npm run build:with-docs` desde `frontend/`.
-- Si se documenta una decision en `docs-site/`, ejecutar `npm run docs:build` desde `docs-site/` cuando sea razonable para el cambio.
+- Si se toca frontend: `pnpm run check` y `pnpm run build` desde `frontend/`.
+- Si se toca docs publicas: `pnpm run docs:build` desde `docs-site/`; si afecta integracion final, tambien `pnpm run build:with-docs` desde `frontend/`.
+- Si se documenta una decision en `docs-site/`, ejecutar `pnpm run docs:build` desde `docs-site/` cuando sea razonable para el cambio.
 - Si se toca pipeline o salidas geoespaciales: `ANALYSIS_SCOPE=norte Rscript scripts/run_pipeline_v2.R` y despues `./scripts/05_build_pmtiles.sh`.
 - Si se toca scoring, indicadores o copy metodologico: verificar que `mixed_score` siga explicandose como comparativo del scope y que `river_access_score` no se describa como calidad sanitaria.
 

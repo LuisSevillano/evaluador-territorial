@@ -13,6 +13,7 @@
   ],
   "author": "El Buen Vivir",
   "license": "UNLICENSED",
+  "packageManager": "pnpm@11.3.0",
   "type": "module",
   "devDependencies": {
     "playwright": "^1.59.1",

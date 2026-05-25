@@ -2,22 +2,24 @@
 	"name": "el-buen-vivir-frontend",
 	"private": true,
 	"version": "0.1.0",
+	"packageManager": "pnpm@11.3.0",
 	"type": "module",
 	"scripts": {
 		"dev": "vite dev",
 		"build": "vite build",
-		"build:with-docs": "rm -rf build && npm run build && npm run docs:build && npm run docs:sync",
+		"build:with-docs": "rm -rf build && pnpm run build && pnpm run docs:build && pnpm run docs:sync",
 		"preview": "vite preview",
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
 		"data:compact": "node ./scripts/build-municipios-compact.mjs",
-		"docs:build": "npm --prefix ../docs-site run docs:build",
+		"docs:build": "pnpm --dir ../docs-site run docs:build",
 		"docs:sync": "rm -rf build/docs && mkdir -p build/docs && cp -R ../docs-site/.vitepress/dist/. build/docs/",
-		"deploy": "npm run build:with-docs && netlify deploy --prod"
+		"deploy": "pnpm run build:with-docs && netlify deploy --prod"
 	},
 	"devDependencies": {
 		"@sveltejs/adapter-static": "^3.0.5",
 		"@sveltejs/kit": "^2.15.0",
 		"@sveltejs/vite-plugin-svelte": "^4.0.0",
+		"@types/geojson": "^7946.0.16",
 		"svelte": "^5.2.0",
 		"svelte-check": "^4.0.7",
 		"typescript": "^5.6.3",

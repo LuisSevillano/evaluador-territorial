@@ -22,15 +22,17 @@ Current default analysis scope in the pipeline: Castilla y Leon + La Rioja + Pai
 
 ```bash
 cd frontend
-npm install
-npm run dev
+pnpm install
+pnpm run dev
 ```
+
+Package manager decision: the frontend uses `pnpm` instead of `npm`. This was adopted after the npm security incidents reported during April 2026, and to keep local installs, dependency locking, and production builds on the same package manager.
 
 ## Build frontend
 
 ```bash
 cd frontend
-npm run build
+pnpm run build
 ```
 
 ## Documentation workflow (VitePress)
@@ -41,8 +43,8 @@ The repository includes a full docs site in `docs-site/` and it is published und
 
 ```bash
 cd docs-site
-npm install
-npm run docs:dev
+pnpm install
+pnpm run docs:dev
 ```
 
 ### Rebuild charts and maps used by docs
@@ -56,7 +58,7 @@ Rscript scripts/91_build_docs_charts.R
 
 ```bash
 cd frontend
-npm run build:with-docs
+pnpm run build:with-docs
 cd build
 python3 -m http.server 4173
 ```
@@ -67,7 +69,7 @@ Open `http://localhost:4173/docs/`.
 
 ```bash
 cd frontend
-npm run deploy
+pnpm run deploy
 ```
 
 ## Run pipeline with explicit scope
