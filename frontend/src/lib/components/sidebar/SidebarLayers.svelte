@@ -14,11 +14,13 @@
 	type Props = {
 		mapColorMetric?: MapColorMetric;
 		layerItems?: LayerItem[];
+		showOsmBasemap?: boolean;
 		showIgnWmsBase?: boolean;
 		showIgnSatellite?: boolean;
 		onMapColorMetricChange?: (value: MapColorMetric) => void;
 		onLayerOrderChange?: (value: string[]) => void;
 		onToggleLayerVisibility?: (layerKey: string, checked: boolean) => void;
+		onToggleOsmBasemap?: (value: boolean) => void;
 		onToggleIgnWmsBase?: (value: boolean) => void;
 		onToggleIgnSatellite?: (value: boolean) => void;
 	};
@@ -26,11 +28,13 @@
 	let {
 		mapColorMetric = 'mixed_score',
 		layerItems = [],
+		showOsmBasemap = false,
 		showIgnWmsBase = false,
 		showIgnSatellite = false,
 		onMapColorMetricChange = () => undefined,
 		onLayerOrderChange = () => undefined,
 		onToggleLayerVisibility = () => undefined,
+		onToggleOsmBasemap = () => undefined,
 		onToggleIgnWmsBase = () => undefined,
 		onToggleIgnSatellite = () => undefined
 	}: Props = $props();
@@ -55,8 +59,9 @@
 		</div>
 		<p class="muted">Arrastra para cambiar el orden de pintado (arriba = se pinta encima).</p>
 		<LayerOrderList items={layerItems} onToggle={toggleLayerVisibility} onReorder={onLayerOrderChange} />
-		<label><input type="checkbox" checked={showIgnWmsBase} onchange={(e) => onToggleIgnWmsBase((e.currentTarget as HTMLInputElement).checked)} /><span>Base IGN WMS</span></label>
-		<label><input type="checkbox" checked={showIgnSatellite} onchange={(e) => onToggleIgnSatellite((e.currentTarget as HTMLInputElement).checked)} /><span>Satelite IGN (PNOA)</span></label>
+		<label><input type="checkbox" checked={showOsmBasemap} onchange={(e) => { onToggleOsmBasemap((e.currentTarget as HTMLInputElement).checked); if ((e.currentTarget as HTMLInputElement).checked) { onToggleIgnWmsBase(false); onToggleIgnSatellite(false); } }} /><span>OpenStreetMap</span></label>
+		<label><input type="checkbox" checked={showIgnWmsBase} onchange={(e) => { onToggleIgnWmsBase((e.currentTarget as HTMLInputElement).checked); if ((e.currentTarget as HTMLInputElement).checked) { onToggleOsmBasemap(false); onToggleIgnSatellite(false); } }} /><span>Base IGN WMS</span></label>
+		<label><input type="checkbox" checked={showIgnSatellite} onchange={(e) => { onToggleIgnSatellite((e.currentTarget as HTMLInputElement).checked); if ((e.currentTarget as HTMLInputElement).checked) { onToggleOsmBasemap(false); onToggleIgnWmsBase(false); } }} /><span>Satelite IGN (PNOA)</span></label>
 	</div>
 </section>
 

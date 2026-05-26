@@ -18,6 +18,7 @@
 		selectedMunicipio?: Municipio | null;
 		showMunicipioPolygons?: boolean;
 		showIsochronesLayer?: boolean;
+		showOsmBasemap?: boolean;
 		showIgnWmsBase?: boolean;
 		showIgnSatellite?: boolean;
 		showIgnRivers?: boolean;
@@ -50,6 +51,7 @@
 		onCoordinateSearch?: (payload: { lat: number; lon: number; label: string }) => void;
 		onToggleMunicipioPolygons?: (value: boolean) => void;
 		onToggleIsochronesLayer?: (value: boolean) => void;
+		onToggleOsmBasemap?: (value: boolean) => void;
 		onToggleIgnWmsBase?: (value: boolean) => void;
 		onToggleIgnSatellite?: (value: boolean) => void;
 		onToggleIgnRivers?: (value: boolean) => void;
@@ -84,6 +86,7 @@
 		selectedMunicipio = null,
 		showMunicipioPolygons = true,
 		showIsochronesLayer = false,
+		showOsmBasemap = false,
 		showIgnWmsBase = false,
 		showIgnSatellite = false,
 		showIgnRivers = false,
@@ -116,6 +119,7 @@
 		onCoordinateSearch = () => undefined,
 		onToggleMunicipioPolygons = () => undefined,
 		onToggleIsochronesLayer = () => undefined,
+		onToggleOsmBasemap = () => undefined,
 		onToggleIgnWmsBase = () => undefined,
 		onToggleIgnSatellite = () => undefined,
 		onToggleIgnRivers = () => undefined,
@@ -243,11 +247,13 @@
 	<SidebarLayers
 		{mapColorMetric}
 		{layerItems}
+		{showOsmBasemap}
 		{showIgnWmsBase}
 		{showIgnSatellite}
 		{onMapColorMetricChange}
 		{onLayerOrderChange}
 		onToggleLayerVisibility={toggleLayerVisibility}
+		{onToggleOsmBasemap}
 		{onToggleIgnWmsBase}
 		{onToggleIgnSatellite}
 	/>

@@ -36,6 +36,8 @@
 		ignSatelliteSourceId,
 		ignWmsLayerId,
 		ignWmsSourceId,
+		osmBasemapLayerId,
+		osmBasemapSourceId,
 		isochroneLayers,
 		landUseFillColorExpression,
 		landUseLayerId,
@@ -97,6 +99,7 @@
 		showMunicipioPolygons?: boolean;
 		showIsochronesLayer?: boolean;
 		showMunicipioPoints?: boolean;
+		showOsmBasemap?: boolean;
 		showIgnWmsBase?: boolean;
 		showIgnSatellite?: boolean;
 		showIgnRivers?: boolean;
@@ -111,6 +114,7 @@
 		maxTravelBucket?: TravelBucketFilter;
 		pmtilesUrl?: string;
 		onMapSelection?: (municipio: Municipio | null) => void;
+		onToggleOsmBasemap?: (visible: boolean) => void;
 		onToggleIgnSatellite?: (visible: boolean) => void;
 		onToggleIgnWmsBase?: (visible: boolean) => void;
 		isMobileView?: boolean;
@@ -127,6 +131,7 @@
 		showMunicipioPolygons = true,
 		showIsochronesLayer = false,
 		showMunicipioPoints = true,
+		showOsmBasemap = false,
 		showIgnWmsBase = false,
 		showIgnSatellite = false,
 		showIgnRivers = false,
@@ -141,6 +146,7 @@
 		maxTravelBucket = null,
 		pmtilesUrl = '/tiles/municipios.pmtiles',
 		onMapSelection = () => undefined,
+		onToggleOsmBasemap = () => undefined,
 		onToggleIgnSatellite = () => undefined,
 		onToggleIgnWmsBase = () => undefined,
 		isMobileView = false,
@@ -635,6 +641,26 @@
 		}
 	};
 
+	const ensureOsmBasemapLayer = () => {
+		if (!map) return;
+		if (!map.getSource(osmBasemapSourceId)) {
+			map.addSource(osmBasemapSourceId, {
+				type: 'raster',
+				tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
+				tileSize: 256,
+				attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+			});
+		}
+		if (!map.getLayer(osmBasemapLayerId)) {
+			map.addLayer({
+				id: osmBasemapLayerId,
+				type: 'raster',
+				source: osmBasemapSourceId,
+				paint: { 'raster-opacity': 1 }
+			});
+		}
+	};
+
 	const ensureIgnWmsBaseLayer = () => {
 		if (!map) return;
 		if (!map.getSource(ignWmsSourceId)) {
@@ -774,6 +800,7 @@
 			isMapLoading = true;
 			currentZoom = map.getZoom();
 
+			if (showOsmBasemap) ensureOsmBasemapLayer();
 			if (showIgnSatellite) ensureIgnSatelliteLayer();
 			if (showIgnWmsBase) ensureIgnWmsBaseLayer();
 
@@ -789,6 +816,7 @@
 				data: toFeatureCollection(municipios) as any
 			});
 
+			setLayerVisibility(map, osmBasemapLayerId, showOsmBasemap);
 			setLayerVisibility(map, ignWmsLayerId, showIgnWmsBase);
 			setLayerVisibility(map, ignSatelliteLayerId, showIgnSatellite);
 			setLayerVisibility(map, ignRiversLayerId, showIgnRivers);
@@ -895,6 +923,7 @@
 
 	$effect(() => {
 		if (!map || !mapReady) return;
+		if (showOsmBasemap) ensureOsmBasemapLayer();
 		if (showIgnSatellite) ensureIgnSatelliteLayer();
 		if (showIgnWmsBase) ensureIgnWmsBaseLayer();
 		if (showIgnRivers || showIgnReservoirs) addIgnHydroWmsLayers();
@@ -904,6 +933,7 @@
 
 	$effect(() => {
 		if (!map) return;
+		setLayerVisibility(map, osmBasemapLayerId, showOsmBasemap);
 		setLayerVisibility(map, ignWmsLayerId, showIgnWmsBase);
 		setLayerVisibility(map, ignSatelliteLayerId, showIgnSatellite);
 		setLayerVisibility(map, ignRiversLayerId, showIgnRivers);
@@ -1034,9 +1064,21 @@
 			<div class="map-quick-controls" role="group" aria-label="Controles rápidos del mapa">
 				<button
 					type="button"
+					class:active={showOsmBasemap}
+					onclick={() => {
+						onToggleOsmBasemap(true);
+						onToggleIgnWmsBase(false);
+						onToggleIgnSatellite(false);
+					}}
+				>
+					Mapa
+				</button>
+				<button
+					type="button"
 					class:active={showIgnWmsBase && !showIgnSatellite}
 					onclick={() => {
 						onToggleIgnWmsBase(true);
+						onToggleOsmBasemap(false);
 						onToggleIgnSatellite(false);
 					}}
 				>
@@ -1047,6 +1089,7 @@
 					class:active={showIgnSatellite}
 					onclick={() => {
 						onToggleIgnSatellite(true);
+						onToggleOsmBasemap(false);
 						onToggleIgnWmsBase(false);
 					}}
 				>

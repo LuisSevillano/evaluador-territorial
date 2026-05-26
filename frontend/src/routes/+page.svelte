@@ -3,6 +3,7 @@
 	import MapView from '$lib/components/MapView.svelte';
 	import type { MapColorMetric } from '$lib/components/map/coloring';
 	import Sidebar from '$lib/components/Sidebar.svelte';
+	import InspectorPanel from '$lib/components/InspectorPanel.svelte';
 	import BottomSheet from '$lib/components/ui/BottomSheet.svelte';
 	import RankingList from '$lib/components/RankingList.svelte';
 	import ColorLegend from '$lib/components/ColorLegend.svelte';
@@ -91,8 +92,6 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 	const filtersStore = createFiltersStore();
 	const layersStore = createLayersStore();
 	const rankingStore = createRankingStore();
-	let InspectorPanel: typeof import('$lib/components/InspectorPanel.svelte').default | null = $state(null);
-	let inspectorPanelLoading = $state(false);
 	const isBottomSheetOpen = $derived(uiStore.state.isBottomSheetOpen);
 	const mapColorMetric = $derived(uiStore.state.mapColorMetric);
 	const activeSheetTab = $derived(uiStore.state.activeSheetTab);
@@ -120,6 +119,7 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 	const showMunicipioPolygons = $derived(layersStore.state.showMunicipioPolygons);
 	const showIsochronesLayer = $derived(layersStore.state.showIsochronesLayer);
 	const showMunicipioPoints = $derived(layersStore.state.showMunicipioPoints);
+	const showOsmBasemap = $derived(layersStore.state.showOsmBasemap);
 	const showIgnWmsBase = $derived(layersStore.state.showIgnWmsBase);
 	const showIgnSatellite = $derived(layersStore.state.showIgnSatellite);
 	const showIgnRivers = $derived(layersStore.state.showIgnRivers);
@@ -272,6 +272,7 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 		showForestLayer,
 		showIgnReservoirs,
 		showIgnRivers,
+		showOsmBasemap,
 		showIgnWmsBase,
 		showIgnSatellite
 	});
@@ -301,6 +302,7 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 			(showForestLayer ? 1 : 0) +
 			(showIgnReservoirs ? 1 : 0) +
 			(showIgnRivers ? 1 : 0) +
+			(showOsmBasemap ? 1 : 0) +
 			(showIgnWmsBase ? 1 : 0) +
 			(showIgnSatellite ? 1 : 0)
 	);
@@ -486,18 +488,6 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 			municipios = data.municipios;
 			climateMonthly = data.climateMonthly;
 			datasetMetadata = data.datasetMetadata;
-		}
-	});
-
-	$effect(() => {
-		if (selectedMunicipio && !InspectorPanel && !inspectorPanelLoading) {
-			inspectorPanelLoading = true;
-			import('$lib/components/InspectorPanel.svelte').then((module) => {
-				InspectorPanel = module.default;
-				inspectorPanelLoading = false;
-			}).catch(() => {
-				inspectorPanelLoading = false;
-			});
 		}
 	});
 
@@ -839,6 +829,7 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 				{selectedMunicipio}
 				{showMunicipioPolygons}
 				{showIsochronesLayer}
+				{showOsmBasemap}
 				{showIgnWmsBase}
 				{showIgnSatellite}
 				{showIgnRivers}
@@ -872,6 +863,7 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 				onCoordinateSearch={handleCoordinateSearch}
 				onToggleMunicipioPolygons={(value) => (layersStore.state.showMunicipioPolygons = value)}
 				onToggleIsochronesLayer={(value) => (layersStore.state.showIsochronesLayer = value)}
+				onToggleOsmBasemap={(value) => (layersStore.state.showOsmBasemap = value)}
 				onToggleIgnWmsBase={(value) => (layersStore.state.showIgnWmsBase = value)}
 				onToggleIgnSatellite={(value: boolean) => (layersStore.state.showIgnSatellite = value)}
 				onToggleIgnRivers={(value: boolean) => (layersStore.state.showIgnRivers = value)}
@@ -906,11 +898,13 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 					{showMunicipioPolygons}
 					{showIsochronesLayer}
 					{showMunicipioPoints}
+					{showOsmBasemap}
 					{showIgnWmsBase}
 					{showIgnSatellite}
 					{showIgnRivers}
 					{showIgnReservoirs}
 					{mapColorMetric}
+					onToggleOsmBasemap={(value) => (layersStore.state.showOsmBasemap = value)}
 					onToggleIgnSatellite={(value) => (layersStore.state.showIgnSatellite = value)}
 					onToggleIgnWmsBase={(value) => (layersStore.state.showIgnWmsBase = value)}
 					{showForestLayer}
@@ -990,30 +984,26 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 					<div class="sheet-content">
 						{#if activeSheetTab === 'sel'}
 							{#if selectedMunicipio}
-								{#if InspectorPanel}
-									<InspectorPanel
-										{selectedMunicipio}
-										municipios={municipiosScoredForView}
-										shortlistedIds={shortlistedIds}
-										weights={normalizedWeights}
-										weightsRaw={{ climateWeight, accessWeight, natureWeight }}
-										sensitivityOverlap={sensitivityOverlap}
+								<InspectorPanel
+									{selectedMunicipio}
+									municipios={municipiosScoredForView}
+									shortlistedIds={shortlistedIds}
+									weights={normalizedWeights}
+									weightsRaw={{ climateWeight, accessWeight, natureWeight }}
+									sensitivityOverlap={sensitivityOverlap}
 
-										climateSeries={selectedClimateSeries}
-										provinceClimateSeries={selectedProvinceClimateSeries}
-										ccaaClimateSeries={selectedCcaaClimateSeries}
-										isGridCell={selectedMunicipio?.id?.startsWith('cell_') ?? false}
-										gridClimateLoading={gridClimateLoading}
-										onToggleShortlist={handleToggleShortlist}
-										onClimateWeightChange={handleClimateWeightChange}
-										onAccessWeightChange={handleAccessWeightChange}
-										onNatureWeightChange={handleNatureWeightChange}
-										onPresetWeights={handlePresetWeights}
-										onClearMunicipio={handleClearSelectedMunicipio}
-									/>
-								{:else}
-									<p class="sheet-empty">Cargando ficha...</p>
-								{/if}
+									climateSeries={selectedClimateSeries}
+									provinceClimateSeries={selectedProvinceClimateSeries}
+									ccaaClimateSeries={selectedCcaaClimateSeries}
+									isGridCell={selectedMunicipio?.id?.startsWith('cell_') ?? false}
+									gridClimateLoading={gridClimateLoading}
+									onToggleShortlist={handleToggleShortlist}
+									onClimateWeightChange={handleClimateWeightChange}
+									onAccessWeightChange={handleAccessWeightChange}
+									onNatureWeightChange={handleNatureWeightChange}
+									onPresetWeights={handlePresetWeights}
+									onClearMunicipio={handleClearSelectedMunicipio}
+								/>
 							{:else}
 								<p class="sheet-empty">Selecciona un municipio en el mapa para ver su ficha.</p>
 								<button
@@ -1063,11 +1053,13 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 							<MobileSheetLayers
 								{mapColorMetric}
 								{layerItems}
+								{showOsmBasemap}
 								{showIgnWmsBase}
 								{showIgnSatellite}
 								onMapColorMetricChange={setMapColorMetric}
 								onToggleLayer={toggleLayerVisibility}
 								onLayerOrderChange={handleLayerOrderChange}
+								onToggleOsmBasemap={(value) => (layersStore.state.showOsmBasemap = value)}
 								onToggleIgnWmsBase={(value) => (layersStore.state.showIgnWmsBase = value)}
 								onToggleIgnSatellite={(value) => (layersStore.state.showIgnSatellite = value)}
 							/>
@@ -1119,30 +1111,26 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 					{/if}
 				</section>
 			{:else}
-				{#if InspectorPanel}
-					<InspectorPanel
-						{selectedMunicipio}
-						municipios={municipiosScoredForView}
-						shortlistedIds={shortlistedIds}
-						weights={normalizedWeights}
-						weightsRaw={{ climateWeight, accessWeight, natureWeight }}
-						sensitivityOverlap={sensitivityOverlap}
+				<InspectorPanel
+					{selectedMunicipio}
+					municipios={municipiosScoredForView}
+					shortlistedIds={shortlistedIds}
+					weights={normalizedWeights}
+					weightsRaw={{ climateWeight, accessWeight, natureWeight }}
+					{sensitivityOverlap}
 
-						climateSeries={selectedClimateSeries}
-						provinceClimateSeries={selectedProvinceClimateSeries}
-						ccaaClimateSeries={selectedCcaaClimateSeries}
-						isGridCell={selectedMunicipio?.id?.startsWith('cell_') ?? false}
-						gridClimateLoading={gridClimateLoading}
-						onToggleShortlist={handleToggleShortlist}
-						onClimateWeightChange={handleClimateWeightChange}
-						onAccessWeightChange={handleAccessWeightChange}
-						onNatureWeightChange={handleNatureWeightChange}
-						onPresetWeights={handlePresetWeights}
-						onClearMunicipio={handleClearSelectedMunicipio}
-					/>
-				{:else}
-					<p class="muted">Cargando...</p>
-				{/if}
+					climateSeries={selectedClimateSeries}
+					provinceClimateSeries={selectedProvinceClimateSeries}
+					ccaaClimateSeries={selectedCcaaClimateSeries}
+					isGridCell={selectedMunicipio?.id?.startsWith('cell_') ?? false}
+					{gridClimateLoading}
+					onToggleShortlist={handleToggleShortlist}
+					onClimateWeightChange={handleClimateWeightChange}
+					onAccessWeightChange={handleAccessWeightChange}
+					onNatureWeightChange={handleNatureWeightChange}
+					onPresetWeights={handlePresetWeights}
+					onClearMunicipio={handleClearSelectedMunicipio}
+				/>
 			{/if}
 		</div>
 	</main>

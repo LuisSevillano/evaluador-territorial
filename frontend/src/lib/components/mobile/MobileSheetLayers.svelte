@@ -9,11 +9,13 @@
 	type Props = {
 		mapColorMetric: MapColorMetric;
 		layerItems: LayerItem[];
+		showOsmBasemap: boolean;
 		showIgnWmsBase: boolean;
 		showIgnSatellite: boolean;
 		onMapColorMetricChange: (value: MapColorMetric) => void;
 		onToggleLayer: (key: string, checked: boolean) => void;
 		onLayerOrderChange: (next: string[]) => void;
+		onToggleOsmBasemap: (checked: boolean) => void;
 		onToggleIgnWmsBase: (checked: boolean) => void;
 		onToggleIgnSatellite: (checked: boolean) => void;
 	};
@@ -33,8 +35,9 @@
 		<ChipButton label="Acceso a bano" active={props.mapColorMetric === 'river_access_score'} onclick={() => props.onMapColorMetricChange('river_access_score')} />
 	</div>
 	<LayerOrderList items={props.layerItems} onToggle={props.onToggleLayer} onReorder={props.onLayerOrderChange} />
-	<label><input type="checkbox" checked={props.showIgnWmsBase} onchange={(e) => props.onToggleIgnWmsBase((e.currentTarget as HTMLInputElement).checked)} /> Base IGN</label>
-	<label><input type="checkbox" checked={props.showIgnSatellite} onchange={(e) => props.onToggleIgnSatellite((e.currentTarget as HTMLInputElement).checked)} /> Satelite IGN</label>
+	<label><input type="checkbox" checked={props.showOsmBasemap} onchange={(e) => { props.onToggleOsmBasemap((e.currentTarget as HTMLInputElement).checked); if ((e.currentTarget as HTMLInputElement).checked) { props.onToggleIgnWmsBase(false); props.onToggleIgnSatellite(false); } }} /> OpenStreetMap</label>
+	<label><input type="checkbox" checked={props.showIgnWmsBase} onchange={(e) => { props.onToggleIgnWmsBase((e.currentTarget as HTMLInputElement).checked); if ((e.currentTarget as HTMLInputElement).checked) { props.onToggleOsmBasemap(false); props.onToggleIgnSatellite(false); } }} /> Base IGN</label>
+	<label><input type="checkbox" checked={props.showIgnSatellite} onchange={(e) => { props.onToggleIgnSatellite((e.currentTarget as HTMLInputElement).checked); if ((e.currentTarget as HTMLInputElement).checked) { props.onToggleOsmBasemap(false); props.onToggleIgnWmsBase(false); } }} /> Satelite IGN</label>
 </div>
 
 <style>

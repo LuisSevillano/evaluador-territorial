@@ -18,6 +18,7 @@ export type LayerVisibilityState = {
 	showForestLayer: boolean;
 	showIgnReservoirs: boolean;
 	showIgnRivers: boolean;
+	showOsmBasemap: boolean;
 	showIgnWmsBase: boolean;
 	showIgnSatellite: boolean;
 };
