@@ -22,6 +22,7 @@
 - El ensamblado vigente pasa por features RDS en `output/features/` y export final via `scripts/05_export_frontend_v2.R`.
 - Si `score_source` es `cell_agg`, el score municipal publicado usa medianas de la rejilla 2x2 km agregadas al municipio.
 - Transporte OSM/Renfe es opt-in con `PIPELINE_INCLUDE_TRANSPORT=1`.
+- OpenTripPlanner Burgos-Madrid es piloto opt-in con `PIPELINE_INCLUDE_OTP_TRANSIT=1`; consulta un endpoint OTP local/remoto y publica `feature_otp_transit` sin alterar el score principal.
 - Fuentes de bano/agua hibrida son opt-in con `PIPELINE_USE_BATHING_SOURCES=1`.
 
 ## Tiles Y Mapas

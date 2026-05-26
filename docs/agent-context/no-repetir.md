@@ -21,6 +21,7 @@
 - Si ranking/municipio y rejilla discrepan, comparar `score_source`, `mixed_score` del compacto y mediana de celdas en `output/municipios_grid_2km.geojson`.
 - Si faltan tiles, ejecutar o revisar `scripts/05_build_pmtiles.sh` y los PMTiles copiados al frontend.
 - Si transporte no aparece, comprobar `PIPELINE_INCLUDE_TRANSPORT=1`.
+- Si el piloto OTP no aparece, comprobar `PIPELINE_INCLUDE_OTP_TRANSIT=1`, que OTP este sirviendo `OTP_ENDPOINT` y que existan GTFS descargados como `.gtfs.zip` en `data/raw/otp/graph/`.
 - Si outputs no cambian tras tocar scripts, comprobar `output/pipeline_step_hashes.json` y usar `PIPELINE_FORCE=1` cuando corresponda.
 
 ## Anti-Patrones De Agente

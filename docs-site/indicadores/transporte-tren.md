@@ -4,6 +4,22 @@ Esta página explica cómo leer la información ferroviaria del Atlas. Sirve par
 
 El indicador no pretende describir toda la movilidad de un lugar. Resume una pregunta concreta: qué relación tiene el municipio con estaciones Renfe que conectan con Madrid.
 
+## Piloto OpenTripPlanner Burgos-Madrid
+
+El pipeline incorpora un piloto opt-in con OpenTripPlanner para estimar tiempo programado por transporte público desde Madrid hasta la mejor parada GTFS del municipio, usando como origen el mejor resultado entre varios intercambiadores de Madrid.
+
+El escenario base es cualquier día laborable (lunes a viernes) de una semana tipo. Para cada municipio, el piloto prueba cada día laborable hasta 5 paradas GTFS candidatas (por nombre municipal o por cercanía), y se queda con la mejor conexión encontrada. La ventana horaria es de 07:00 a 23:00.
+
+Los orígenes probados son Avenida de América, Moncloa, Estación Sur y Chamartín. El piloto primero prueba cada parada candidata con un origen principal (Avenida de América). Si encuentra ruta, refina probando los 3 orígenes restantes para quedarse con el mejor resultado.
+
+Cuando la parada coincide exactamente con el nombre del municipio, la confianza se marca como `pilot`. Cuando la parada se deduce por cercanía al centroide municipal (hasta 15 km), la confianza se marca como `pilot_nearest_stop`. En la salida se incluyen el nombre de la parada usada, la distancia al centroide (si aplica) y el día laborable con mejor conexión.
+
+Este cálculo solo se genera cuando se ejecuta `PIPELINE_INCLUDE_OTP_TRANSIT=1`. No cambia el score principal ni sustituye las isocronas actuales: añade contexto para auditar si los horarios GTFS publicados ofrecen una conexión razonable.
+
+La lectura debe hacerse con cautela: depende de los GTFS cargados en OTP, de la fecha/hora de referencia y de la cobertura real de los operadores. No representa tráfico, incidencias ni tiempo real.
+
+Los GTFS de NAP se descargan como inputs de pipeline autenticados y quedan como datos operativos locales, no como fuente incorporada al repositorio.
+
 ## Qué significa cada color
 
 El panel de municipio muestra tres situaciones posibles.

@@ -22,10 +22,17 @@
 - `iso_01h30m`, `iso_02h00m`, `iso_02h30m`, `iso_03h30m`, `iso_04h00m`: pertenencia booleana por centroide municipal dentro de isocrona precalculada.
 - `travel_bucket`: bucket de accesibilidad derivado por celdas y agregado a municipio por mayoria.
 - `accesibilidad_norm`: normalizacion por buckets con suelo metodologico de 0.20 para evitar que territorios lejanos colapsen a cero.
+- `otp_madrid_transit_minutes`: piloto opt-in de tiempo programado por transporte publico desde el mejor intercambiador de Madrid a la mejor parada GTFS del municipio (por nombre o cercania); escenario base cualquier dia laborable de semana tipo (lun-vie), ventana 07:00-23:00.
+- `otp_madrid_transit_status`: estado del calculo OTP (`routed`, `no_route`, `error` o `not_in_scope`).
+- `otp_madrid_transit_confidence`: confianza metodologica del piloto (`pilot` para paradas por nombre exacto, `pilot_nearest_stop` para paradas deducidas por cercania); no participa todavia en `mixed_score`.
+- `otp_madrid_stop_name`: nombre de la parada GTFS usada como destino en la mejor ruta.
+- `otp_madrid_stop_distance_m`: distancia en metros de la parada GTFS al centroide municipal (solo para paradas deducidas por cercania).
+- `otp_madrid_query_day`: mejor dia laborable encontrado (formato YYYY-MM-DD).
 
 ## Limitaciones
 - La unidad de calculo es celda 2x2 km; el municipio resume distribuciones internas y no microclima de parcela.
 - Isocronas fijas precalculadas: no representan variacion horaria o de trafico en tiempo real.
+- El piloto OTP usa horarios GTFS programados para una referencia estable de cualquier dia laborable (lun-vie) entre 07:00 y 23:00; no representa tiempo real, incidencias ni garantia de servicio futuro. La parada GTFS mas cercana puede estar hasta 15 km del centroide municipal y no implica acceso peatonal razonable.
 
 ## Entorno natural
 - `forest_pct`: porcentaje municipal de coberturas forestales y matorral (OSM `landuse` + `natural`).
