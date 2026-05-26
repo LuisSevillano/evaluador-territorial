@@ -8,6 +8,7 @@
 	import { getLegendConfig } from '$lib/components/map/coloring';
 	import { classifyMixedScore, labelForScoreBand } from '$lib/components/map/scoreClassification';
 	import {
+		type MetricTone,
 		accessToneFromBucket,
 		climateToneFromMoistureScore,
 		renfeMadridToneFromScore
@@ -122,6 +123,59 @@
 		if (stopProv && stopProv !== muniProv) return `, ${stopProv}`;
 		return '';
 	});
+	const otpScope = $derived(selectedMunicipio?.otp_madrid_query_scope);
+	const otpStatus = $derived(selectedMunicipio?.otp_madrid_transit_status);
+	const otpMinutes = $derived(selectedMunicipio?.otp_madrid_transit_minutes);
+	const otpStopName = $derived(selectedMunicipio?.otp_madrid_stop_name);
+	const otpStopDistance = $derived(selectedMunicipio?.otp_madrid_stop_distance_m);
+	const otpConfidence = $derived(selectedMunicipio?.otp_madrid_transit_confidence);
+	const otpTransitModes = $derived(selectedMunicipio?.otp_madrid_transit_modes);
+	const otpOriginLat = $derived(selectedMunicipio?.otp_madrid_origin_lat);
+	const otpOriginLon = $derived(selectedMunicipio?.otp_madrid_origin_lon);
+	const otpStopLat = $derived(selectedMunicipio?.otp_madrid_stop_lat);
+	const otpStopLon = $derived(selectedMunicipio?.otp_madrid_stop_lon);
+	const otpHasData = $derived(!!otpScope && otpScope !== 'out_of_scope');
+	const otpMapUrl = $derived.by(() => {
+		if (!otpIsRouted || !Number.isFinite(otpOriginLat) || !Number.isFinite(otpOriginLon) || !Number.isFinite(otpStopLat) || !Number.isFinite(otpStopLon)) return null;
+		return `https://www.google.com/maps/dir/?api=1&origin=${otpOriginLat},${otpOriginLon}&destination=${otpStopLat},${otpStopLon}&travelmode=transit`;
+	});
+	const otpIsRouted = $derived(otpStatus === 'routed');
+	const otpTone = $derived.by((): MetricTone => {
+		if (!otpIsRouted || !Number.isFinite(otpMinutes)) return 'bad';
+		if ((otpMinutes as number) <= 180) return 'good';
+		if ((otpMinutes as number) <= 360) return 'mid';
+		return 'bad';
+	});
+	const otpStatusText = $derived.by(() => {
+		if (otpIsRouted) return 'Conexión a Madrid (Bus / Tren)';
+		if (otpStatus === 'no_route') return 'Sin ruta laborable';
+		return 'Sin conexión';
+	});
+	const otpTimeLabel = $derived.by(() => {
+		if (!Number.isFinite(otpMinutes)) return '-';
+		const m = otpMinutes as number;
+		if (m >= 60) {
+			const h = Math.floor(m / 60);
+			const min = Math.round(m % 60);
+			return `${h}h ${min}min`;
+		}
+		return `${Math.round(m)} min`;
+	});
+	const otpStopLabel = $derived(otpStopName ?? '-');
+	const otpConfidenceLabel = $derived.by(() => {
+		if (otpConfidence === 'pilot_nearest_stop') return 'parada cercana';
+		return '';
+	});
+	const otpStopDistanceLabel = $derived.by(() => {
+		if (!Number.isFinite(otpStopDistance)) return '';
+		const km = ((otpStopDistance as number) / 1000).toFixed(1);
+		return `a ${km} km`;
+	});
+	const otpModesLabel = $derived.by(() => {
+		if (!otpTransitModes) return 'GTFS';
+		return otpTransitModes.replaceAll(',', ' + ');
+	});
+
 	const safeParseProtectedAreas = (value: string): ProtectedAreaRef[] => {
 		try {
 			const parsed = JSON.parse(value) as unknown;
@@ -273,8 +327,10 @@
 				<div class="transport-header">TRANSPORTE</div>
 				<div class={`transport-content ${renfeTone}`}>
 					<div class="transport-row">
-						<span class="transport-type">Tren</span>
-						<span class={`transport-indicator ${renfeTone}`}></span>
+						<div class="transport-title">
+							<span class="transport-type">Tren</span>
+							<span class={`transport-indicator ${renfeTone}`}></span>
+						</div>
 						<span class="transport-status">{renfeStatusText}</span>
 						{#if renfeStatus === 'direct_madrid'}
 							<span class="transport-score">{formatScorePercent(renfeScore ?? 0)}%</span>
@@ -292,6 +348,36 @@
 						</div>
 					{/if}
 				</div>
+				{#if otpHasData}
+					<div class="transport-content {otpTone}">
+						<div class="transport-row">
+							<div class="transport-title">
+								<span class="transport-type">Bus / Tren</span>
+								<span class="transport-indicator {otpTone}"></span>
+							</div>
+							<span class="transport-status">{otpStatusText}</span>
+							{#if otpIsRouted}
+								<span class="transport-score">{otpTimeLabel}</span>
+							{/if}
+						</div>
+						{#if otpIsRouted}
+							<div class="transport-info">
+								<div class="transport-station-line">
+									<span class="transport-station">{otpStopLabel}</span>
+									<span class="transport-mode-chip">{otpModesLabel}</span>
+								</div>
+								{#if otpConfidenceLabel || otpStopDistanceLabel}
+									<span class="transport-dist">
+										{otpConfidenceLabel}{#if otpConfidenceLabel && otpStopDistanceLabel} · {/if}{otpStopDistanceLabel}
+									</span>
+								{/if}
+								{#if otpMapUrl}
+									<a href={otpMapUrl} target="_blank" rel="noopener noreferrer" class="transport-gmaps">Abrir en Google Maps →</a>
+								{/if}
+							</div>
+						{/if}
+					</div>
+				{/if}
 			</div>
 			{#if protectedAreas.length > 0}
 				<div class="protected-block">
@@ -565,40 +651,54 @@
 		letter-spacing: 0.1em;
 		text-transform: uppercase;
 		color: var(--text-muted);
-		margin-bottom: 0.2rem;
+		margin-bottom: 0.35rem;
 	}
 	.transport-content {
-		padding: 0.35rem 0.45rem;
-		border: 0;
-		border-radius: var(--radius-card);
+		padding: 0.6rem 0.7rem;
+		border: 1px solid transparent;
+		border-radius: 0.7rem;
 		background: transparent;
-		border-top: 1px solid var(--divider-border);
-		border-radius: 0;
+		box-shadow: inset 0 1px 0 color-mix(in srgb, white 45%, transparent);
+	}
+	.transport-content + .transport-content {
+		margin-top: 0.4rem;
 	}
 	.transport-content.good {
-		background: color-mix(in srgb, var(--status-good-bg) 52%, transparent);
+		background: color-mix(in srgb, var(--status-good-bg) 58%, white 22%);
+		border-color: color-mix(in srgb, var(--status-good) 18%, transparent);
 	}
 	.transport-content.mid {
-		background: color-mix(in srgb, var(--status-warn-bg) 52%, transparent);
+		background: color-mix(in srgb, var(--status-warn-bg) 58%, white 22%);
+		border-color: color-mix(in srgb, var(--status-warn) 18%, transparent);
 	}
 	.transport-content.bad {
-		background: color-mix(in srgb, var(--status-bad-bg) 52%, transparent);
+		background: color-mix(in srgb, var(--status-bad-bg) 58%, white 22%);
+		border-color: color-mix(in srgb, var(--status-bad) 16%, transparent);
 	}
 	.transport-row {
-		display: flex;
+		display: grid;
+		grid-template-columns: minmax(5rem, auto) minmax(0, 1fr) auto;
+		align-items: start;
+		gap: 0.55rem;
+	}
+	.transport-title {
+		display: inline-flex;
 		align-items: center;
-		gap: 0.35rem;
+		gap: 0.4rem;
+		min-width: 0;
 	}
 	.transport-type {
-		font-size: 0.78rem;
+		font-size: 0.82rem;
 		font-weight: 700;
 		color: var(--text-primary);
+		line-height: 1.1;
 	}
 	.transport-indicator {
-		width: 8px;
-		height: 8px;
+		width: 0.5rem;
+		height: 0.5rem;
 		border-radius: 50%;
 		flex-shrink: 0;
+		box-shadow: 0 0 0 3px color-mix(in srgb, currentColor 12%, transparent);
 	}
 	.transport-indicator.good {
 		background: var(--status-good);
@@ -610,33 +710,69 @@
 		background: var(--status-bad);
 	}
 	.transport-status {
-		flex: 1;
-		font-size: 0.72rem;
-		font-weight: 500;
+		min-width: 0;
+		font-size: 0.76rem;
+		font-weight: 650;
+		line-height: 1.22;
 		color: var(--text-secondary);
 	}
 	.transport-score {
 		flex: 0 0 auto;
 		border-radius: var(--radius-pill);
-		padding: 0.06rem 0.3rem;
-		background: var(--control-bg);
-		font-size: 0.62rem;
+		padding: 0.16rem 0.45rem;
+		background: color-mix(in srgb, var(--surface) 88%, white 12%);
+		font-size: 0.7rem;
 		font-weight: 700;
 		color: var(--brand);
+		line-height: 1;
+		box-shadow: 0 1px 4px color-mix(in srgb, black 5%, transparent);
 	}
 	.transport-info {
-		margin-top: 0.22rem;
-		font-size: 0.66rem;
+		margin-top: 0.45rem;
+		padding-left: calc(5rem + 0.55rem);
+		font-size: 0.7rem;
+		line-height: 1.25;
 		color: var(--text-muted);
 	}
+	.transport-station-line {
+		display: flex;
+		align-items: center;
+		gap: 0.35rem;
+		flex-wrap: wrap;
+	}
 	.transport-station {
-		font-weight: 600;
+		font-weight: 750;
 		color: var(--text-primary);
+	}
+	.transport-mode-chip {
+		border-radius: var(--radius-pill);
+		padding: 0.08rem 0.35rem;
+		background: color-mix(in srgb, var(--brand) 8%, transparent);
+		font-size: 0.58rem;
+		font-weight: 750;
+		letter-spacing: 0.04em;
+		text-transform: uppercase;
+		color: var(--brand);
 	}
 	.transport-dist {
 		display: block;
-		margin-top: 0.05rem;
+		margin-top: 0.12rem;
 		color: var(--text-muted);
+	}
+	.transport-gmaps {
+		display: inline-block;
+		margin-top: 0.25rem;
+		font-size: 0.66rem;
+		font-weight: 600;
+		color: var(--brand);
+		text-decoration: none;
+		border: 1px solid color-mix(in srgb, var(--brand) 25%, transparent);
+		border-radius: var(--radius-pill);
+		padding: 0.1rem 0.45rem;
+		transition: background 160ms ease;
+	}
+	.transport-gmaps:hover {
+		background: color-mix(in srgb, var(--brand) 10%, transparent);
 	}
 	.transport-sep {
 		margin: 0 0.2rem;
@@ -680,6 +816,16 @@
 		}
 		.metric-grid strong {
 			font-size: 0.8rem;
+		}
+		.transport-row {
+			grid-template-columns: 1fr auto;
+			gap: 0.3rem 0.45rem;
+		}
+		.transport-title {
+			grid-column: 1 / -1;
+		}
+		.transport-info {
+			padding-left: 0;
 		}
 		.charts {
 			gap: 0.4rem;

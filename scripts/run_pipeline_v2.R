@@ -7,6 +7,7 @@ suppressPackageStartupMessages({
 
 pipeline_mode <- tolower(trimws(Sys.getenv("PIPELINE_MODE", unset = "full")))
 include_transport <- identical(Sys.getenv("PIPELINE_INCLUDE_TRANSPORT", unset = "0"), "1")
+include_otp_transit <- identical(Sys.getenv("PIPELINE_INCLUDE_OTP_TRANSIT", unset = "0"), "1")
 include_protected_areas <- identical(Sys.getenv("PIPELINE_INCLUDE_PROTECTED_AREAS", unset = "0"), "1")
 use_bathing_sources <- identical(Sys.getenv("PIPELINE_USE_BATHING_SOURCES", unset = "0"), "1")
 force_rebuild <- identical(Sys.getenv("PIPELINE_FORCE", unset = "0"), "1")
@@ -21,6 +22,7 @@ assemble_feature_inputs <- c(
   paths$output_feature_river_rds,
   paths$output_feature_transport_osm_rds,
   paths$output_feature_transport_renfe_rds,
+  paths$output_feature_otp_transit_rds,
   paths$output_feature_protected_areas_municipal_rds
 )
 
@@ -146,7 +148,7 @@ steps <- list(
     path = "scripts/05_export_frontend_v2.R",
     label = "Export frontend v2",
     outputs = c(paths$output_v2_csv, paths$output_v2_json, paths$output_v2_geojson),
-    inputs = c(paths$output_final_geojson, paths$output_climate_monthly_csv, paths$output_feature_protected_areas_municipal_rds)
+    inputs = c(paths$output_final_geojson, paths$output_climate_monthly_csv, paths$output_feature_otp_transit_rds, paths$output_feature_protected_areas_municipal_rds)
   ),
   list(
     path = "scripts/06_metadata_indicators.R",
@@ -187,6 +189,18 @@ if (include_transport) {
   steps <- append(steps, transport_steps, after = 9)
 }
 
+if (include_otp_transit) {
+  otp_transit_steps <- list(
+    list(
+      path = "scripts/04c_otp_transit_madrid.R",
+      label = "Transporte OTP Burgos-Madrid",
+      outputs = c(paths$output_feature_otp_transit_rds),
+      inputs = c(paths$output_final_geojson)
+    )
+  )
+  steps <- append(steps, otp_transit_steps, after = 9)
+}
+
 if (include_protected_areas) {
   protected_area_steps <- list(
     list(
@@ -206,6 +220,12 @@ if (include_protected_areas) {
 
 if (pipeline_mode == "assemble-only") {
   steps <- list(
+    if (include_otp_transit) list(
+      path = "scripts/04c_otp_transit_madrid.R",
+      label = "Transporte OTP Burgos-Madrid",
+      outputs = c(paths$output_feature_otp_transit_rds),
+      inputs = c(paths$output_final_geojson)
+    ) else NULL,
     list(
       path = "scripts/05b_assemble_features_fast.R",
       label = "Ensamblado rapido de features",
@@ -251,7 +271,7 @@ if (pipeline_mode == "assemble-only") {
       path = "scripts/05_export_frontend_v2.R",
       label = "Export frontend v2",
       outputs = c(paths$output_v2_csv, paths$output_v2_json, paths$output_v2_geojson),
-      inputs = c(paths$output_final_geojson, paths$output_climate_monthly_csv, paths$output_feature_protected_areas_municipal_rds)
+      inputs = c(paths$output_final_geojson, paths$output_climate_monthly_csv, paths$output_feature_otp_transit_rds, paths$output_feature_protected_areas_municipal_rds)
     ),
     list(
       path = "scripts/06_metadata_indicators.R",
@@ -260,6 +280,7 @@ if (pipeline_mode == "assemble-only") {
       inputs = c(paths$output_v2_csv)
     )
   )
+  steps <- Filter(Negate(is.null), steps)
 }
 
 now_str <- function() format(Sys.time(), "%H:%M:%S")
@@ -307,7 +328,7 @@ step_hash <- function(step) {
   } else {
     "no-inputs"
   }
-  paste(script_hash, analysis_scope, pipeline_mode, include_transport, include_protected_areas, inputs_hash, sep = "::")
+  paste(script_hash, analysis_scope, pipeline_mode, include_transport, include_otp_transit, include_protected_areas, inputs_hash, sep = "::")
 }
 
 should_run_step <- function(step, state) {
@@ -333,7 +354,7 @@ should_run_step <- function(step, state) {
 
 cat("== Pipeline v2 iniciado ==\n")
 cat(sprintf("[%s] Scope: %s (%s)\n", now_str(), scope_config$label, analysis_scope))
-cat(sprintf("[%s] Modo: %s | Transporte: %s | ENP: %s\n", now_str(), pipeline_mode, if (include_transport) "ON" else "OFF", if (include_protected_areas) "ON" else "OFF"))
+cat(sprintf("[%s] Modo: %s | Transporte: %s | OTP: %s | ENP: %s\n", now_str(), pipeline_mode, if (include_transport) "ON" else "OFF", if (include_otp_transit) "ON" else "OFF", if (include_protected_areas) "ON" else "OFF"))
 cat(sprintf("[%s] Pasos: %d\n", now_str(), length(steps)))
 cat(sprintf("[%s] Estimacion inicial: %.1f min\n\n", now_str(), estimate_total_minutes(scope_config)))
 

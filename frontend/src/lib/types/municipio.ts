@@ -94,6 +94,23 @@ export type Municipio = {
 	nearest_station_distance_km?: number;
 	transport_confidence?: 'high' | 'medium' | 'low';
 	transport_status?: 'direct_madrid' | 'station_nearby' | 'no_station';
+	otp_madrid_transit_seconds?: number;
+	otp_madrid_transit_minutes?: number;
+	otp_madrid_transit_hhmm?: string;
+	otp_madrid_transit_legs?: string;
+	otp_madrid_transit_modes?: string;
+	otp_madrid_transit_status?: 'routed' | 'no_route' | 'error' | 'not_in_scope';
+	otp_madrid_transit_confidence?: 'pilot' | 'pilot_nearest_stop' | 'none';
+	otp_madrid_query_datetime?: string;
+	otp_madrid_query_target?: string;
+	otp_madrid_query_scope?: string;
+	otp_madrid_query_day?: string;
+	otp_madrid_stop_name?: string;
+	otp_madrid_stop_distance_m?: number;
+	otp_madrid_stop_lat?: number;
+	otp_madrid_stop_lon?: number;
+	otp_madrid_origin_lat?: number;
+	otp_madrid_origin_lon?: number;
 	relieve_norm?: number;
 	relieve_score_raw?: number;
 	// Grid aggregation (from 2km cells)

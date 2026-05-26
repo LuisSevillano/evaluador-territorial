@@ -67,6 +67,17 @@ if (file.exists(paths$output_feature_protected_areas_municipal_rds)) {
     left_join(protected_areas, by = "codigo")
 }
 
+if (file.exists(paths$output_feature_otp_transit_rds)) {
+  feature_otp <- readRDS(paths$output_feature_otp_transit_rds) |>
+    select(codigo, starts_with("otp_madrid"))
+  otp_cols <- grep("^otp_madrid", names(mun), value = TRUE)
+  if (length(otp_cols) > 0) {
+    mun <- mun |> select(-any_of(otp_cols))
+  }
+  mun <- mun |>
+    left_join(feature_otp, by = "codigo")
+}
+
 if (file.exists(paths$output_provincias_geojson)) {
   provincias_bounds <- st_read(paths$output_provincias_geojson, quiet = TRUE) |>
     st_transform(4326)
@@ -266,7 +277,11 @@ for (col_name in c(
   "renfe_madrid_departures_active_day", "renfe_madrid_departures_p25",
   "renfe_madrid_routes_count", "renfe_madrid_service_norm",
   "has_direct_madrid_service", "has_nearby_station", "nearest_station_distance_km",
-  "transport_confidence"
+	"otp_madrid_transit_seconds", "otp_madrid_transit_minutes",
+	"otp_madrid_stop_distance_m",
+	"otp_madrid_stop_lat", "otp_madrid_stop_lon",
+	"otp_madrid_origin_lat", "otp_madrid_origin_lon",
+	"transport_confidence"
 )) {
   mun <- ensure_num_col(mun, col_name)
 }
@@ -277,7 +292,11 @@ for (col_name in c(
   "renfe_tipo_servicio", "renfe_madrid_connection_type",
   "renfe_madrid_stop_id", "renfe_madrid_stop_name",
   "renfe_madrid_stop_municipality", "renfe_madrid_stop_province",
-  "travel_bucket", "transport_status", "protected_areas", "protected_areas_source"
+  "travel_bucket", "transport_status", "otp_madrid_transit_hhmm", "otp_madrid_transit_legs",
+  "otp_madrid_transit_modes", "otp_madrid_transit_status", "otp_madrid_transit_confidence",
+  "otp_madrid_query_datetime", "otp_madrid_query_target", "otp_madrid_query_scope",
+  "otp_madrid_stop_name", "otp_madrid_query_day",
+  "protected_areas", "protected_areas_source"
 )) {
   mun <- ensure_chr_col(mun, col_name)
 }
@@ -474,7 +493,24 @@ mun_v2 <- mun |>
     has_direct_madrid_service,
     transport_confidence,
     transport_status,
-    precip_norm,
+    otp_madrid_transit_seconds,
+    otp_madrid_transit_minutes,
+    otp_madrid_transit_hhmm,
+    otp_madrid_transit_legs,
+    otp_madrid_transit_modes,
+    otp_madrid_transit_status,
+    otp_madrid_transit_confidence,
+    otp_madrid_query_datetime,
+    otp_madrid_query_target,
+    otp_madrid_query_scope,
+    otp_madrid_query_day,
+	otp_madrid_stop_name,
+	otp_madrid_stop_distance_m,
+	otp_madrid_stop_lat,
+	otp_madrid_stop_lon,
+	otp_madrid_origin_lat,
+	otp_madrid_origin_lon,
+	precip_norm,
     temp_verano_norm,
     temp_invierno_norm,
     forest_pct,

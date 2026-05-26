@@ -66,6 +66,12 @@ mun <- mun |>
     "renfe_madrid_connection_type", "renfe_madrid_service_norm",
     "has_direct_madrid_service", "has_nearby_station", "nearest_station_distance_km",
     "transport_confidence", "transport_status"
+  )) |>
+  join_feature(paths$output_feature_otp_transit_rds, paths$output_feature_otp_transit_parquet, c(
+    "otp_madrid_transit_seconds", "otp_madrid_transit_minutes", "otp_madrid_transit_hhmm",
+    "otp_madrid_transit_legs", "otp_madrid_transit_modes", "otp_madrid_transit_status",
+    "otp_madrid_transit_confidence", "otp_madrid_query_datetime", "otp_madrid_query_target",
+    "otp_madrid_query_scope"
   ))
 
 resolve_join_suffixes <- function(df) {

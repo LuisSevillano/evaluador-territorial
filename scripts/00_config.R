@@ -63,6 +63,7 @@ paths <- list(
   output_feature_river_parquet = path(project_root, "output", "features", "feature_river_access.parquet"),
   output_feature_transport_osm_parquet = path(project_root, "output", "features", "feature_transport_osm.parquet"),
   output_feature_transport_renfe_parquet = path(project_root, "output", "features", "feature_transport_renfe.parquet"),
+  output_feature_otp_transit_parquet = path(project_root, "output", "features", "feature_otp_transit.parquet"),
   output_feature_protected_areas_grid_parquet = path(project_root, "output", "features", "feature_protected_areas_grid.parquet"),
   output_feature_protected_areas_municipal_parquet = path(project_root, "output", "features", "feature_protected_areas_municipal.parquet"),
   output_feature_grid_agg_parquet = path(project_root, "output", "features", "feature_grid_agg.parquet"),
@@ -73,9 +74,13 @@ paths <- list(
   output_feature_river_rds = path(project_root, "output", "features", "feature_river_access.rds"),
   output_feature_transport_osm_rds = path(project_root, "output", "features", "feature_transport_osm.rds"),
   output_feature_transport_renfe_rds = path(project_root, "output", "features", "feature_transport_renfe.rds"),
+  output_feature_otp_transit_rds = path(project_root, "output", "features", "feature_otp_transit.rds"),
   output_feature_protected_areas_grid_rds = path(project_root, "output", "features", "feature_protected_areas_grid.rds"),
   output_feature_protected_areas_municipal_rds = path(project_root, "output", "features", "feature_protected_areas_municipal.rds"),
   output_feature_grid_agg_rds = path(project_root, "output", "features", "feature_grid_agg.rds"),
+  otp_raw_dir = path(project_root, "data", "raw", "otp"),
+  otp_graph_dir = path(project_root, "data", "raw", "otp", "graph"),
+  otp_gtfs_dir = path(project_root, "data", "raw", "otp", "graph", "gtfs"),
   protected_areas_xlsx = path("/Users/portatil/Downloads/enp_dd_2025.xlsx"),
   protected_areas_shp_zip = path("/Users/portatil/Downloads/Enp2025_shp.zip"),
   relieve_raw_dir = path(project_root, "data", "raw", "relieve", "copdem"),
@@ -126,6 +131,7 @@ paths <- list(
 invisible(dir_create(paths$output_dir, recurse = TRUE))
 invisible(dir_create(paths$output_features_dir, recurse = TRUE))
 invisible(dir_create(paths$relieve_processed_dir, recurse = TRUE))
+invisible(dir_create(paths$otp_gtfs_dir, recurse = TRUE))
 invisible(dir_create(path_dir(paths$frontend_json), recurse = TRUE))
 invisible(dir_create(paths$frontend_isochrones_dir, recurse = TRUE))
 
