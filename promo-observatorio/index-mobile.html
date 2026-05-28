@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=1080, height=1200">
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <style>
+      * { box-sizing: border-box; }
+      html, body { margin: 0; width: 1080px; height: 1200px; overflow: hidden; font-family: Arial, Helvetica, sans-serif; background: #101812; }
+      #root { position: relative; width: 1080px; height: 1200px; overflow: hidden; color: #102016; background: linear-gradient(140deg, #f8f4e9, #dce9dc); }
+      .clip { position: absolute; }
+      .scene { inset: 0; }
+      .dark { background: radial-gradient(circle at 20% 15%, #29483b 0%, transparent 34%), linear-gradient(140deg, #101812, #1f352b); color: #fff8e8; }
+      .title { margin: 0; font-family: serif; font-size: 92px; line-height: 0.95; letter-spacing: -0.045em; }
+      .subtitle { margin: 0; font-size: 38px; line-height: 1.16; color: #dce8d3; }
+      .k { text-transform: uppercase; letter-spacing: 0.12em; font-size: 24px; font-weight: 800; color: #5b7059; }
+      .frame { border: 1px solid rgba(24,45,30,0.16); border-radius: 8px; overflow: hidden; background: #f8f8f8; box-shadow: 0 18px 46px rgba(20,30,22,0.15); }
+      .frame img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+      .cap { left: 60px; bottom: 52px; width: 1800px; padding: 18px 24px; border-radius: 8px; background: rgba(12,20,16,0.9); color: #fff8e8; font-size: 34px; line-height: 1.15; }
+      .badge { position: absolute; left: 76px; top: 76px; padding: 10px 14px; border-radius: 6px; border: 1px solid rgba(23,55,47,0.35); background: #f6f3e8; color: #17372f; font-size: 21px; font-weight: 800; }
+      .process { position: absolute; left: 130px; top: 320px; width: 1660px; display: grid; grid-template-columns: repeat(3, 460px); gap: 140px; }
+      .process-card { min-height: 330px; padding: 34px; border-radius: 10px; background: rgba(255,253,244,0.94); border: 1px solid rgba(26,48,31,0.16); box-shadow: 0 18px 42px rgba(20,30,22,0.12); }
+      .process-card b { display: block; font-size: 38px; margin-bottom: 18px; }
+      .process-card span { display: block; font-size: 28px; line-height: 1.22; color: #304432; }
+      .arrow { top: 474px; width: 76px; height: 10px; background: #22584e; }
+      .arrow:after { content: ''; position: absolute; right: -14px; top: -9px; border-left: 22px solid #22584e; border-top: 14px solid transparent; border-bottom: 14px solid transparent; }
+      .weight-row { display: grid; grid-template-columns: 220px 1fr 80px; gap: 20px; align-items: center; margin: 26px 0; font-size: 31px; }
+      .track { height: 26px; border-radius: 999px; background: #dbe5d4; overflow: hidden; }
+      .fill { display: block; height: 100%; border-radius: 999px; background: #2f7d6e; }
+      .closing { position: absolute; left: 210px; top: 170px; width: 1500px; min-height: 620px; padding: 80px 110px; border-radius: 12px; background: rgba(255,253,244,0.94); border: 1px solid rgba(26,48,31,0.16); text-align: center; }
+      .code-badge { display: inline-block; padding: 5px 10px; border-radius: 8px; background: rgba(255,248,232,0.14); border: 1px solid rgba(255,248,232,0.24); font-family: monospace; font-size: 0.9em; font-style: italic; color: #fff8e8; }
+      .metric-item { display: grid; grid-template-columns: 18px 1fr; gap: 14px; align-items: start; padding: 11px 0; border-bottom: 1px solid rgba(20,32,22,0.12); }
+      .metric-item:before { content: ''; width: 10px; height: 10px; border-radius: 999px; background: #174c42; margin-top: 13px; }
+      .mobile-kicker { position: absolute; left: 56px; top: 40px; font-size: 18px; }
+      .mobile-title { position: absolute; left: 56px; top: 76px; width: 620px; font-size: 52px; color: #142016; }
+      .mobile-subtitle { position: absolute; left: 56px; top: 205px; width: 600px; font-size: 28px; line-height: 1.18; color: #304432; margin: 0; }
+      .mobile-dark-title { color: #fff8e8; }
+      .mobile-dark-subtitle { color: #dce8d3; }
+      .mobile-card-title { display:block; font-size: 24px; font-weight: 650; margin-bottom: 14px; }
+      .mobile-card-text { display:block; font-size: 22px; line-height: 1.18; color:#304432; }
+      .demo-focus { position:absolute; border:3px solid rgba(255,248,232,0.96); background:rgba(255,248,232,0.18); box-shadow:0 0 0 999px rgba(12,18,14,0.08), 0 18px 42px rgba(0,0,0,0.25); opacity:0; }
+      .demo-copy-state { position:absolute; inset:0; opacity:0; }
+      .demo-copy-state b { display:block; font-size:36px; color:#132016; margin-bottom:8px; }
+      .demo-copy-state span { display:block; font-size:26px; line-height:1.18; color:#304432; }
+    </style>
+  </head>
+  <body>
+    <div id="root" data-composition-id="main" data-start="0" data-duration="73.5" data-width="1080" data-height="1200">
+      <section id="s1" class="clip scene dark" data-start="0" data-duration="4" data-track-index="1">
+        <h1 class="title" style="position:absolute;left:54px;top:790px;width:972px;font-size:80px;color:#fff8e8;text-align:center">Atlas Territorial El Buen Vivir</h1>
+        <p class="subtitle" style="position:absolute;left:60px;top:920px;width:960px;font-size:30px;color:#dce8d3;text-align:center">La herramienta para explorar lugares posibles para El Buen Vivir.</p>
+        <div style="position:absolute;left:60px;top:1000px;width:960px;font-size:26px;color:#fff8e8;font-weight:800;text-align:center">observatorio-territorial.netlify.app</div>
+      </section>
+
+      <section id="s2" class="clip scene" data-start="4" data-duration="14.5" data-track-index="2">
+        <h2 id="s2Title" class="title" style="position:absolute;left:56px;top:50px;width:850px;font-size:58px;line-height:0.98;color:#132016;text-align:left">Bienvenidos al Atlas Territorial</h2>
+        <p id="s2Sub" style="position:absolute;left:56px;top:135px;width:820px;margin:0;font-size:27px;line-height:1.18;color:#304432;text-align:left">Una herramienta para explorar municipios, comparar indicadores y entender mejor donde puede encajar El Buen Vivir.</p>
+        <div id="demoFrame" class="frame" style="position:absolute;left:24px;top:255px;width:1032px;height:581px;background:#eef2ea;border-color:transparent">
+          <img src="assets/screenshots/prod-cillaperlata-open.png" alt="Demo de interfaz del Atlas" style="width:100%;height:100%;object-fit:contain;display:block">
+          <div id="demoDim" style="position:absolute;inset:0;background:rgba(13,18,15,0.50);opacity:0"></div>
+          <div data-data-hf-studio-original-display="" data-data-hf-studio-original-box-sizing="" data-data-hf-studio-original-flex-shrink="" data-data-hf-studio-original-flex-grow="" data-data-hf-studio-original-flex-basis="" data-data-hf-studio-original-max-height="" data-data-hf-studio-original-max-width="" data-data-hf-studio-original-min-height="" data-data-hf-studio-original-min-width="" data-data-hf-studio-original-height="530px" data-data-hf-studio-original-width="230px" data-data-hf-studio-box-size="true" data-data-hf-studio-original-inline-translate="" data-data-hf-studio-original-translate="" data-data-hf-studio-path-offset="true" id="demoFilters" class="demo-focus" style="left:0;top:38px;width:228px;height:530px;--hf-studio-offset-x:2px;--hf-studio-offset-y:8px;translate:var(--hf-studio-offset-x, 0px) var(--hf-studio-offset-y, 0px);--hf-studio-width:228px;--hf-studio-height:530px;min-width:0px;min-height:0px;max-width:none;max-height:none;box-sizing:border-box"></div>
+          <div data-data-hf-studio-original-inline-translate="" data-data-hf-studio-original-translate="" data-data-hf-studio-path-offset="true" data-data-hf-studio-original-display="" data-data-hf-studio-original-box-sizing="" data-data-hf-studio-original-flex-shrink="" data-data-hf-studio-original-flex-grow="" data-data-hf-studio-original-flex-basis="" data-data-hf-studio-original-max-height="" data-data-hf-studio-original-max-width="" data-data-hf-studio-original-min-height="" data-data-hf-studio-original-min-width="" data-data-hf-studio-original-height="338px" data-data-hf-studio-original-width="595px" data-data-hf-studio-box-size="true" id="demoMap" class="demo-focus" style="left:238px;top:38px;width:595px;height:380px;--hf-studio-width:595px;--hf-studio-height:380px;min-width:0px;min-height:0px;max-width:none;max-height:none;box-sizing:border-box;--hf-studio-offset-x:0px;--hf-studio-offset-y:14px;translate:var(--hf-studio-offset-x, 0px) var(--hf-studio-offset-y, 0px)"></div>
+          <div data-data-hf-studio-original-display="" data-data-hf-studio-original-box-sizing="" data-data-hf-studio-original-flex-shrink="" data-data-hf-studio-original-flex-grow="" data-data-hf-studio-original-flex-basis="" data-data-hf-studio-original-max-height="" data-data-hf-studio-original-max-width="" data-data-hf-studio-original-min-height="" data-data-hf-studio-original-min-width="" data-data-hf-studio-original-height="152px" data-data-hf-studio-original-width="595px" data-data-hf-studio-box-size="true" data-data-hf-studio-original-inline-translate="" data-data-hf-studio-original-translate="" data-data-hf-studio-path-offset="true" id="demoTable" class="demo-focus" style="left:238px;top:416px;width:595px;height:146px;--hf-studio-offset-x:0px;--hf-studio-offset-y:13px;translate:var(--hf-studio-offset-x, 0px) var(--hf-studio-offset-y, 0px);--hf-studio-width:595px;--hf-studio-height:146px;min-width:0px;min-height:0px;max-width:none;max-height:none;box-sizing:border-box"></div>
+          <div data-data-hf-studio-original-display="" data-data-hf-studio-original-box-sizing="" data-data-hf-studio-original-flex-shrink="" data-data-hf-studio-original-flex-grow="" data-data-hf-studio-original-flex-basis="" data-data-hf-studio-original-max-height="" data-data-hf-studio-original-max-width="" data-data-hf-studio-original-min-height="" data-data-hf-studio-original-min-width="" data-data-hf-studio-original-height="530px" data-data-hf-studio-original-width="176px" data-data-hf-studio-box-size="true" data-data-hf-studio-original-inline-translate="" data-data-hf-studio-original-translate="" data-data-hf-studio-path-offset="true" id="demoInfo" class="demo-focus" style="left:846px;top:38px;width:175px;height:530px;--hf-studio-offset-x:2px;--hf-studio-offset-y:8px;translate:var(--hf-studio-offset-x, 0px) var(--hf-studio-offset-y, 0px);--hf-studio-width:175px;--hf-studio-height:530px;min-width:0px;min-height:0px;max-width:none;max-height:none;box-sizing:border-box"></div>
+        </div>
+        <div id="demoCopy" style="position:absolute;left:56px;top:875px;width:480px;height:132px;opacity:0">
+          <div id="demoCopyFilters" class="demo-copy-state"><b>Filtros</b><span>Ajusta provincias, accesibilidad, clima y pesos del score.</span></div>
+          <div id="demoCopyMap" class="demo-copy-state"><b>Mapa</b><span>Visualiza patrones territoriales y cambia entre municipios y detalle 2 km.</span></div>
+          <div id="demoCopyTable" class="demo-copy-state"><b>Tabla ranking</b><span>Compara municipios de un vistazo y ordena por los indicadores principales.</span></div>
+          <div id="demoCopyInfo" class="demo-copy-state"><b>Info municipio</b><span>Abre fortalezas, riesgos, clima, agua, transporte y contexto local.</span></div>
+        </div>
+      </section>
+
+      <section id="s3" class="clip scene" data-start="18.5" data-duration="9" data-track-index="3">
+        <div class="k mobile-kicker" style="left:230px;top:50px">Proceso metodológico</div>
+        <h2 class="title mobile-title" style="left:230px;top:88px;width:620px">Cómo el Atlas convierte datos dispersos en una lectura común</h2>
+        <div data-data-hf-studio-original-display="" data-data-hf-studio-original-box-sizing="border-box" data-data-hf-studio-original-flex-shrink="" data-data-hf-studio-original-flex-grow="" data-data-hf-studio-original-flex-basis="" data-data-hf-studio-original-max-height="none" data-data-hf-studio-original-max-width="none" data-data-hf-studio-original-min-height="0px" data-data-hf-studio-original-min-width="0px" data-data-hf-studio-original-height="220px" data-data-hf-studio-original-width="620px" data-data-hf-studio-box-size="true" id="proc1" class="process-card" style="position:absolute;left:230px;top:285px;width:620px;height:225px;min-height:0px;padding:24px 30px;--hf-studio-width:620px;--hf-studio-height:225px;min-width:0px;max-width:none;max-height:none;box-sizing:border-box;scale:none"><b class="mobile-card-title">Datos territoriales</b><span class="mobile-card-text">Clima, lluvia, temperatura, accesibilidad, transporte, relieve, naturaleza y contexto municipal.</span></div>
+        <div data-data-hf-studio-original-display="" data-data-hf-studio-original-box-sizing="" data-data-hf-studio-original-flex-shrink="" data-data-hf-studio-original-flex-grow="" data-data-hf-studio-original-flex-basis="" data-data-hf-studio-original-max-height="" data-data-hf-studio-original-max-width="" data-data-hf-studio-original-min-height="" data-data-hf-studio-original-min-width="" data-data-hf-studio-original-height="46px" data-data-hf-studio-original-width="12px" data-data-hf-studio-box-size="true" id="arr1" class="clip" style="position:absolute;left:534px;top:522px;width:12px;height:30px;--hf-studio-width:12px;--hf-studio-height:30px;min-width:0px;min-height:0px;max-width:none;max-height:none;box-sizing:border-box;scale:none;transform-origin:6px 15px"><svg width="12" height="30" viewBox="0 0 12 30"><rect x="4" y="0" width="4" height="20" fill="#22584e" /><polygon points="0,20 12,20 6,30" fill="#22584e" /></svg></div>
+        <div data-data-hf-studio-original-display="" data-data-hf-studio-original-box-sizing="border-box" data-data-hf-studio-original-flex-shrink="" data-data-hf-studio-original-flex-grow="" data-data-hf-studio-original-flex-basis="" data-data-hf-studio-original-max-height="none" data-data-hf-studio-original-max-width="none" data-data-hf-studio-original-min-height="0px" data-data-hf-studio-original-min-width="0px" data-data-hf-studio-original-height="220px" data-data-hf-studio-original-width="620px" data-data-hf-studio-box-size="true" id="proc2" class="process-card" style="position:absolute;left:230px;top:565px;width:620px;height:225px;min-height:0px;padding:24px 30px;--hf-studio-width:620px;--hf-studio-height:225px;min-width:0px;max-width:none;max-height:none;box-sizing:border-box;scale:none"><b class="mobile-card-title">Comparación</b><span class="mobile-card-text">Los indicadores se ajustan para poder comparar municipios bajo una misma lógica.</span></div>
+        <div id="arr2" class="clip" style="position:absolute;left:534px;top:802px;width:12px;height:30px"><svg width="12" height="30" viewBox="0 0 12 30"><rect x="4" y="0" width="4" height="20" fill="#22584e" /><polygon points="0,20 12,20 6,30" fill="#22584e" /></svg></div>
+        <div data-data-hf-studio-original-display="" data-data-hf-studio-original-box-sizing="border-box" data-data-hf-studio-original-flex-shrink="" data-data-hf-studio-original-flex-grow="" data-data-hf-studio-original-flex-basis="" data-data-hf-studio-original-max-height="none" data-data-hf-studio-original-max-width="none" data-data-hf-studio-original-min-height="0px" data-data-hf-studio-original-min-width="0px" data-data-hf-studio-original-height="245px" data-data-hf-studio-original-width="620px" data-data-hf-studio-box-size="true" id="proc3" class="process-card" style="position:absolute;left:230px;top:845px;width:620px;height:250px;min-height:0px;padding:24px 30px;--hf-studio-width:620px;--hf-studio-height:250px;min-width:0px;max-width:none;max-height:none;box-sizing:border-box;scale:none"><b class="mobile-card-title">Síntesis</b><span class="mobile-card-text">El Atlas resume información compleja para detectar casos interesantes y entender dónde destacan o dónde tienen límites.</span></div>
+      </section>
+
+      <section id="s4" class="clip scene dark" data-start="27.5" data-duration="6" data-track-index="4">
+        <div class="k mobile-kicker">Qué es el score</div>
+        <h2 class="title mobile-title mobile-dark-title">Una ayuda para priorizar, no una respuesta automática</h2>
+        <p class="subtitle mobile-subtitle mobile-dark-subtitle" style="top:205px;width:900px;font-size:24px;line-height:1.15">El <span class="code-badge" style="font-size:1em">mixed_score</span> resume clima, acceso y naturaleza para detectar municipios interesantes dentro del territorio analizado.</p>
+        <div class="frame" style="position:absolute;left:60px;top:330px;width:960px;height:840px;background:#111"><img src="assets/screenshots/score_weights_global_treemap.dark.png" alt="Treemap de pesos del score"></div>
+      </section>
+
+      <section id="s5" class="clip scene" data-start="33.5" data-duration="7" data-track-index="5">
+        <div class="k mobile-kicker" style="left:36px">Criterios ajustables</div>
+        <h2 class="title mobile-title" style="left:36px;width:700px">El Atlas muestra una puntuación equilibrada pero permite hacer ajustes</h2>
+        <div id="s5Card1" class="frame" style="position:absolute;left:36px;top:260px;width:492px;height:300px;padding:22px 22px">
+          <b style="font-size:28px">Perfil paisaje</b>
+          <div class="weight-row" style="margin:12px 0;font-size:23px;grid-template-columns:124px 1fr 42px"><span>Clima</span><div class="track" style="height:16px"><i class="fill" style="width:25%"></i></div><b>25</b></div>
+          <div class="weight-row" style="margin:12px 0;font-size:23px;grid-template-columns:124px 1fr 42px"><span>Naturaleza</span><div class="track" style="height:16px"><i class="fill" style="width:60%"></i></div><b>60</b></div>
+          <div class="weight-row" style="margin:12px 0;font-size:23px;grid-template-columns:124px 1fr 42px"><span>Acceso</span><div class="track" style="height:16px"><i class="fill" style="width:15%"></i></div><b>15</b></div>
+          <p style="font-size:23px;line-height:1.18;color:#304432;margin:12px 0 0">Valora paisaje y verano fresco por encima de la distancia.</p>
+        </div>
+        <div id="s5Card2" class="frame" style="position:absolute;right:36px;top:260px;width:492px;height:300px;padding:22px 22px">
+          <b style="font-size:28px">Perfil acceso frecuente</b>
+          <div class="weight-row" style="margin:12px 0;font-size:23px;grid-template-columns:124px 1fr 42px"><span>Clima</span><div class="track" style="height:16px"><i class="fill" style="width:30%"></i></div><b>30</b></div>
+          <div class="weight-row" style="margin:12px 0;font-size:23px;grid-template-columns:124px 1fr 42px"><span>Naturaleza</span><div class="track" style="height:16px"><i class="fill" style="width:20%"></i></div><b>20</b></div>
+          <div class="weight-row" style="margin:12px 0;font-size:23px;grid-template-columns:124px 1fr 42px"><span>Acceso</span><div class="track" style="height:16px"><i class="fill" style="width:50%"></i></div><b>50</b></div>
+          <p style="font-size:23px;line-height:1.18;color:#304432;margin:12px 0 0">Prioriza cercanía para volver a menudo sin tantos kilómetros.</p>
+        </div>
+        <div id="s5Map1" class="frame" style="position:absolute;left:36px;top:610px;width:492px;height:350px"><img src="assets/screenshots/perfil_paisaje.png" alt="Mapa con perfil paisaje" style="width:100%;height:100%;object-fit:cover;display:block"></div>
+        <div id="s5Map2" class="frame" style="position:absolute;right:36px;top:610px;width:492px;height:350px"><img src="assets/screenshots/perfil_accesibilidad.png" alt="Mapa con perfil acceso frecuente" style="width:100%;height:100%;object-fit:cover;display:block"></div>
+      </section>
+
+      <section id="s6" class="clip scene" data-start="40.5" data-duration="5" data-track-index="6">
+        <div class="k mobile-kicker" style="left:56px">Dos niveles de datos</div>
+        <h2 class="title mobile-title" style="left:56px;width:620px">Municipios para comparar, celdas 2x2 km para entender el detalle</h2>
+        <p class="mobile-subtitle" style="left:56px;top:275px;width:600px">La rejilla ayuda a encontrar diferencias dentro de municipios grandes, donde puede haber paisajes muy distintos.</p>
+        <div id="frameMun" class="frame" style="position:absolute;left:36px;top:410px;width:1008px;height:270px"><img src="assets/screenshots/municipio-comparacion-usuario.png" alt="Vista municipal con fronteras" style="width:100%;height:100%;object-fit:cover;display:block"></div>
+        <div id="frameGrid" class="frame" style="position:absolute;left:36px;top:790px;width:1008px;height:270px"><img src="assets/screenshots/rejilla-comparacion-usuario.png" alt="Vista de detalle con rejilla 2 km" style="width:100%;height:100%;object-fit:cover;display:block"></div>
+        <div id="s6Label1" style="position:absolute;left:48px;top:700px;padding:6px 12px;border-radius:6px;background:rgba(12,20,16,0.82);color:#fff8e8;font-size:22px;font-weight:700;opacity:0">Municipio</div>
+        <div id="s6Label2" style="position:absolute;left:48px;top:1080px;padding:6px 12px;border-radius:6px;background:rgba(12,20,16,0.82);color:#fff8e8;font-size:22px;font-weight:700;opacity:0">Rejilla 2 km</div>
+      </section>
+
+      <section id="s7" class="clip scene" data-start="45.5" data-duration="10.5" data-track-index="7">
+        <h2 class="title mobile-title" style="left:44px;top:78px;width:760px;font-size:54px;line-height:0.98">Mucha información<br>para cada municipio</h2>
+        <p class="mobile-subtitle" style="left:44px;top:260px;width:455px;font-size:28px;line-height:1.16">Clima, relieve, accesibilidad, agua, transporte, entorno natural y mucho más, municipio a municipio.</p>
+        <div id="metricList" style="position:absolute;left:44px;top:430px;width:455px;display:grid;font-size:25px;color:#132016">
+          <div class="metric-item">Puntuación global</div>
+          <div class="metric-item">Altitud y relieve</div>
+          <div class="metric-item">Lluvia, acceso y naturaleza</div>
+          <div class="metric-item">Fortalezas y riesgos</div>
+          <div class="metric-item">Temperatura y precipitación</div>
+          <div class="metric-item">Accesibilidad</div>
+          <div class="metric-item">Cobertura forestal</div>
+          <div class="metric-item">Agua y ríos</div>
+          <div class="metric-item">Transporte</div>
+        </div>
+        <div id="inspectorMask" class="frame" data-layout-allow-overflow="" style="position:absolute;right:36px;top:235px;width:460px;height:890px;background:#f8f5ec;overflow:hidden">
+          <img id="inspectorScroll" src="assets/screenshots/prod-arlanzon-inspector-viewport-tall-retina-cropped.png" alt="Inspector completo de Arlanzón" style="position:absolute;left:0;top:0;width:460px;height:auto;object-fit:contain">
+        </div>
+      </section>
+
+      <section id="s8" class="clip scene" data-start="56" data-duration="5" data-track-index="11">
+        <div id="s8Frame" class="frame" data-layout-allow-overflow="" style="position:absolute;left:40px;top:24px;width:1000px;height:660px;background:#f8f5ec;overflow:hidden;border-radius:2px">
+          <img id="s8Scroll" src="assets/screenshots/docs-site-fullpage.png" alt="Documentación completa" style="position:absolute;left:0;top:0;width:1000px;height:auto;display:block">
+        </div>
+        <div id="s8Card" style="position:absolute;left:56px;top:730px;width:620px">
+          <h2 class="title" style="font-size:52px;color:#132016">Metodología abierta y documentada</h2>
+          <p style="font-size:29px;line-height:1.2;color:#304432;margin:30px 0 0">Indicadores, pesos, fuentes y decisiones metodológicas pueden consultarse públicamente.</p>
+          <div style="margin-top:32px;padding:0;font-size:25px;font-weight:800;color:#174c42;word-break:break-word">observatorio-territorial.netlify.app/docs/</div>
+        </div>
+      </section>
+
+      <section id="s9" class="clip scene" data-start="61" data-duration="7.3" data-track-index="12" style="background:#101812">
+        <div id="s9Bg" style="position:absolute;overflow:hidden;top:-1px;left:-1px;width:calc(100%+2px);height:calc(100%+2px);background:radial-gradient(circle at 20% 15%,#29483b,#101812)">
+          <img src="assets/screenshots/prod-cillaperlata-open.png" alt="" style="position:absolute;top:-1px;left:-1px;width:calc(100%+2px);height:calc(100%+2px);object-fit:cover;display:block">
+          <div style="position:absolute;top:-1px;left:-1px;width:calc(100%+2px);height:calc(100%+2px);background:linear-gradient(135deg,rgba(16,24,18,0.88),rgba(31,53,43,0.78))"></div>
+        </div>
+        <div id="s9Card" class="closing" style="background:rgba(255,253,244,0.92);min-height:auto;padding:48px 56px;top:450px;left:120px;width:840px">
+          <h2 class="title" style="font-size:52px;color:#132016">Una herramienta para interpretar el territorio</h2>
+          <p style="font-size:28px;line-height:1.22;color:#304432;margin:30px 0 0">El Atlas ayuda a comparar y encontrar lugares a partir de los indicadores disponibles, para acercarnos al mejor lugar donde establecer El Buen Vivir.</p>
+        </div>
+      </section>
+      
+      <section id="s10" class="clip scene dark" data-start="68.1" data-duration="5.4" data-track-index="13">
+        <h2 class="title" style="position:absolute;left:54px;top:790px;width:972px;font-size:80px;color:#fff8e8;text-align:center">Atlas Territorial El Buen Vivir</h2>
+        <p class="subtitle" style="position:absolute;left:60px;top:920px;width:960px;font-size:30px;color:#dce8d3;text-align:center">La herramienta para explorar lugares posibles para El Buen Vivir.</p>
+        <div style="position:absolute;left:60px;top:1000px;width:960px;font-size:26px;color:#fff8e8;font-weight:800;text-align:center">observatorio-territorial.netlify.app</div>
+      </section>
+
+      <div id="fade-black" class="clip" data-start="72.7" data-duration="0.8" data-track-index="30" style="inset:0;background:#000;opacity:0"></div>
+
+      <audio id="bgMusic" src="assets/music/deep-water-sascha-ende-73-5s-faded.mp3" data-start="0" data-duration="73.5" data-track-index="40" preload="auto" data-volume="0.225"></audio>
+
+    </div>
+    <script>
+      window.__timelines = window.__timelines || {};
+      const tl = gsap.timeline({ paused: true });
+      const fade = () => {};
+      fade('#s1', 0); fade('#s2', 4); fade('#s3', 18.5); fade('#s4', 27.5); fade('#s5', 33.5); fade('#s6', 40.5); fade('#s7', 45.5); fade('#s8', 56); fade('#s9', 61); fade('#s10', 68.1);
+      tl.from('#s2Title', { opacity: 0, x: -34, duration: 0.72, ease: 'power3.out' }, 4.08);
+      tl.from('#s2Sub', { opacity: 0, y: 16, duration: 0.52, ease: 'power2.out' }, 4.28);
+      tl.from('#demoFrame', { opacity: 0, y: -32, duration: 0.7, ease: 'power3.out' }, 4.22);
+      tl.to('#demoDim', { opacity: 1, duration: 0.35, ease: 'power2.out' }, 7.45);
+      tl.to('#demoCopy', { opacity: 1, y: 0, duration: 0.35, ease: 'power2.out' }, 7.55);
+      tl.to('#demoFilters, #demoCopyFilters', { opacity: 1, duration: 0.35, ease: 'power2.out' }, 7.6);
+      tl.to('#demoFilters, #demoCopyFilters', { opacity: 0, duration: 0.25, ease: 'power2.in' }, 10.0);
+      tl.to('#demoMap, #demoCopyMap', { opacity: 1, duration: 0.35, ease: 'power2.out' }, 10.15);
+      tl.to('#demoMap, #demoCopyMap', { opacity: 0, duration: 0.25, ease: 'power2.in' }, 12.55);
+      tl.to('#demoTable, #demoCopyTable', { opacity: 1, duration: 0.35, ease: 'power2.out' }, 12.7);
+      tl.to('#demoTable, #demoCopyTable', { opacity: 0, duration: 0.25, ease: 'power2.in' }, 15.1);
+      tl.to('#demoInfo, #demoCopyInfo', { opacity: 1, duration: 0.35, ease: 'power2.out' }, 15.25);
+      tl.to('#demoInfo, #demoCopyInfo', { opacity: 0, duration: 0.25, ease: 'power2.in' }, 17.65);
+      tl.from('#proc1', { opacity: 0, y: 32, duration: 0.5 }, 19.0);
+      tl.from('#arr1', { scaleY: 0, transformOrigin: 'top center', duration: 0.4 }, 19.75);
+      tl.from('#proc2', { opacity: 0, y: 32, duration: 0.5 }, 20.15);
+      tl.from('#arr2', { scaleY: 0, transformOrigin: 'top center', duration: 0.4 }, 20.9);
+      tl.from('#proc3', { opacity: 0, y: 32, duration: 0.5 }, 21.3);
+      tl.from('#s4 .frame', { opacity: 0, scale: 0.96, y: -30, duration: 0.65, ease: 'power2.out' }, 27.75);
+      tl.from('#s5Card1', { opacity: 0, x: -40, duration: 0.5, ease: 'power2.out' }, 33.9);
+      tl.from('#s5Card2', { opacity: 0, x: 40, duration: 0.5, ease: 'power2.out' }, 34.05);
+      tl.from('#s5 .fill', { scaleX: 0, transformOrigin: 'left center', stagger: 0.08, duration: 0.5, ease: 'power2.out' }, 34.3);
+      tl.from('#s5Map1', { opacity: 0, y: 30, duration: 0.5, ease: 'power2.out' }, 34.7);
+      tl.from('#s5Map2', { opacity: 0, y: 30, duration: 0.5, ease: 'power2.out' }, 34.85);
+      tl.from('#frameMun', { opacity: 0, y: -40, duration: 0.6, ease: 'power3.out' }, 40.85);
+      tl.from('#frameGrid', { opacity: 0, y: 40, duration: 0.6, ease: 'power3.out' }, 42.5);
+      tl.set('#s6Label1, #s6Label2', { y: 6 }, 40.85);
+      tl.to('#s6Label1', { opacity: 1, y: 0, duration: 0.3, ease: 'power2.out' }, 41.5);
+      tl.to('#s6Label2', { opacity: 1, y: 0, duration: 0.3, ease: 'power2.out' }, 43.15);
+      tl.to('#inspectorScroll', { y: -810, duration: 8.3, ease: 'none' }, 46.2);
+      tl.from('.metric-item', { opacity: 0, x: -22, stagger: 0.92, duration: 0.34, ease: 'power2.out' }, 46.05);
+      tl.from('#s8Frame', { y: -30, opacity: 0, duration: 0.4, ease: 'power2.out' }, 56);
+      tl.from('#s8Card', { y: 30, opacity: 0, duration: 0.4, ease: 'power2.out' }, 56.1);
+      tl.to('#s8Scroll', { y: -393, duration: 3.15, ease: 'none' }, 56.35);
+      tl.from('#s9Bg img', { scale: 1.015, duration: 0.5, ease: 'power2.out' }, 61);
+      tl.to('#s9Bg img', { scale: 1.04, duration: 6.1, ease: 'none' }, 61.6);
+      tl.from('#s9Card', { opacity: 0, scale: 0.96, y: 24, duration: 0.9, ease: 'power2.out' }, 60.9);
+      tl.from('#s10 .title, #s10 .subtitle, #s10 div', { opacity: 0, y: 26, stagger: 0.14, duration: 0.7, ease: 'power2.out' }, 68.15);
+      tl.to('#fade-black', { opacity: 1, duration: 0.8, ease: 'power2.inOut' }, 72.7);
+      window.__timelines.main = tl;
+    </script>
+  </body>
+</html>

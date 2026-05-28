@@ -1,0 +1,8 @@
+node_modules/
+.DS_Store
+.thumbnails/
+.waveform-cache/
+renders/
+snapshots/
+assets/.DS_Store
+assets/screenshots/.DS_Store
