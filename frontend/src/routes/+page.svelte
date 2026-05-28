@@ -147,6 +147,8 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 	let welcomeHydrated = $state(false);
 	let coordinateSearchRequest = $state<{ id: number; lat: number; lon: number } | null>(null);
 	let coordinateSearchRequestId = $state(0);
+	let lastUrlSelectedId: string | null = null;
+	let suppressNextUrlPush = false;
 	const welcomeStorageKey = 'ebv-welcome-dismissed-v1';
 	const tableRowHeight = 38;
 	const tableOverscan = 24;
@@ -555,8 +557,18 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 		return () => window.removeEventListener('resize', updateViewport);
 	});
 
-	$effect(() => {
-		if (typeof window === 'undefined' || urlStateReady) return;
+	type NavigationSelectionState = { selectedMunicipio?: Municipio | null } | null;
+
+	const toHistorySelection = (municipio: Municipio | null): Municipio | null => {
+		if (!municipio?.id?.startsWith('cell_')) return null;
+		try {
+			return JSON.parse(JSON.stringify(municipio)) as Municipio;
+		} catch {
+			return null;
+		}
+	};
+
+	const applyCurrentUrlToState = (navigationState: NavigationSelectionState = null) => {
 		const { next, pendingSelectedMunicipioId } = applyUrlToState(window.location.search, {
 			mapViewMode: uiStore.state.mapViewMode,
 			query,
@@ -576,6 +588,8 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 			isBottomSheetOpen,
 			selectedMunicipioId: selectedMunicipio?.id
 		});
+
+		suppressNextUrlPush = true;
 		Object.assign(uiStore.state, {
 			mapViewMode: next.mapViewMode ?? uiStore.state.mapViewMode,
 			activeSheetTab: next.activeSheetTab ?? uiStore.state.activeSheetTab,
@@ -600,7 +614,16 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 			accessWeight: next.accessWeight ?? filtersStore.state.accessWeight,
 			natureWeight: next.natureWeight ?? filtersStore.state.natureWeight
 		});
-		selectionStore.state.pendingSelectedMunicipioId = pendingSelectedMunicipioId;
+
+		const stateSelection = navigationState?.selectedMunicipio;
+		if (stateSelection?.id && stateSelection.id === pendingSelectedMunicipioId) {
+			selectionStore.state.selectedMunicipio = stateSelection;
+			selectionStore.state.pendingSelectedMunicipioId = null;
+		} else {
+			selectionStore.state.pendingSelectedMunicipioId = pendingSelectedMunicipioId;
+			if (!pendingSelectedMunicipioId) selectionStore.state.selectedMunicipio = null;
+		}
+		lastUrlSelectedId = pendingSelectedMunicipioId;
 
 		const coordinateCandidate = parseCoordinateQuery(next.query ?? filtersStore.state.query);
 		if (coordinateCandidate) {
@@ -611,8 +634,22 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 				lon: coordinateCandidate.lon
 			};
 		}
+	};
+
+	$effect(() => {
+		if (typeof window === 'undefined' || urlStateReady) return;
+		applyCurrentUrlToState(window.history.state as NavigationSelectionState);
 
 		urlStateReady = true;
+	});
+
+	$effect(() => {
+		if (typeof window === 'undefined') return;
+		const handlePopState = (event: PopStateEvent) => {
+			applyCurrentUrlToState(event.state as NavigationSelectionState);
+		};
+		window.addEventListener('popstate', handlePopState);
+		return () => window.removeEventListener('popstate', handlePopState);
 	});
 
 	$effect(() => {
@@ -650,7 +687,24 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 		const queryString = params.toString();
 		const nextUrl = queryString ? `${window.location.pathname}?${queryString}` : window.location.pathname;
 		const nextUrlWithHash = `${nextUrl}${window.location.hash || ''}`;
-		window.history.replaceState({}, '', nextUrlWithHash);
+		const selectedId = selectedMunicipio?.id ?? null;
+		const shouldPushSelection = selectedId !== lastUrlSelectedId && !suppressNextUrlPush;
+		const historyState = { selectedMunicipio: toHistorySelection(selectedMunicipio) };
+
+		if (`${window.location.pathname}${window.location.search}${window.location.hash || ''}` === nextUrlWithHash) {
+			window.history.replaceState(historyState, '', nextUrlWithHash);
+			lastUrlSelectedId = selectedId;
+			suppressNextUrlPush = false;
+			return;
+		}
+
+		if (shouldPushSelection) {
+			window.history.pushState(historyState, '', nextUrlWithHash);
+		} else {
+			window.history.replaceState(historyState, '', nextUrlWithHash);
+		}
+		lastUrlSelectedId = selectedId;
+		suppressNextUrlPush = false;
 	});
 
 	$effect(() => {
