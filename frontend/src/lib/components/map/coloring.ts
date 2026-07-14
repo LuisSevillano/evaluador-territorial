@@ -160,6 +160,81 @@ export const buildMunicipioColorExpression = (municipios: Municipio[], mapColorM
 	return expression;
 };
 
+/**
+ * Valor numérico que se guarda en el feature-state (`cv`) de cada municipio para
+ * pintarlo. Devuelve -1 cuando el dato falta o el municipio no tiene nombre
+ * oficial (centinela de "sin datos"; todos los valores válidos son >= 0).
+ */
+export const stateColorValue = (municipio: Municipio, metric: MapColorMetric): number => {
+	const hasOfficialName = typeof municipio.nombre === 'string' && municipio.nombre.trim().length > 0;
+	if (!hasOfficialName) return -1;
+
+	switch (metric) {
+		case 'mixed_score':
+			return Number.isFinite(municipio.climate_block_score) &&
+				Number.isFinite(municipio.access_block_score) &&
+				Number.isFinite(municipio.nature_block_score) &&
+				Number.isFinite(municipio.mixed_score)
+				? (municipio.mixed_score as number)
+				: -1;
+		case 'precip_moisture_score':
+			return Number.isFinite(municipio.precip_moisture_score) ? (municipio.precip_moisture_score as number) : -1;
+		case 'precip_annual_mm':
+			return Number.isFinite(municipio.precip_annual_mm) ? (municipio.precip_annual_mm as number) : -1;
+		case 'transporte_norm':
+			return Number.isFinite(municipio.transporte_norm) ? (municipio.transporte_norm as number) : -1;
+		case 'servicio_renfe_norm': {
+			const v = municipio.renfe_madrid_service_norm ?? municipio.servicio_renfe_norm;
+			return Number.isFinite(v) ? (v as number) : -1;
+		}
+		case 'river_access_score':
+			return Number.isFinite(municipio.river_access_score) ? (municipio.river_access_score as number) : -1;
+		case 'travel_bucket': {
+			const idx = travelBucketOrder.indexOf(municipio.travel_bucket as (typeof travelBucketOrder)[number]);
+			return idx >= 0 ? idx : -1;
+		}
+		default:
+			return -1;
+	}
+};
+
+/**
+ * Expresión de color basada en feature-state (`cv`). Es CONSTANTE por métrica:
+ * no se reconstruye cuando cambian las puntuaciones (esas se actualizan con
+ * setFeatureState), evitando reserializar una expresión gigante en cada cambio
+ * de peso. `municipios` solo se usa para derivar los umbrales dinámicos del score.
+ */
+export const buildMunicipioStateColorExpression = (
+	metric: MapColorMetric,
+	municipios: Municipio[] = []
+) => {
+	const cv: any = ['coalesce', ['feature-state', 'cv'], -1];
+	const stepFor = (thresholds: readonly number[], colors: readonly string[]) => {
+		const step: any[] = ['step', cv, colors[0]];
+		for (let i = 0; i < thresholds.length; i++) step.push(thresholds[i], colors[i + 1]);
+		return step;
+	};
+
+	let inner: any;
+	if (metric === 'mixed_score') inner = stepFor(deriveScoreThresholds(municipios), scoreColors);
+	else if (metric === 'precip_moisture_score') inner = stepFor(moistureThresholds, moistureColors);
+	else if (metric === 'precip_annual_mm') inner = stepFor(precipThresholds, precipColors);
+	else if (metric === 'transporte_norm') inner = stepFor(transporteThresholds, transporteColors);
+	else if (metric === 'servicio_renfe_norm') inner = stepFor(renfeServiceThresholds, renfeServiceColors);
+	else if (metric === 'river_access_score') inner = stepFor(riverAccessThresholds, riverAccessColors);
+	else if (metric === 'travel_bucket') {
+		// cv = índice del bucket (0..5)
+		const step: any[] = ['step', cv, travelBucketColors[0]];
+		for (let i = 1; i < travelBucketColors.length; i++) step.push(i - 0.5, travelBucketColors[i]);
+		inner = step;
+	} else {
+		inner = missingDataColor;
+	}
+
+	// cv < 0 => sin datos.
+	return ['case', ['<', cv, 0], missingDataColor, inner] as any;
+};
+
 export const getLegendConfig = (
 	mapColorMetric: MapColorMetric,
 	municipios: Municipio[] = []

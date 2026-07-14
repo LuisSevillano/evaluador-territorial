@@ -9,7 +9,8 @@
 	import ViewControl from '$lib/components/map/ViewControl.svelte';
 	import {
 		type MapColorMetric,
-		buildMunicipioColorExpression,
+		buildMunicipioStateColorExpression,
+		stateColorValue,
 		getScoreThresholdsForMunicipios,
 		moistureColors,
 		moistureThresholds,
@@ -218,9 +219,29 @@
 		setLayerVisibility(map, gridHoverLineLayerId, showGrid);
 	};
 
+	// Expresión CONSTANTE por métrica (feature-state). Las puntuaciones se aplican
+	// por separado con setFeatureState (applyMunicipioFeatureState), así no se
+	// reserializa una expresión gigante en cada cambio de peso.
 	const paintColorExpression = $derived.by(() =>
-		buildMunicipioColorExpression(municipios, mapColorMetric)
+		buildMunicipioStateColorExpression(mapColorMetric, municipios)
 	);
+
+	// Escribe el valor de color de cada municipio en su feature-state (`cv`).
+	// Se fija tanto el id string como el numérico para casar con el promoteId
+	// del tile sea cual sea su tipo.
+	const applyMunicipioFeatureState = () => {
+		if (!map) return;
+		const source = municipiosPmtilesSourceId;
+		const sourceLayer = activeMunicipiosSourceLayer ?? sourceLayerName;
+		for (const municipio of municipios) {
+			const cv = stateColorValue(municipio, mapColorMetric);
+			map.setFeatureState({ source, sourceLayer, id: municipio.id }, { cv });
+			const numericId = Number(municipio.id);
+			if (Number.isFinite(numericId)) {
+				map.setFeatureState({ source, sourceLayer, id: numericId }, { cv });
+			}
+		}
+	};
 
 	const gridFillColorExpression = $derived.by(() => {
 		if (mapColorMetric === 'mixed_score') {
@@ -598,6 +619,7 @@
 			});
 
 			addHighlightLayers(municipiosPmtilesSourceId, sourceLayerName);
+			applyMunicipioFeatureState();
 
 			map.on('click', municipiosPolygonsFillLayerId, (e: maplibregl.MapLayerMouseEvent) => {
 				const feature = e.features?.[0];
@@ -964,9 +986,12 @@
 	});
 
 	$effect(() => {
+		void municipios; // dependencia explícita: reaplicar el estado al cambiar datos/métrica
+		void mapColorMetric;
 		const colorExpr = paintColorExpression;
 		if (!mapReady || !map || !map.getLayer(municipiosPolygonsFillLayerId)) return;
 		map.setPaintProperty(municipiosPolygonsFillLayerId, 'fill-color', colorExpr as any);
+		applyMunicipioFeatureState();
 	});
 
 	$effect(() => {
