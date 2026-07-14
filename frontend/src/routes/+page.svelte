@@ -979,7 +979,19 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 						<tbody>
 							<tr class="spacer-row" aria-hidden="true" style={`height:${virtualWindow.paddingTop}px`}><td colspan="7"></td></tr>
 							{#each virtualTableRows as municipio (municipio.id)}
-								<tr onclick={() => handleSelectMunicipio(municipio)}>
+								<tr
+									class="municipio-row"
+									role="button"
+									tabindex="0"
+									aria-label={`Ver ${municipio.nombre}`}
+									onclick={() => handleSelectMunicipio(municipio)}
+									onkeydown={(e) => {
+										if (e.key === 'Enter' || e.key === ' ') {
+											e.preventDefault();
+											handleSelectMunicipio(municipio);
+										}
+									}}
+								>
 									<td>{municipio.nombre}</td>
 									<td>{municipio.provincia}</td>
 									<td>{formatTravelBucketLabel(municipio.travel_bucket)}</td>
@@ -1386,6 +1398,11 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 		cursor: pointer;
 	}
 	.desktop-table tbody tr:hover {
+		background: var(--hover-bg);
+	}
+	.desktop-table tbody tr.municipio-row:focus-visible {
+		outline: 2px solid var(--accent, #1f8a70);
+		outline-offset: -2px;
 		background: var(--hover-bg);
 	}
 	.desktop-table tbody tr.spacer-row {

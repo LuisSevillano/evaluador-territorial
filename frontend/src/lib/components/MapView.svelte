@@ -185,11 +185,16 @@
 	let skipNextSelectedMunicipioFlyTo = $state(false);
 	const mobileSelectedMunicipioLatOffset = -0.4;
 
+	const prefersReducedMotion = () =>
+		typeof window !== 'undefined' &&
+		typeof window.matchMedia === 'function' &&
+		window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
 	$effect(() => {
 		if (!map || !mapReady || viewMode !== 'grid') return;
 		const minZoom = getGridMinZoom();
 		if (currentZoom >= minZoom) return;
-		map.easeTo({ zoom: minZoom, duration: 320 });
+		map.easeTo({ zoom: minZoom, duration: prefersReducedMotion() ? 0 : 320 });
 	});
 
 	const visibility = $derived.by(() => {
@@ -1024,7 +1029,7 @@
 		if (!Number.isFinite(selectedMunicipio.lon) || !Number.isFinite(selectedMunicipio.lat)) return;
 		const zoom = isMobileView ? 7 : 9;
 		const lat = selectedMunicipio.lat + (isMobileView ? mobileSelectedMunicipioLatOffset : 0);
-		map.flyTo({ center: [selectedMunicipio.lon, lat], zoom, speed: 0.8 });
+		map.flyTo({ center: [selectedMunicipio.lon, lat], zoom, speed: 0.8, animate: !prefersReducedMotion() });
 	});
 
 	$effect(() => {
