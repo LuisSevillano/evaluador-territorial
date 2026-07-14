@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
 	import MapView from '$lib/components/MapView.svelte';
 	import type { MapColorMetric } from '$lib/components/map/coloring';
 	import Sidebar from '$lib/components/Sidebar.svelte';
@@ -73,7 +72,6 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 	} from '$lib/state/ranking';
 
 	import type { DatasetMetadata, Municipio, MunicipioClimateMonthly } from '$lib/types/municipio';
-	import { loadMunicipiosDataset } from '$lib/utils/municipiosDataset';
 
 	type PageData = {
 		municipios: Municipio[];
@@ -465,26 +463,8 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 	};
 
 
-	onMount(() => {
-		const loadData = async () => {
-			try {
-				const [munData, climateResp, metaResp] = await Promise.all([
-					loadMunicipiosDataset(fetch),
-					fetch('/data/municipios_climate_monthly.json'),
-					fetch('/data/dataset_metadata_v3.json')
-				]);
-				const climateData = climateResp.ok ? await climateResp.json() : [];
-				const metaData = metaResp.ok ? await metaResp.json() : null;
-				municipios = munData;
-				climateMonthly = climateData as MunicipioClimateMonthly[];
-				datasetMetadata = metaData as DatasetMetadata | null;
-			} catch (e) {
-				console.error('Error loading data:', e);
-			}
-		};
-		loadData();
-	});
-
+	// Los datos llegan por load() (+page.ts); este efecto los vuelca al estado.
+	// (Se eliminó un onMount que re-fetcheaba exactamente lo mismo, ~8 MB.)
 	$effect(() => {
 		if ((data.municipios ?? []).length > 0) {
 			municipios = data.municipios;
