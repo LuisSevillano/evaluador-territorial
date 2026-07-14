@@ -106,7 +106,8 @@ export default {
 						{ text: 'Pipeline de datos', link: '/pipeline/' },
 						{ text: 'Trazabilidad', link: '/pipeline/trazabilidad' },
 						{ text: 'Fuentes de datos', link: '/pipeline/fuentes' },
-						{ text: 'Scripts detallados', link: '/pipeline/scripts-detalle' }
+						{ text: 'Scripts detallados', link: '/pipeline/scripts-detalle' },
+						{ text: 'Entorno de R', link: '/pipeline/entorno-r' }
 					]
 				},
 				{
