@@ -65,3 +65,7 @@ En la práctica, el uso del Atlas siempre sigue el mismo patrón:
 | Capas | Panel lateral | Panel inferior con tabs |
 | Comparación | Varios paneles abiertos | Un panel a la vez |
 | Navegación | Mouse y teclado | Táctil gestos |
+
+## Buscador de municipios con teclado
+
+El buscador es un combobox accesible: al escribir aparece la lista de coincidencias y se puede recorrer sin ratón. Las flechas **↑/↓** mueven la opción resaltada (con retorno cíclico al llegar a los extremos), **Inicio/Fin** saltan a la primera o última, **Intro** selecciona la opción activa y **Esc** cierra la lista y limpia el campo. La opción resaltada se anuncia a los lectores de pantalla mediante `aria-activedescendant`, de modo que el foco permanece siempre en el campo de texto. También admite coordenadas (`lat, lon`) como término de búsqueda.

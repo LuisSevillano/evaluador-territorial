@@ -29,8 +29,11 @@
 	let isSearchFocused = $state(false);
 	let draftQuery = $state('');
 	let selectedDuringFocus = $state(false);
+	let activeIndex = $state(-1);
+	let listboxEl = $state<HTMLUListElement>();
 
 	const suggestionsId = $derived(`${inputId}-suggestions`);
+	const optionId = (index: number) => `${suggestionsId}-opt-${index}`;
 
 	type SearchSuggestion =
 		| { kind: 'municipio'; municipio: Municipio; starts: boolean }
@@ -77,6 +80,17 @@
 	});
 
 	const showSearchSuggestions = $derived(isSearchFocused && searchSuggestions.length > 0);
+	const activeDescendant = $derived(
+		showSearchSuggestions && activeIndex >= 0 ? optionId(activeIndex) : undefined
+	);
+
+	const selectSuggestion = (suggestion: SearchSuggestion) => {
+		if (suggestion.kind === 'coords') {
+			handleSelectCoordinateSuggestion(suggestion.coords);
+			return;
+		}
+		handleSelectMunicipioSuggestion(suggestion.municipio);
+	};
 
 	const handleSearchBlur = () => {
 		setTimeout(() => {
@@ -111,56 +125,87 @@
 			draftQuery = '';
 			selectedDuringFocus = false;
 			isSearchFocused = false;
+			activeIndex = -1;
 			return;
 		}
 
-		if (event.key === 'Enter' && searchSuggestions.length > 0) {
+		const count = searchSuggestions.length;
+		if (count === 0) return;
+
+		if (event.key === 'ArrowDown') {
 			event.preventDefault();
-			const first = searchSuggestions[0];
-			if (first.kind === 'coords') {
-				handleSelectCoordinateSuggestion(first.coords);
-				return;
-			}
-			handleSelectMunicipioSuggestion(first.municipio);
+			activeIndex = activeIndex >= count - 1 ? 0 : activeIndex + 1;
+			return;
+		}
+
+		if (event.key === 'ArrowUp') {
+			event.preventDefault();
+			activeIndex = activeIndex <= 0 ? count - 1 : activeIndex - 1;
+			return;
+		}
+
+		if (event.key === 'Home') {
+			event.preventDefault();
+			activeIndex = 0;
+			return;
+		}
+
+		if (event.key === 'End') {
+			event.preventDefault();
+			activeIndex = count - 1;
+			return;
+		}
+
+		if (event.key === 'Enter') {
+			event.preventDefault();
+			selectSuggestion(searchSuggestions[activeIndex >= 0 ? activeIndex : 0]);
 		}
 	};
 
 	const handleSuggestionPointerDown = (event: PointerEvent, suggestion: SearchSuggestion) => {
 		event.preventDefault();
-		if (suggestion.kind === 'coords') {
-			handleSelectCoordinateSuggestion(suggestion.coords);
-			return;
-		}
-		handleSelectMunicipioSuggestion(suggestion.municipio);
+		selectSuggestion(suggestion);
 	};
 
 	const handleSuggestionClick = (event: MouseEvent, suggestion: SearchSuggestion) => {
 		if (event.detail !== 0) return;
-		if (suggestion.kind === 'coords') {
-			handleSelectCoordinateSuggestion(suggestion.coords);
-			return;
-		}
-		handleSelectMunicipioSuggestion(suggestion.municipio);
+		selectSuggestion(suggestion);
 	};
 
 	$effect(() => {
 		if (isSearchFocused) return;
 		draftQuery = query;
 	});
+
+	// Reinicia la opción activa cuando cambian las sugerencias o se cierra el desplegable.
+	$effect(() => {
+		void searchSuggestions;
+		if (!showSearchSuggestions) {
+			activeIndex = -1;
+		} else if (activeIndex > searchSuggestions.length - 1) {
+			activeIndex = -1;
+		}
+	});
+
+	// Mantiene visible la opción resaltada al navegar con el teclado.
+	$effect(() => {
+		if (activeIndex < 0 || !listboxEl) return;
+		const option = listboxEl.querySelector<HTMLElement>(`#${CSS.escape(optionId(activeIndex))}`);
+		option?.scrollIntoView({ block: 'nearest' });
+	});
 </script>
 
-<div
-	class="search-shell"
-	class:sheet={variant === 'sheet'}
-	role="combobox"
-	aria-expanded={showSearchSuggestions}
-	aria-controls={suggestionsId}
->
+<div class="search-shell" class:sheet={variant === 'sheet'}>
 	<input
 		id={inputId}
 		name={inputId}
 		autocomplete="off"
 		type="search"
+		role="combobox"
+		aria-autocomplete="list"
+		aria-expanded={showSearchSuggestions}
+		aria-controls={suggestionsId}
+		aria-activedescendant={activeDescendant}
 		{placeholder}
 		value={draftQuery}
 		onfocus={() => {
@@ -176,21 +221,26 @@
 	/>
 	{#if showSearchSuggestions}
 		<div class="search-dropdown">
-			<ul class="search-suggestions" id={suggestionsId} role="listbox">
-			{#each searchSuggestions as suggestion (suggestion.kind === 'coords' ? `coords-${suggestion.coords.label}` : suggestion.municipio.id)}
-					<li>
-						<button
-							class="suggestion-btn"
-							onpointerdown={(event) => handleSuggestionPointerDown(event, suggestion)}
-							onclick={(event) => handleSuggestionClick(event, suggestion)}
-						>
-							{#if suggestion.kind === 'coords'}
-								<span>{suggestion.coords.label}</span>
-							{:else}
-								<span>{suggestion.municipio.nombre}</span>
-								<small>{suggestion.municipio.provincia}</small>
-							{/if}
-						</button>
+			<ul class="search-suggestions" id={suggestionsId} role="listbox" bind:this={listboxEl}>
+			{#each searchSuggestions as suggestion, index (suggestion.kind === 'coords' ? `coords-${suggestion.coords.label}` : suggestion.municipio.id)}
+					<!-- El teclado se gestiona en el input (patrón combobox con aria-activedescendant); la opción no es focalizable. -->
+					<!-- svelte-ignore a11y_click_events_have_key_events -->
+					<li
+						id={optionId(index)}
+						role="option"
+						aria-selected={activeIndex === index}
+						class="suggestion-btn"
+						class:active={activeIndex === index}
+						onpointerdown={(event) => handleSuggestionPointerDown(event, suggestion)}
+						onclick={(event) => handleSuggestionClick(event, suggestion)}
+						onpointermove={() => (activeIndex = index)}
+					>
+						{#if suggestion.kind === 'coords'}
+							<span>{suggestion.coords.label}</span>
+						{:else}
+							<span>{suggestion.municipio.nombre}</span>
+							<small>{suggestion.municipio.provincia}</small>
+						{/if}
 					</li>
 				{/each}
 			</ul>
@@ -267,7 +317,8 @@
 		line-height: 1.2;
 	}
 
-	.suggestion-btn:hover {
+	.suggestion-btn:hover,
+	.suggestion-btn.active {
 		background: var(--active-bg);
 		transform: translateX(1px);
 	}
