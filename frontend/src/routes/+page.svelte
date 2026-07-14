@@ -938,6 +938,7 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 					{showIgnRivers}
 					{showIgnReservoirs}
 					{mapColorMetric}
+					weights={normalizedWeights}
 					onToggleOsmBasemap={(value) => (layersStore.state.showOsmBasemap = value)}
 					onToggleIgnSatellite={(value) => (layersStore.state.showIgnSatellite = value)}
 					onToggleIgnWmsBase={(value) => (layersStore.state.showIgnWmsBase = value)}

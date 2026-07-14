@@ -20,6 +20,7 @@
 		travelBucketColors,
 		missingDataColor
 	} from '$lib/components/map/coloring';
+	import { DEFAULT_WEIGHTS_NORMALIZED, type WeightsNormalized } from '$lib/state/scoring';
 	import {
 		ccaaLineLayerId,
 		ccaaPmtilesSourceId,
@@ -106,6 +107,7 @@
 		showIgnRivers?: boolean;
 		showIgnReservoirs?: boolean;
 		mapColorMetric?: MapColorMetric;
+		weights?: WeightsNormalized;
 		showForestLayer?: boolean;
 		showLandUseLayer?: boolean;
 		showVegetationLayer?: boolean;
@@ -138,6 +140,7 @@
 		showIgnRivers = false,
 		showIgnReservoirs = false,
 		mapColorMetric = 'mixed_score',
+		weights = DEFAULT_WEIGHTS_NORMALIZED,
 		showForestLayer = false,
 		showLandUseLayer = false,
 		showVegetationLayer = false,
@@ -251,13 +254,22 @@
 	const gridFillColorExpression = $derived.by(() => {
 		if (mapColorMetric === 'mixed_score') {
 			const thresholds = getScoreThresholdsForMunicipios(municipios);
+			// Score ponderado por celda con los pesos ACTUALES del usuario, calculado
+			// desde los block-scores del tile → la rejilla responde a los sliders
+			// igual que los municipios (mismos umbrales/escala de color).
+			const weightedCellScore = [
+				'+',
+				['*', weights.climate, ['to-number', ['get', 'climate_block_score']]],
+				['*', weights.access, ['to-number', ['get', 'access_block_score']]],
+				['*', weights.nature, ['to-number', ['get', 'nature_block_score']]]
+			];
 			return [
 				'case',
-				['!', ['has', 'mixed_score']],
+				['!', ['has', 'climate_block_score']],
 				missingDataColor,
 				[
 					'step',
-					['to-number', ['get', 'mixed_score']],
+					weightedCellScore,
 					scoreColors[0],
 					thresholds[0],
 					scoreColors[1],
@@ -1000,6 +1012,7 @@
 	});
 
 	$effect(() => {
+		void gridFillColorExpression; // dependencia: repintar al cambiar pesos/métrica
 		if (!mapReady || !map || !map.getLayer(gridFillLayerId)) return;
 		applyGridFillPaint();
 	});
