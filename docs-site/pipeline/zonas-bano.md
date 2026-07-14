@@ -49,7 +49,7 @@ Este documento registra las fuentes identificadas para mejorar el calculo de acc
 - Sitio:
   `https://conalforjas.com/piscinas-naturales/`
 - Archivo descargado localmente:
-  `/Users/portatil/Documents/projects/evaluador-territorial/data/raw/bathing_areas/Zonas de Baño Gratuitas.kml`
+  `/Users/luissevillano/Documents/projects/evaluador-territorial/data/raw/bathing_areas/Zonas de Baño Gratuitas.kml`
 - Estado: util para cobertura adicional exploratoria; no sustituye fuentes oficiales.
 
 ## Priorizacion recomendada de integracion

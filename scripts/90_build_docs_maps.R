@@ -47,12 +47,12 @@ bbox_with_margin <- function(x, margin_x = 0.35, margin_y = 0.30) {
 }
 
 ccaa <- st_read(
-  "/Users/portatil/Documents/gis/SIGLIM_Publico_INSPIRE/SHP_ETRS89/recintos_autonomicas_inspire_peninbal_etrs89/recintos_autonomicas_inspire_peninbal_etrs89.shp",
+  "/Users/luissevillano/Documents/gis/SIGLIM_Publico_INSPIRE/SHP_ETRS89/recintos_autonomicas_inspire_peninbal_etrs89/recintos_autonomicas_inspire_peninbal_etrs89.shp",
   quiet = TRUE
 ) |> st_transform(4326)
 
 prov <- st_read(
-  "/Users/portatil/Documents/gis/SIGLIM_Publico_INSPIRE/SHP_ETRS89/recintos_provinciales_inspire_peninbal_etrs89/recintos_provinciales_inspire_peninbal_etrs89.shp",
+  "/Users/luissevillano/Documents/gis/SIGLIM_Publico_INSPIRE/SHP_ETRS89/recintos_provinciales_inspire_peninbal_etrs89/recintos_provinciales_inspire_peninbal_etrs89.shp",
   quiet = TRUE
 ) |> st_transform(4326)
 

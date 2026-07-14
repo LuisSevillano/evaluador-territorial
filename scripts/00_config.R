@@ -29,11 +29,11 @@ scope_config <- switch(analysis_scope,
 
 paths <- list(
   shapefile = path(
-    "/Users/portatil/Documents/gis/SIGLIM_Publico_INSPIRE/SHP_ETRS89/recintos_municipales_inspire_peninbal_etrs89",
+    "/Users/luissevillano/Documents/gis/SIGLIM_Publico_INSPIRE/SHP_ETRS89/recintos_municipales_inspire_peninbal_etrs89",
     "recintos_municipales_inspire_peninbal_etrs89.shp"
   ),
   provinces_shapefile = path(
-    "/Users/portatil/Documents/gis/SIGLIM_Publico_INSPIRE/SHP_ETRS89/recintos_provinciales_inspire_peninbal_etrs89",
+    "/Users/luissevillano/Documents/gis/SIGLIM_Publico_INSPIRE/SHP_ETRS89/recintos_provinciales_inspire_peninbal_etrs89",
     "recintos_provinciales_inspire_peninbal_etrs89.shp"
   ),
   output_dir = path(project_root, "output"),
@@ -45,7 +45,7 @@ paths <- list(
   output_final_json = path(project_root, "output", "municipios_final.json"),
   frontend_geojson = path(project_root, "frontend", "static", "data", "municipios_final.geojson"),
   frontend_json = path(project_root, "frontend", "static", "data", "municipios_final.json"),
-  isochrones_dir = path("/Users/portatil/Documents/epic-life/isochrones"),
+  isochrones_dir = path("/Users/luissevillano/Documents/epic-life/isochrones"),
   output_v2_geojson = path(project_root, "output", "municipios_v2.geojson"),
   output_v2_csv = path(project_root, "output", "municipios_v2.csv"),
   output_v2_json = path(project_root, "output", "municipios_v2.json"),
@@ -81,8 +81,8 @@ paths <- list(
   otp_raw_dir = path(project_root, "data", "raw", "otp"),
   otp_graph_dir = path(project_root, "data", "raw", "otp", "graph"),
   otp_gtfs_dir = path(project_root, "data", "raw", "otp", "graph", "gtfs"),
-  protected_areas_xlsx = path("/Users/portatil/Downloads/enp_dd_2025.xlsx"),
-  protected_areas_shp_zip = path("/Users/portatil/Downloads/Enp2025_shp.zip"),
+  protected_areas_xlsx = path("/Users/luissevillano/Downloads/enp_dd_2025.xlsx"),
+  protected_areas_shp_zip = path("/Users/luissevillano/Downloads/Enp2025_shp.zip"),
   relieve_raw_dir = path(project_root, "data", "raw", "relieve", "copdem"),
   relieve_processed_dir = path(project_root, "data", "processed", "relieve"),
   output_rivers_geojson = path(project_root, "output", "rios_watercourse_scope.geojson"),
