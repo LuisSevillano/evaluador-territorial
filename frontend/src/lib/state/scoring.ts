@@ -38,23 +38,14 @@ export const normalizeWeights = (raw: WeightsRaw): WeightsNormalized => {
 	};
 };
 
-const summerHeatPenaltyFactor = (tempSummerMeanC?: number): number => {
-	if (!Number.isFinite(tempSummerMeanC)) return 1;
-	const summer = tempSummerMeanC as number;
-	const threshold = 22.5;
-	const hardHeat = 24.2;
-	const maxPenalty = 0.15;
-	if (summer <= threshold) return 1;
-	const ratio = Math.min(1, (summer - threshold) / (hardHeat - threshold));
-	return 1 - ratio * maxPenalty;
-};
-
 export const scoreForMunicipio = (m: Municipio, weights: WeightsNormalized): number => {
+	// El calor estival ya está penalizado dentro de climate_block_score
+	// (temp_verano_norm); no se aplica un multiplicador adicional para no
+	// contarlo dos veces.
 	const climate = m.climate_block_score ?? m.precip_norm ?? 0.5;
 	const access = m.access_block_score ?? m.accesibilidad_norm ?? 0.5;
 	const nature = m.nature_block_score ?? m.naturality_norm ?? 0.5;
-	const baseScore = weights.climate * climate + weights.access * access + weights.nature * nature;
-	return baseScore * summerHeatPenaltyFactor(m.temp_summer_mean_c);
+	return weights.climate * climate + weights.access * access + weights.nature * nature;
 };
 
 export const activePresetFromWeights = (raw: WeightsRaw): Preset | null => {
