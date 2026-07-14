@@ -35,6 +35,12 @@ Ejemplo: un municipio puede tener muy buen clima y naturaleza, pero accesibilida
 
 En el dataset, el score final aparece como `mixed_score`.
 
+## Pesos por defecto y personalización
+
+El reparto 40/30/30 es el **punto de partida**. En el Atlas puedes **ajustar los pesos** (deslizadores y perfiles: naturaleza, accesibilidad, clima…) para priorizar lo que más te importa. Al cambiarlos, **tanto la capa de municipios como la rejilla de 2 km recolorean en vivo** con tus pesos, de forma coherente entre ambos niveles.
+
+El valor `mixed_score` publicado en el dataset corresponde a los pesos por defecto (40/30/30): es la línea base sobre la que el Atlas personaliza la vista.
+
 ## Cómo leer la puntuación
 
 Un `mixed_score` alto suele indicar mejor equilibrio entre bloques dentro del alcance actual. Aún así, hay que leer el desglose: un municipio puede compensar un bloque flojo con otro muy fuerte.
@@ -47,6 +53,8 @@ Cuando dos municipios tienen puntuaciones parecidas, conviene tratarlos como alt
 ## Ponderación interna de clima
 
 El bloque clima usa `precip_moisture_score` en lugar de basarse solo en percentiles internos de lluvia anual. Esta puntuación combina referencia climática absoluta TerraClimate 2014-2023, sequía estival y una parte menor de ventaja relativa dentro del alcance activo.
+
+El calor estival se penaliza **dentro del bloque de clima** (a través de la temperatura de verano); no se aplica ningún multiplicador adicional fuera de los bloques.
 
 ## Ponderación interna de naturaleza
 
