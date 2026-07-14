@@ -14,6 +14,11 @@ La idea es sencilla: no basta con que el pipeline acabe. Hay que comprobar que l
 - Ejecutar `npm run check` en frontend.
 - Confirmar que el metadata declara el alcance esperado.
 
+## Control automático: gate de calidad y CI
+
+- **Gate de calidad (`scripts/04_quality_checks.R`)**: además de escribir `output/data_quality_report.csv`, ahora **detiene el pipeline** (error, no solo aviso) si detecta violaciones de integridad —geometrías inválidas, `codigo` duplicados, precipitación negativa, temperaturas imposibles o `travel_bucket` fuera de catálogo— o si el dataset se queda sin filas. Los valores ausentes (`na_*`) se informan como aviso, pero no bloquean.
+- **Integración continua (`.github/workflows/ci.yml`)**: en cada push a `main` y en cada pull request se ejecuta `pnpm --dir frontend run check` y `pnpm --dir frontend run build`, de modo que una regresión de tipos o de compilación se detecta antes de desplegar. El gate de datos en R no corre en CI porque necesita los datos fuente, que no están en el repositorio.
+
 ## Validaciones metodológicas
 
 - Revisar distribución de `mixed_score` por percentiles.
