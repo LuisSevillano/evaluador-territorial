@@ -129,14 +129,14 @@ steps <- list(
   list(
     path = "scripts/04j_grid_2km.R",
     label = "Grid 2km y agregados",
-    outputs = c(paths$output_grid_geojson, paths$frontend_grid_geojson, paths$output_feature_grid_agg_rds, paths$output_feature_grid_agg_parquet),
+    outputs = c(paths$output_grid_geojson, paths$output_feature_grid_agg_rds, paths$output_feature_grid_agg_parquet),
     inputs = c(paths$output_final_geojson)
   ),
   list(
     path = "scripts/05c_build_grid_pmtiles.sh",
     label = "PMTiles grid",
     outputs = c(path(paths$frontend_grid_pmtiles, "grid_norte.pmtiles")),
-    inputs = c(paths$frontend_grid_geojson)
+    inputs = c(paths$output_grid_geojson)
   ),
   list(
     path = "scripts/04_quality_checks.R",
@@ -209,8 +209,7 @@ if (include_protected_areas) {
       outputs = c(
         paths$output_feature_protected_areas_grid_rds,
         paths$output_feature_protected_areas_municipal_rds,
-        paths$output_grid_geojson,
-        paths$frontend_grid_geojson
+        paths$output_grid_geojson
       ),
       inputs = c(paths$output_grid_geojson, paths$protected_areas_shp_zip, paths$protected_areas_xlsx)
     )
@@ -241,7 +240,7 @@ if (pipeline_mode == "assemble-only") {
     list(
       path = "scripts/04j_grid_2km.R",
       label = "Grid 2km y agregados",
-      outputs = c(paths$output_grid_geojson, paths$frontend_grid_geojson, paths$output_feature_grid_agg_rds, paths$output_feature_grid_agg_parquet),
+      outputs = c(paths$output_grid_geojson, paths$output_feature_grid_agg_rds, paths$output_feature_grid_agg_parquet),
       inputs = c(paths$output_final_geojson)
     ),
     if (include_protected_areas) list(
@@ -250,8 +249,7 @@ if (pipeline_mode == "assemble-only") {
       outputs = c(
         paths$output_feature_protected_areas_grid_rds,
         paths$output_feature_protected_areas_municipal_rds,
-        paths$output_grid_geojson,
-        paths$frontend_grid_geojson
+        paths$output_grid_geojson
       ),
       inputs = c(paths$output_grid_geojson, paths$protected_areas_shp_zip, paths$protected_areas_xlsx)
     ) else NULL,
@@ -259,7 +257,7 @@ if (pipeline_mode == "assemble-only") {
       path = "scripts/05c_build_grid_pmtiles.sh",
       label = "PMTiles grid",
       outputs = c(path(paths$frontend_grid_pmtiles, "grid_norte.pmtiles")),
-      inputs = c(paths$frontend_grid_geojson)
+      inputs = c(paths$output_grid_geojson)
     ),
     list(
       path = "scripts/04_quality_checks.R",

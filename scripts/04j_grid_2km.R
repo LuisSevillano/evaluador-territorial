@@ -736,14 +736,12 @@ grid_sf <- st_transform(grid_sf, 4326) |>
 
 log_step("Guardando dataset de celdas")
 st_write(grid_sf, paths$output_grid_geojson, delete_dsn = TRUE, quiet = TRUE)
-invisible(file_copy(paths$output_grid_geojson, paths$frontend_grid_geojson, overwrite = TRUE))
 
 log_step("Guardando agregados municipales de grid")
 write_parquet(grid_agg, paths$output_feature_grid_agg_parquet)
 saveRDS(grid_agg, paths$output_feature_grid_agg_rds)
 
 log_step(paste0("Grid guardado en ", paths$output_grid_geojson))
-log_step(paste0("Grid copiado a frontend en ", paths$frontend_grid_geojson))
 log_step(paste0("Total celdas: ", nrow(grid_sf)))
 log_step(paste0("Municipios con agregados: ", nrow(grid_agg)))
 

@@ -124,7 +124,6 @@ paths <- list(
   frontend_isochrones_dir = path(project_root, "frontend", "static", "data", "isochrones"),
   frontend_isochrones_pmtiles = path(project_root, "frontend", "static", "tiles", "isochrones.pmtiles"),
   output_grid_geojson = path(project_root, "output", "municipios_grid_2km.geojson"),
-  frontend_grid_geojson = path(project_root, "frontend", "static", "data", "municipios_grid_2km.geojson"),
   frontend_grid_pmtiles = path(project_root, "frontend", "static", "tiles", "grid")
 )
 

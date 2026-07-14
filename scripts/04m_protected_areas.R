@@ -159,7 +159,6 @@ grid_out <- grid_sf |>
   st_transform(4326)
 
 st_write(grid_out, paths$output_grid_geojson, delete_dsn = TRUE, quiet = TRUE)
-invisible(file_copy(paths$output_grid_geojson, paths$frontend_grid_geojson, overwrite = TRUE))
 
 saveRDS(grid_feature, paths$output_feature_protected_areas_grid_rds)
 write_parquet(grid_feature, paths$output_feature_protected_areas_grid_parquet)

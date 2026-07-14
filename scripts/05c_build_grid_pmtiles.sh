@@ -2,7 +2,7 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
-GRID_GEOJSON="$ROOT_DIR/frontend/static/data/municipios_grid_2km.geojson"
+GRID_GEOJSON="$ROOT_DIR/output/municipios_grid_2km.geojson"
 GRID_DIR="$ROOT_DIR/frontend/static/tiles/grid"
 PROV_DIR="$GRID_DIR/provincias"
 
