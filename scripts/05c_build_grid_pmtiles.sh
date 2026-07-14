@@ -41,6 +41,7 @@ tippecanoe \
 
 echo "[grid] Convirtiendo a grid_norte.pmtiles"
 pmtiles convert "$GRID_MBTILES" "$GRID_PMTILES"
+rm -f "$GRID_MBTILES"  # el .mbtiles es intermedio; solo se versiona/sirve el .pmtiles
 
 echo "[grid] Construyendo PMTiles provinciales"
 python3 - "$GRID_GEOJSON" "$PROV_DIR" <<'PY'
@@ -86,6 +87,7 @@ for prov in provinces:
         "-l", "grid", "-j", filter_expr, str(grid_geojson)
     ], check=True)
     subprocess.run(["pmtiles", "convert", str(mb), str(pm)], check=True)
+    mb.unlink(missing_ok=True)  # borrar el .mbtiles intermedio
     print(f"[grid] OK provincia: {prov} -> {pm.name}")
 PY
 

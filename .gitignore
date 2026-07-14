@@ -33,9 +33,10 @@ output/*
 *.gpkg-wal
 *.gpkg-shm
 
-# Keep only frontend runtime tiles versioned
+# Keep only frontend runtime tiles versioned (pmtiles, not the .mbtiles intermediates)
 !frontend/static/tiles/
 !frontend/static/tiles/*.pmtiles
+!frontend/static/tiles/grid/**/*.pmtiles
 
 # Local Netlify folder
 .netlify
