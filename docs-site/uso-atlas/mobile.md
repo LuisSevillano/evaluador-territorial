@@ -30,6 +30,7 @@ El fondo carga por defecto una capa del IGN (Instituto Geográfico Nacional) don
 Al tocar un municipio o una celda, aparece un panel en la parte inferior que muestra:
 
 - Nombre y provincia.
+- Botón con el icono de Google Maps para abrir la ubicación en Google Maps.
 - Score global y desglose por bloques.
 - Métricas concretas del municipio.
 

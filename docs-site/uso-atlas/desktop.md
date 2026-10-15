@@ -46,6 +46,7 @@ Al hacer clic en cualquier municipio del mapa, el inspector muestra:
 - Población total.
 - Score global (`mixed_score`) y desglose por bloques (clima, accesibilidad, naturaleza).
 - Métricas concretas: precipitación anual, distancia a estación de tren, cobertura forestal, distancia al río más cercano, tipo de relieve, etc.
+- Botón con el icono de Google Maps para abrir la ubicación del municipio en Google Maps.
 
 El inspector permite comparar visualmente los bloques con barras horizontales que indican la posición relativa dentro del ámbito.
 
