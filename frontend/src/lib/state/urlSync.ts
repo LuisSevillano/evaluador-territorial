@@ -1,10 +1,11 @@
 import { buildUrlState, parseUrlState, type SheetTab } from '$lib/state/urlState';
 import { clampNumber, type TravelBucketFilter } from '$lib/state/filters';
+import { normalizeProvinceName } from '$lib/state/provinces';
 
 type SyncState = {
 	mapViewMode: 'auto' | 'municipality' | 'grid';
 	query: string;
-	provinceFilter: string;
+	provinceFilter: string[];
 	maxTravelBucket: TravelBucketFilter;
 	minPrecipAnnual: number;
 	minWinterTemp: number;
@@ -27,7 +28,11 @@ export const applyUrlToState = (search: string, current: SyncState) => {
 
 	if (parsed.mapView) next.mapViewMode = parsed.mapView;
 	if (parsed.q) next.query = parsed.q;
-	if (parsed.province) next.provinceFilter = parsed.province;
+	if (parsed.province !== undefined)
+		next.provinceFilter = parsed.province
+			.split(',')
+			.map((name) => normalizeProvinceName(name.trim()))
+			.filter((name) => name.length > 0);
 	if (parsed.travel) next.maxTravelBucket = parsed.travel;
 
 	if (parsed.ppt !== undefined) next.minPrecipAnnual = clampNumber(parsed.ppt, 0, 1800);
@@ -54,7 +59,7 @@ export const applyUrlToState = (search: string, current: SyncState) => {
 export const buildUrlFromState = (state: SyncState) =>
 	buildUrlState({
 		q: state.query.trim().length > 0 ? state.query.trim() : undefined,
-		province: state.provinceFilter !== 'Todas' ? state.provinceFilter : undefined,
+		province: state.provinceFilter.length > 0 ? state.provinceFilter.join(',') : undefined,
 		travel: state.maxTravelBucket !== null && state.maxTravelBucket !== '>4h00' ? state.maxTravelBucket : undefined,
 		ppt: state.minPrecipAnnual !== 0 ? state.minPrecipAnnual : undefined,
 		tw: state.minWinterTemp !== -10 ? state.minWinterTemp : undefined,

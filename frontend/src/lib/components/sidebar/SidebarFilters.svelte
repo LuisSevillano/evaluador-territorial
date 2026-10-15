@@ -13,7 +13,7 @@
 		municipios?: Municipio[];
 		searchMunicipios?: Municipio[];
 		selectedMunicipio?: Municipio | null;
-		provinceFilter?: string;
+		provinceFilter?: string[];
 		provinciasDisponibles?: string[];
 		maxTravelBucket?: TravelBucketFilter;
 		minPrecipAnnual?: number;
@@ -26,7 +26,8 @@
 		onQueryChange?: (value: string) => void;
 		onSelectMunicipio?: (municipio: Municipio) => void;
 		onCoordinateSearch?: (payload: { lat: number; lon: number; label: string }) => void;
-		onProvinceFilterChange?: (value: string) => void;
+		onProvinceToggle?: (value: string) => void;
+		onProvinceClear?: () => void;
 		onMaxTravelBucketChange?: (value: TravelBucketFilter) => void;
 		onMinPrecipAnnualChange?: (value: number) => void;
 		onMinWinterTempChange?: (value: number) => void;
@@ -40,8 +41,8 @@
 		query = '',
 		municipios = [],
 		searchMunicipios = [],
-		provinceFilter = 'Todas',
-		provinciasDisponibles = ['Todas'],
+		provinceFilter = [],
+		provinciasDisponibles = [],
 		maxTravelBucket = null,
 		minPrecipAnnual = 0,
 		minWinterTemp = -10,
@@ -53,7 +54,8 @@
 		onQueryChange = () => undefined,
 		onSelectMunicipio = () => undefined,
 		onCoordinateSearch = () => undefined,
-		onProvinceFilterChange = () => undefined,
+		onProvinceToggle = () => undefined,
+		onProvinceClear = () => undefined,
 		onMaxTravelBucketChange = () => undefined,
 		onMinPrecipAnnualChange = () => undefined,
 		onMinWinterTempChange = () => undefined,
@@ -82,14 +84,20 @@
 		/>
 	</div>
 	<div class="control">
-		<p class="control-title control-title-help">Provincia <FilterHelp text={FILTER_HELP.province} /></p>
+		<p class="control-title control-title-help">Provincias <FilterHelp text={FILTER_HELP.province} /></p>
 		<div class="chips-wrap compact province-chips">
+			<ChipButton
+				label="Todas"
+				size="small"
+				active={provinceFilter.length === 0}
+				onclick={() => onProvinceClear()}
+			/>
 			{#each provinciasDisponibles as provincia}
 				<ChipButton
 					label={provincia}
 					size="small"
-					active={provinceFilter === provincia}
-					onclick={() => onProvinceFilterChange(provincia)}
+					active={provinceFilter.includes(provincia)}
+					onclick={() => onProvinceToggle(provincia)}
 				/>
 			{/each}
 		</div>

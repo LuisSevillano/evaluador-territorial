@@ -15,7 +15,7 @@
 		municipiosScoredForView: Municipio[];
 		municipiosFiltradosBase: Municipio[];
 		provinciasDisponibles: string[];
-		provinceFilter: string;
+		provinceFilter: string[];
 		maxTravelBucket: TravelBucket | null;
 		minPrecipAnnual: number;
 		minWinterTemp: number;
@@ -31,7 +31,8 @@
 		onQueryChange: (value: string) => void;
 		onSelectMunicipio: (municipio: Municipio | null) => void;
 		onCoordinateSearch: (payload: { lat: number; lon: number; label: string }) => void;
-		onProvinceFilterChange: (value: string) => void;
+		onProvinceToggle: (value: string) => void;
+		onProvinceClear: () => void;
 		onMaxTravelBucketChange: (value: TravelBucket | null) => void;
 		onMinPrecipAnnualChange: (value: number) => void;
 		onMinWinterTempChange: (value: number) => void;
@@ -79,14 +80,25 @@
 			/>
 		</div>
 		<div class="sheet-label-help-row sheet-label-help-row-nowrap">
-			<label for="sheet-province">Provincia</label>
+			<span id="sheet-province-label" class="sheet-group-label">Provincias</span>
 			<FilterHelp text={FILTER_HELP.province} />
 		</div>
-		<select id="sheet-province" value={props.provinceFilter} onchange={(e) => props.onProvinceFilterChange((e.currentTarget as HTMLSelectElement).value)}>
+		<div class="chips-row" role="group" aria-labelledby="sheet-province-label">
+			<ChipButton
+				label="Todas"
+				size="small"
+				active={props.provinceFilter.length === 0}
+				onclick={() => props.onProvinceClear()}
+			/>
 			{#each props.provinciasDisponibles as provincia}
-				<option value={provincia}>{provincia}</option>
+				<ChipButton
+					label={provincia}
+					size="small"
+					active={props.provinceFilter.includes(provincia)}
+					onclick={() => props.onProvinceToggle(provincia)}
+				/>
 			{/each}
-		</select>
+		</div>
 		<p class="sheet-subtitle sheet-subtitle-help">Accesibilidad maxima <FilterHelp text={FILTER_HELP.accessibility} /></p>
 		<div class="chips-row">
 			{#each travelBuckets as bucket}
@@ -173,16 +185,11 @@
 		gap: 0.3rem;
 		flex-wrap: nowrap;
 	}
-	.sheet-label-help-row label {
-		display: inline;
-		min-width: 0;
-		line-height: 1.15;
-	}
 	.sheet-label-help-row :global(.help-wrap) {
 		flex: 0 0 auto;
 		margin-top: 0;
 	}
-	.sheet-label-help-row-nowrap label {
+	.sheet-label-help-row-nowrap .sheet-group-label {
 		white-space: nowrap;
 	}
 	.sheet-block label {
@@ -207,19 +214,14 @@
 		flex: 0 0 auto;
 	}
 	@media (max-width: 435px) {
-		.sheet-label-help-row label,
+		.sheet-group-label,
 		.sheet-subtitle-help {
 			font-size: 0.68rem;
 		}
 	}
-	.sheet-block select {
-		border: 1px solid var(--border-color);
-		border-radius: var(--radius-card);
-		height: 30px;
-		padding: 0 0.5rem;
-		font-size: 0.8rem;
-		line-height: 1.2;
-		background: var(--control-bg);
+	.sheet-group-label {
+		font-size: 0.75rem;
+		color: var(--text-secondary);
 	}
 	.chips-row {
 		display: flex;

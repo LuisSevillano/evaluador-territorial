@@ -4,3 +4,11 @@ export const normalizeProvinceName = (province: string) => {
 	}
 	return province;
 };
+
+export const toggleProvinceSelection = (selected: string[], province: string): string[] => {
+	const normalized = normalizeProvinceName(province);
+	const current = selected.map(normalizeProvinceName);
+	return current.includes(normalized)
+		? current.filter((name) => name !== normalized)
+		: [...current, normalized];
+};

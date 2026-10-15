@@ -17,7 +17,7 @@ import MobileSheetTabs from '$lib/components/mobile/MobileSheetTabs.svelte';
 	import { formatScorePercent, formatSmartNumber } from '$lib/utils/numberFormat';
 	import { parseCoordinateQuery } from '$lib/utils/coordinateSearch';
 	import { applyUrlToState, buildUrlFromState } from '$lib/state/urlSync';
-	import { normalizeProvinceName } from '$lib/state/provinces';
+	import { normalizeProvinceName, toggleProvinceSelection } from '$lib/state/provinces';
 
 	import {
 		bucketOrder,
@@ -151,16 +151,23 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 	const tableRowHeight = 38;
 	const tableOverscan = 24;
 
-	const provinciasDisponibles = $derived([
-		'Todas',
-		...Array.from(
+	const provinciasDisponibles = $derived(
+		Array.from(
 			new Set(
 				municipios.map((m) => normalizeProvinceName((m as any).provincia_nombre_geo ?? m.provincia))
 			)
 		)
 			.filter((provincia) => provincia && provincia !== '53')
 			.sort((a, b) => a.localeCompare(b, 'es'))
-	]);
+	);
+
+	const provinceFilterSet = $derived(new Set(provinceFilter.map(normalizeProvinceName)));
+
+	const provinceFilterLabel = $derived.by(() => {
+		if (provinceFilter.length === 0) return 'Todas';
+		if (provinceFilter.length <= 3) return provinceFilter.join(', ');
+		return `${provinceFilter.length} provincias`;
+	});
 
 	const labelAccesibilidad = (bucket: string) => {
 		if (bucket === '<=1h30' || bucket === '<=2h00') return 'alta';
@@ -186,9 +193,7 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 	const municipiosFiltradosBase = $derived(
 		municipiosScoredForView.filter((m) => {
 			const provinceName = normalizeProvinceName((m as any).provincia_nombre_geo ?? m.provincia);
-			const provinceOk =
-				provinceFilter === 'Todas' ||
-				provinceName === normalizeProvinceName(provinceFilter);
+			const provinceOk = provinceFilterSet.size === 0 || provinceFilterSet.has(provinceName);
 			const bucketOk =
 				maxTravelBucket === null ||
 				(bucketOrder[m.travel_bucket as TravelBucket] ?? bucketOrder['>4h00']) <=
@@ -249,7 +254,7 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 
 	const activeFiltersSummary = $derived(
 		[
-			provinceFilter !== 'Todas' ? `provincia=${provinceFilter}` : null,
+			provinceFilter.length > 0 ? `provincia=${provinceFilterLabel}` : null,
 			maxTravelBucket !== null ? `acc ${formatTravelBucketLabel(maxTravelBucket)}` : null,
 			minPrecipAnnual !== 0 ? `ppt>=${minPrecipAnnual}` : null,
 			minWinterTemp !== -10 ? `t_inv>=${minWinterTemp}` : null,
@@ -398,6 +403,19 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 	const handleClearFilters = () => {
 		filtersStore.clear();
 		filtersStore.state.maxThermalAmplitude = maxThermalAmplitudeLimit;
+	};
+
+	const handleProvinceToggle = (provincia: string) => {
+		clearSelectionForFilterChange();
+		filtersStore.state.provinceFilter = toggleProvinceSelection(
+			filtersStore.state.provinceFilter,
+			provincia
+		);
+	};
+
+	const handleProvinceClear = () => {
+		clearSelectionForFilterChange();
+		filtersStore.state.provinceFilter = [];
 	};
 
 	const handleToggleShortlist = (municipioId: string) => {
@@ -579,7 +597,7 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 			query: next.query ?? filtersStore.state.query,
 			provinceFilter:
 				next.provinceFilter !== undefined
-					? normalizeProvinceName(next.provinceFilter)
+					? next.provinceFilter.map(normalizeProvinceName)
 					: filtersStore.state.provinceFilter,
 			maxTravelBucket: next.maxTravelBucket ?? filtersStore.state.maxTravelBucket,
 			minPrecipAnnual: next.minPrecipAnnual ?? filtersStore.state.minPrecipAnnual,
@@ -848,7 +866,7 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 	<div class="mode-strip-metrics">
 		<span>Color mapa: {mapColorLabel}</span>
 		<span>Capas activas: {activeLayerCount}</span>
-		<span>Filtro provincia: {provinceFilter}</span>
+		<span>Filtro provincias: {provinceFilterLabel}</span>
 		<span>Pesos: clima {climateWeight} · acceso {accessWeight} · naturaleza {natureWeight}</span>
 	</div>
 </section>
@@ -906,7 +924,8 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 				onToggleForestLayer={(value) => (layersStore.state.showForestLayer = value)}
 				onToggleLandUseLayer={(value) => (layersStore.state.showLandUseLayer = value)}
 				onToggleVegetationLayer={(value) => (layersStore.state.showVegetationLayer = value)}
-				onProvinceFilterChange={(value) => { clearSelectionForFilterChange(); filtersStore.state.provinceFilter = value; }}
+				onProvinceToggle={handleProvinceToggle}
+				onProvinceClear={handleProvinceClear}
 				onMaxTravelBucketChange={(value) => { clearSelectionForFilterChange(); filtersStore.state.maxTravelBucket = value; }}
 				onMinPrecipAnnualChange={(value) => { clearSelectionForFilterChange(); filtersStore.state.minPrecipAnnual = value; }}
 				onMinWinterTempChange={(value) => { clearSelectionForFilterChange(); filtersStore.state.minWinterTemp = value; }}
@@ -1082,7 +1101,8 @@ import { exportShortlistCsv, exportShortlistJson } from '$lib/state/shortlistExp
 							onQueryChange={(value) => (filtersStore.state.query = value)}
 							onSelectMunicipio={handleSelectMunicipio}
 							onCoordinateSearch={handleCoordinateSearch}
-							onProvinceFilterChange={(value) => { clearSelectionForFilterChange(); filtersStore.state.provinceFilter = value; }}
+							onProvinceToggle={handleProvinceToggle}
+				onProvinceClear={handleProvinceClear}
 								onMaxTravelBucketChange={(value) => { clearSelectionForFilterChange(); filtersStore.state.maxTravelBucket = value; }}
 								onMinPrecipAnnualChange={(value) => { clearSelectionForFilterChange(); filtersStore.state.minPrecipAnnual = value; }}
 								onMinWinterTempChange={(value) => { clearSelectionForFilterChange(); filtersStore.state.minWinterTemp = value; }}

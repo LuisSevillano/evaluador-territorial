@@ -27,7 +27,7 @@
 		showForestLayer?: boolean;
 		showLandUseLayer?: boolean;
 		showVegetationLayer?: boolean;
-		provinceFilter?: string;
+		provinceFilter?: string[];
 		provinciasDisponibles?: string[];
 		maxTravelBucket?: TravelBucketFilter;
 		minPrecipAnnual?: number;
@@ -60,7 +60,8 @@
 		onToggleForestLayer?: (value: boolean) => void;
 		onToggleLandUseLayer?: (value: boolean) => void;
 		onToggleVegetationLayer?: (value: boolean) => void;
-		onProvinceFilterChange?: (value: string) => void;
+		onProvinceToggle?: (value: string) => void;
+		onProvinceClear?: () => void;
 		onMaxTravelBucketChange?: (value: TravelBucketFilter) => void;
 		onMinPrecipAnnualChange?: (value: number) => void;
 		onMinWinterTempChange?: (value: number) => void;
@@ -95,8 +96,8 @@
 		showForestLayer = false,
 		showLandUseLayer = false,
 		showVegetationLayer = false,
-		provinceFilter = 'Todas',
-		provinciasDisponibles = ['Todas'],
+		provinceFilter = [],
+		provinciasDisponibles = [],
 		maxTravelBucket = null,
 		minPrecipAnnual = 0,
 		minWinterTemp = -10,
@@ -128,7 +129,8 @@
 		onToggleForestLayer = () => undefined,
 		onToggleLandUseLayer = () => undefined,
 		onToggleVegetationLayer = () => undefined,
-		onProvinceFilterChange = () => undefined,
+		onProvinceToggle = () => undefined,
+		onProvinceClear = () => undefined,
 		onMaxTravelBucketChange = () => undefined,
 		onMinPrecipAnnualChange = () => undefined,
 		onMinWinterTempChange = () => undefined,
@@ -223,7 +225,8 @@
 		{onQueryChange}
 		{onSelectMunicipio}
 		{onCoordinateSearch}
-		{onProvinceFilterChange}
+		{onProvinceToggle}
+		{onProvinceClear}
 		{onMaxTravelBucketChange}
 		{onMinPrecipAnnualChange}
 		{onMinWinterTempChange}

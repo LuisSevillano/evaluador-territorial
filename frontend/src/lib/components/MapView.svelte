@@ -3,7 +3,6 @@
 	import maplibregl from 'maplibre-gl';
 	import type { Point } from 'geojson';
 	import type { Municipio } from '$lib/types/municipio';
-	import { normalizeProvinceName } from '$lib/state/provinces';
 	import LandUseLegend from '$lib/components/map/LandUseLegend.svelte';
 	import MapLoadingBadge from '$lib/components/map/MapLoadingBadge.svelte';
 	import ViewControl from '$lib/components/map/ViewControl.svelte';
@@ -113,7 +112,7 @@
 		showVegetationLayer?: boolean;
 		layerOrder?: string[];
 		visibleMunicipioIds?: string[];
-		provinceFilter?: string;
+		provinceFilter?: string[];
 		maxTravelBucket?: TravelBucketFilter;
 		pmtilesUrl?: string;
 		onMapSelection?: (municipio: Municipio | null) => void;
@@ -146,7 +145,7 @@
 		showVegetationLayer = false,
 		layerOrder = ['municipios', 'isochrones', 'reservoirs', 'rivers'],
 		visibleMunicipioIds = [],
-		provinceFilter = 'Todas',
+		provinceFilter = [],
 		maxTravelBucket = null,
 		pmtilesUrl = '/tiles/municipios.pmtiles',
 		onMapSelection = () => undefined,
@@ -567,7 +566,7 @@
 		const signature = [
 			isMobileView ? 'm' : 'd',
 			isBottomSheetOpen ? 'open' : 'closed',
-			provinceFilter,
+			[...provinceFilter].sort().join(','),
 			String(visibleMunicipioIds.length),
 			...bounds.raw.flat().map((n) => n.toFixed(4))
 		].join('|');
@@ -580,7 +579,7 @@
 		} else {
 			map.fitBounds(bounds.raw, {
 				padding: getFitPadding(),
-				maxZoom: normalizeProvinceName(provinceFilter) === 'Todas' ? 7.4 : 9,
+				maxZoom: provinceFilter.length === 0 ? 7.4 : 9,
 				duration
 			});
 		}
@@ -762,10 +761,9 @@
 	};
 
 	const resolveGridPmtilesPath = () => {
-		const fromFilter = provinceFilter && provinceFilter !== 'Todas' ? provinceFilter.trim() : null;
-		const province = fromFilter;
-		if (!province) return '/tiles/grid/grid_norte.pmtiles';
-		const provinceSlug = slugifyProvinceName(province);
+		const selected = provinceFilter.map((name) => name.trim()).filter((name) => name.length > 0);
+		if (selected.length !== 1) return '/tiles/grid/grid_norte.pmtiles';
+		const provinceSlug = slugifyProvinceName(selected[0]);
 		return `/tiles/grid/provincias/grid_${provinceSlug}.pmtiles`;
 	};
 

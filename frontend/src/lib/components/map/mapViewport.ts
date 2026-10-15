@@ -1,6 +1,5 @@
 import type maplibregl from 'maplibre-gl';
 import type { Municipio } from '$lib/types/municipio';
-import { normalizeProvinceName } from '$lib/state/provinces';
 
 export type BoundsPack = {
 	raw: [[number, number], [number, number]];
@@ -52,5 +51,5 @@ export const centerToBounds = (
 	map.setZoom(zoom);
 };
 
-export const getAutoFitZoom = (provinceFilter: string) =>
-	normalizeProvinceName(provinceFilter) === 'Todas' ? 5.2 : 6.2;
+export const getAutoFitZoom = (provinceFilter: string[]) =>
+	provinceFilter.length === 0 ? 5.2 : 6.2;

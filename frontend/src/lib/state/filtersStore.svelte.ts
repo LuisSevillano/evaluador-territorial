@@ -4,7 +4,7 @@ import type { TravelBucketFilter } from '$lib/state/filters';
 export const createFiltersStore = () => {
 	const state = $state({
 		query: '',
-		provinceFilter: 'Todas',
+		provinceFilter: [] as string[],
 		maxTravelBucket: null as TravelBucketFilter,
 		minPrecipAnnual: 0,
 		minWinterTemp: -10,
@@ -17,7 +17,7 @@ export const createFiltersStore = () => {
 	});
 
 	const clear = () => {
-		state.provinceFilter = 'Todas';
+		state.provinceFilter = [];
 		state.maxTravelBucket = null;
 		state.minPrecipAnnual = 0;
 		state.minWinterTemp = -10;

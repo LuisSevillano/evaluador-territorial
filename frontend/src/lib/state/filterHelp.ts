@@ -1,6 +1,6 @@
 export const FILTER_HELP = {
 	search: 'Filtra por nombre del municipio o provincia. No cambia el score, solo lo que se muestra.',
-	province: 'Muestra solo municipios de la provincia seleccionada.',
+	province: 'Muestra solo municipios de las provincias seleccionadas. Sin selección se muestran todas.',
 	accessibility:
 		'Limita por tiempo de desplazamiento al municipio. Menor tiempo = filtro más estricto.',
 	precip: 'Excluye municipios con menos lluvia anual que este umbral.',

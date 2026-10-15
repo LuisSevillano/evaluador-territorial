@@ -10,7 +10,7 @@ type GridFilterParams = {
 	visibilityGridVisible: boolean;
 	selectedMunicipio?: { id?: string; codigo?: string } | null;
 	maxTravelBucket: TravelBucketFilter;
-	provinceFilter: string;
+	provinceFilter: string[];
 };
 
 const setGridFilters = (map: maplibregl.Map, expr: any, ids: { fill: string; line: string; hover: string }) => {
@@ -37,7 +37,7 @@ export const applyGridFilter = ({
 	}
 
 	const hasTravelFilter = maxTravelBucket !== null;
-	const hasProvinceFilter = provinceFilter && provinceFilter !== 'Todas';
+	const hasProvinceFilter = provinceFilter.length > 0;
 	const hasSelectedMunicipio = selectedMunicipio?.id || selectedMunicipio?.codigo;
 
 	if (!visibilityGridVisible) {
@@ -74,8 +74,12 @@ export const applyGridFilter = ({
 	}
 
 	if (hasProvinceFilter) {
-		const normalizedProvince = normalizeProvinceName(provinceFilter);
-		filterParts.push(['==', ['get', 'provincia'], normalizedProvince]);
+		const normalizedProvinces = provinceFilter.map(normalizeProvinceName);
+		filterParts.push(
+			normalizedProvinces.length === 1
+				? ['==', ['get', 'provincia'], normalizedProvinces[0]]
+				: ['in', ['get', 'provincia'], ['literal', normalizedProvinces]]
+		);
 	}
 
 	if (filterParts.length === 0) {
