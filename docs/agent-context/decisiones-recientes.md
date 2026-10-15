@@ -2,6 +2,9 @@
 
 ## Estado Del Producto
 - La UX objetivo es una experiencia unificada; no dividir en modo exploracion y modo evaluacion salvo peticion explicita.
+- El filtro de provincias es multiseleccion: `provinceFilter` es `string[]` (vacio = todas), con toggle por chips en desktop y en mobile (`ChipButton` pequeno, mismo patron que accesibilidad) y `Todas` como limpiar seleccion.
+- La seleccion multiple de provincias se comparte por URL como `?province=Burgos,Ávila` (coma separada); el formato antiguo `?province=Burgos` sigue funcionando.
+- Con 0 o 2+ provincias el modo rejilla usa `grid_norte.pmtiles` y filtra por `in`; con exactamente 1 mantiene el PMTiles por provincia.
 - El inspector y los graficos de clima ya existen; el roadmap anota mejorar graficos del inspector como siguiente area, no crear un inspector desde cero.
 - El producto ya trabaja con mapa, ranking, filtros, capas, panel lateral y experiencia mobile con bottom sheets.
 

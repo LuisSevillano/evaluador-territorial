@@ -17,7 +17,7 @@ Ejemplo: un municipio verde en score mixto destaca frente a los demás municipio
 1. Abre el mapa con la métrica **Puntuación global**.
 2. Observa si hay zonas que concentran mejores resultados.
 3. Cambia a clima, accesibilidad o naturaleza para entender de dónde viene el patrón.
-4. Filtra por provincia si quieres reducir el ámbito.
+4. Filtra por una o varias provincias si quieres reducir el ámbito.
 5. Haz clic en un municipio para abrir el detalle.
 6. Revisa el desglose antes de sacar conclusiones.
 7. Guarda o compara lugares que merezcan una segunda mirada.

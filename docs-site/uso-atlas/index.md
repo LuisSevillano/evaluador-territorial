@@ -51,7 +51,7 @@ En la práctica, el uso del Atlas siempre sigue el mismo patrón:
 
 1. **Elegir una métrica** (score mixto, clima, accesibilidad, naturaleza o acceso a baño).
 2. **Observar el patrón espacial** en el mapa para identificar zonas con mejor puntuación.
-3. **Filtrar** por provincia o rango de score para reducir el ámbito de análisis.
+3. **Filtrar** por provincias o rango de score para reducir el ámbito de análisis.
 4. **Seleccionar municipios** individuales para ver el detalle en el inspector.
 5. **Comparar** resultados entre varios municipios.
 

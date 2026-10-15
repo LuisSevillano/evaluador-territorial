@@ -19,7 +19,7 @@ Sin pregunta, el ranking puede parecer más definitivo de lo que es.
 
 ## Usa filtros para reducir ruido
 
-Los filtros sirven para hacer la comparación más manejable. Puedes filtrar por provincia, score, clima o accesibilidad.
+Los filtros sirven para hacer la comparación más manejable. Puedes filtrar por una o varias provincias, score, clima o accesibilidad.
 
 La regla práctica es: primero reduce el conjunto, después compara con más detalle.
 

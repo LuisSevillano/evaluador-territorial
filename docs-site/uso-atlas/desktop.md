@@ -30,7 +30,7 @@ Al cambiar de métrica, el mapa se recolorea instantáneamente. La leyenda super
 Los filtros están organizados en el panel lateral:
 
 - **Buscar municipio**: escribir nombre para localizar directamente un municipio.
-- **Provincia**: filtrar por provincia específica dentro del ámbito.
+- **Provincias**: selección múltiple por chips dentro del ámbito (p. ej. Burgos y Ávila a la vez). El chip `Todas` quita el filtro.
 - **Rango de score**: seleccionar un rango del 0-100 para ver solo municipios dentro de ese intervalo.
 - **Filtros de climatología**: precipitación mínima, temperatura mínima de invierno, temperatura máxima de verano, amplitud térmica.
 
