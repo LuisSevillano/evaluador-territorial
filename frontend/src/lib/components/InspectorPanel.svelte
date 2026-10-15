@@ -139,6 +139,15 @@
 		if (!otpIsRouted || !Number.isFinite(otpOriginLat) || !Number.isFinite(otpOriginLon) || !Number.isFinite(otpStopLat) || !Number.isFinite(otpStopLon)) return null;
 		return `https://www.google.com/maps/dir/?api=1&origin=${otpOriginLat},${otpOriginLon}&destination=${otpStopLat},${otpStopLon}&travelmode=transit`;
 	});
+	const mapsSearchUrl = $derived.by(() => {
+		if (!selectedMunicipio) return null;
+		if (Number.isFinite(selectedMunicipio.lat) && Number.isFinite(selectedMunicipio.lon)) {
+			return `https://www.google.com/maps/search/?api=1&query=${selectedMunicipio.lat},${selectedMunicipio.lon}`;
+		}
+		const place = [selectedMunicipio.nombre, selectedMunicipio.provincia].filter(Boolean).join(', ');
+		if (!place) return null;
+		return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(place)}`;
+	});
 	const otpIsRouted = $derived(otpStatus === 'routed');
 	const otpTone = $derived.by((): MetricTone => {
 		if (!otpIsRouted || !Number.isFinite(otpMinutes)) return 'bad';
@@ -254,7 +263,21 @@
 				<div class="title-with-badge">
 					<h3>{selectedMunicipio.nombre}</h3>
 				</div>
-				<button class="ghost-btn" onclick={onClearMunicipio}>Cerrar</button>
+				<div class="title-actions">
+					<button class="ghost-btn" onclick={onClearMunicipio}>Cerrar</button>
+					{#if mapsSearchUrl}
+						<a
+							class="maps-btn"
+							href={mapsSearchUrl}
+							target="_blank"
+							rel="noopener noreferrer"
+							aria-label={`Abrir ${selectedMunicipio.nombre} en Google Maps`}
+							title="Abrir en Google Maps"
+						>
+							<img src="/icons/google-maps.png" alt="" width="18" height="18" />
+						</a>
+					{/if}
+				</div>
 			</div>
 			<p>
 				{selectedMunicipio.provincia} · {selectedMunicipio.codigo}{selectedMunicipio.population
@@ -515,6 +538,37 @@
 		background: var(--control-bg);
 		padding: 0.2rem 0.5rem;
 		font-size: 0.74rem;
+	}
+	.title-actions {
+		display: flex;
+		flex-direction: column;
+		align-items: flex-end;
+		gap: 0.35rem;
+		flex: 0 0 auto;
+	}
+	.maps-btn {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 1.9rem;
+		height: 1.9rem;
+		border: 1px solid var(--control-border);
+		border-radius: var(--radius-pill);
+		background: var(--control-bg);
+		transition: background-color 120ms ease, transform 120ms ease;
+	}
+	.maps-btn:hover {
+		background: var(--control-bg-hover);
+		transform: translateY(-0.5px);
+	}
+	.maps-btn:focus-visible {
+		outline: 2px solid var(--focus-ring);
+		outline-offset: 2px;
+	}
+	.maps-btn img {
+		width: 18px;
+		height: 18px;
+		display: block;
 	}
 	.metric-grid {
 		display: grid;
