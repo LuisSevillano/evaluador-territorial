@@ -264,7 +264,6 @@
 					<h3>{selectedMunicipio.nombre}</h3>
 				</div>
 				<div class="title-actions">
-					<button class="ghost-btn" onclick={onClearMunicipio}>Cerrar</button>
 					{#if mapsSearchUrl}
 						<a
 							class="maps-btn"
@@ -274,9 +273,10 @@
 							aria-label={`Abrir ${selectedMunicipio.nombre} en Google Maps`}
 							title="Abrir en Google Maps"
 						>
-							<img src="/icons/google-maps.png" alt="" width="18" height="18" />
+							<img src="/icons/google-maps.png" alt="" width="16" height="16" />
 						</a>
 					{/if}
+					<button class="ghost-btn" onclick={onClearMunicipio}>Cerrar</button>
 				</div>
 			</div>
 			<p>
@@ -541,17 +541,16 @@
 	}
 	.title-actions {
 		display: flex;
-		flex-direction: column;
-		align-items: flex-end;
-		gap: 0.35rem;
+		align-items: center;
+		gap: 0.3rem;
 		flex: 0 0 auto;
 	}
 	.maps-btn {
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
-		width: 1.9rem;
-		height: 1.9rem;
+		width: 1.55rem;
+		height: 1.55rem;
 		border: 1px solid var(--control-border);
 		border-radius: var(--radius-pill);
 		background: var(--control-bg);
@@ -566,8 +565,8 @@
 		outline-offset: 2px;
 	}
 	.maps-btn img {
-		width: 18px;
-		height: 18px;
+		width: 16px;
+		height: 16px;
 		display: block;
 	}
 	.metric-grid {
