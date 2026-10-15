@@ -140,9 +140,10 @@
 		return `https://www.google.com/maps/dir/?api=1&origin=${otpOriginLat},${otpOriginLon}&destination=${otpStopLat},${otpStopLon}&travelmode=transit`;
 	});
 	const mapsSearchUrl = $derived.by(() => {
+		const zoom = 15;
 		if (!selectedMunicipio) return null;
 		if (Number.isFinite(selectedMunicipio.lat) && Number.isFinite(selectedMunicipio.lon)) {
-			return `https://www.google.com/maps/@?api=1&map_action=map&center=${selectedMunicipio.lat},${selectedMunicipio.lon}&zoom=12`;
+			return `https://www.google.com/maps/@?api=1&map_action=map&center=${selectedMunicipio.lat},${selectedMunicipio.lon}&zoom=${zoom}`;
 		}
 		const place = [selectedMunicipio.nombre, selectedMunicipio.provincia].filter(Boolean).join(', ');
 		if (!place) return null;
